@@ -1,0 +1,16 @@
+{
+"developerEmail": "alexander.jacob@eurac.edu",
+"developerName": "Alexander Jacob",
+"developerOrganization": "Eurac Research",
+"developerOrganizationUrl": "http://www.eurac.edu",
+"dateLibrary": "java8",
+"groupId": "org.openeo",
+"invokerPackage": "org.openeo.spring",
+"apiPackage": "org.openeo.spring.api",
+"modelPackage": "org.openeo.spring.model",
+"artificatDescription":"openEO backend driver based on spring",
+"artifactId": "openeo-spring-driver",
+"artifactUrl": "https://github.com/Open-EO/openeo-spring-driver",
+"artifactVersion": "1.0.0-draft",
+"booleanGetterPrefix": "is"
+}
