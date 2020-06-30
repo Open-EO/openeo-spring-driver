@@ -1,0 +1,93 @@
+package org.openeo.spring.model;
+
+import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import org.openapitools.jackson.nullable.JsonNullable;
+import javax.validation.Valid;
+import javax.validation.constraints.*;
+
+/**
+ * The *potential* temporal extent of the features in the collection.
+ */
+@ApiModel(description = "The *potential* temporal extent of the features in the collection.")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T14:48:14.663+02:00[Europe/Rome]")
+public class STACCollectionExtentTemporal   {
+  @JsonProperty("interval")
+  @Valid
+  private List<List<OffsetDateTime>> interval = null;
+
+  public STACCollectionExtentTemporal interval(List<List<OffsetDateTime>> interval) {
+    this.interval = interval;
+    return this;
+  }
+
+  public STACCollectionExtentTemporal addIntervalItem(List<OffsetDateTime> intervalItem) {
+    if (this.interval == null) {
+      this.interval = new ArrayList<>();
+    }
+    this.interval.add(intervalItem);
+    return this;
+  }
+
+  /**
+   * One or more time intervals that describe the temporal extent of the dataset. The value `null` is supported and indicates an open time interval. In the Core only a single time interval is supported. Extensions may support multiple intervals. If multiple intervals are provided, the union of the intervals describes the temporal extent.
+   * @return interval
+  */
+  @ApiModelProperty(value = "One or more time intervals that describe the temporal extent of the dataset. The value `null` is supported and indicates an open time interval. In the Core only a single time interval is supported. Extensions may support multiple intervals. If multiple intervals are provided, the union of the intervals describes the temporal extent.")
+
+  @Valid
+@Size(min=1) 
+  public List<List<OffsetDateTime>> getInterval() {
+    return interval;
+  }
+
+  public void setInterval(List<List<OffsetDateTime>> interval) {
+    this.interval = interval;
+  }
+
+
+  @Override
+  public boolean equals(java.lang.Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    STACCollectionExtentTemporal stACCollectionExtentTemporal = (STACCollectionExtentTemporal) o;
+    return Objects.equals(this.interval, stACCollectionExtentTemporal.interval);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(interval);
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("class STACCollectionExtentTemporal {\n");
+    
+    sb.append("    interval: ").append(toIndentedString(interval)).append("\n");
+    sb.append("}");
+    return sb.toString();
+  }
+
+  /**
+   * Convert the given object to string with each line indented by 4 spaces
+   * (except the first line).
+   */
+  private String toIndentedString(java.lang.Object o) {
+    if (o == null) {
+      return "null";
+    }
+    return o.toString().replace("\n", "\n    ");
+  }
+}
+
