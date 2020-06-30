@@ -4,7 +4,7 @@ Spring Boot Server
 
 using the following command:
 ```
-java -jar ./openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate -c ./openeo-spring-driverV1-draft-properties.json -i ./openeo-api/openapi.yaml -g spring -o openeo-spring-driver > generate_V1-draft.log
+java -jar ./openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate -c ./openeo-spring-driver/V1-draft-properties.json -i ./openeo-api/openapi.yaml -g spring -o openeo-spring-driver > generate_V1-draft.log
 ```
 
 
