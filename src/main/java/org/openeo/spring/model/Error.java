@@ -16,7 +16,7 @@ import javax.validation.constraints.*;
  * An error object declares additional information about a client-side or server-side error. See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)
  */
 @ApiModel(description = "An error object declares additional information about a client-side or server-side error. See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T14:48:14.663+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
 public class Error   {
   @JsonProperty("id")
   private String id;

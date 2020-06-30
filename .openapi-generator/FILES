@@ -101,7 +101,6 @@ src/main/java/org/openeo/spring/model/STACCollectionExtentTemporal.java
 src/main/java/org/openeo/spring/model/SecondaryWebServicesListResponse.java
 src/main/java/org/openeo/spring/model/Service.java
 src/main/java/org/openeo/spring/model/ServiceType.java
-src/main/java/org/openeo/spring/model/StacVersion.java
 src/main/java/org/openeo/spring/model/StoreBatchJobRequest.java
 src/main/java/org/openeo/spring/model/StoreSecondaryWebServiceRequest.java
 src/main/java/org/openeo/spring/model/SynchronousResultRequest.java

@@ -16,7 +16,7 @@ import javax.validation.constraints.*;
  * The *potential* temporal extent of the features in the collection.
  */
 @ApiModel(description = "The *potential* temporal extent of the features in the collection.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T14:48:14.663+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
 public class STACCollectionExtentTemporal   {
   @JsonProperty("interval")
   @Valid

@@ -15,7 +15,7 @@ import javax.validation.constraints.*;
 /**
  * Parameter
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T14:48:14.663+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
 public class Parameter   {
   @JsonProperty("name")
   private String name;

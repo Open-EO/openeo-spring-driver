@@ -12,7 +12,7 @@ import javax.validation.constraints.*;
 /**
  * LogEntryPath
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T14:48:14.663+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
 public class LogEntryPath   {
   @JsonProperty("node_id")
   private String nodeId;

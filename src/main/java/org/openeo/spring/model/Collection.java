@@ -12,7 +12,6 @@ import java.util.Set;
 import org.openeo.spring.model.AnyOfURIstring;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.STACCollectionExtent;
-import org.openeo.spring.model.StacVersion;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
@@ -20,10 +19,10 @@ import javax.validation.constraints.*;
 /**
  * Collection
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T14:48:14.663+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
 public class Collection   {
   @JsonProperty("stac_version")
-  private StacVersion stacVersion;
+  private String stacVersion;
 
   @JsonProperty("stac_extensions")
   @Valid
@@ -62,25 +61,24 @@ public class Collection   {
   @Valid
   private List<Link> links = new ArrayList<>();
 
-  public Collection stacVersion(StacVersion stacVersion) {
+  public Collection stacVersion(String stacVersion) {
     this.stacVersion = stacVersion;
     return this;
   }
 
   /**
-   * Get stacVersion
+   * The [version of the STAC specification](https://github.com/radiantearth/stac-spec/releases), which MAY not be equal to the [STAC API version](#section/STAC). Supports versions 0.9.x and 1.x.x.
    * @return stacVersion
   */
-  @ApiModelProperty(required = true, value = "")
+  @ApiModelProperty(required = true, value = "The [version of the STAC specification](https://github.com/radiantearth/stac-spec/releases), which MAY not be equal to the [STAC API version](#section/STAC). Supports versions 0.9.x and 1.x.x.")
   @NotNull
 
-  @Valid
 
-  public StacVersion getStacVersion() {
+  public String getStacVersion() {
     return stacVersion;
   }
 
-  public void setStacVersion(StacVersion stacVersion) {
+  public void setStacVersion(String stacVersion) {
     this.stacVersion = stacVersion;
   }
 

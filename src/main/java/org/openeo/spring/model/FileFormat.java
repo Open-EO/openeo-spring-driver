@@ -20,7 +20,7 @@ import javax.validation.constraints.*;
  * Describes a specific file format.
  */
 @ApiModel(description = "Describes a specific file format.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T14:48:14.663+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
 public class FileFormat   {
   @JsonProperty("title")
   private String title;

@@ -10,7 +10,6 @@ import java.util.List;
 import org.openeo.spring.model.Billing;
 import org.openeo.spring.model.Endpoint;
 import org.openeo.spring.model.Link;
-import org.openeo.spring.model.StacVersion;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
@@ -18,7 +17,7 @@ import javax.validation.constraints.*;
 /**
  * CapabilitiesResponse
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T14:48:14.663+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
 public class CapabilitiesResponse   {
   @JsonProperty("api_version")
   private String apiVersion;
@@ -27,7 +26,7 @@ public class CapabilitiesResponse   {
   private String backendVersion;
 
   @JsonProperty("stac_version")
-  private StacVersion stacVersion;
+  private String stacVersion;
 
   @JsonProperty("id")
   private String id;
@@ -94,25 +93,24 @@ public class CapabilitiesResponse   {
     this.backendVersion = backendVersion;
   }
 
-  public CapabilitiesResponse stacVersion(StacVersion stacVersion) {
+  public CapabilitiesResponse stacVersion(String stacVersion) {
     this.stacVersion = stacVersion;
     return this;
   }
 
   /**
-   * Get stacVersion
+   * The [version of the STAC specification](https://github.com/radiantearth/stac-spec/releases), which MAY not be equal to the [STAC API version](#section/STAC). Supports versions 0.9.x and 1.x.x.
    * @return stacVersion
   */
-  @ApiModelProperty(required = true, value = "")
+  @ApiModelProperty(required = true, value = "The [version of the STAC specification](https://github.com/radiantearth/stac-spec/releases), which MAY not be equal to the [STAC API version](#section/STAC). Supports versions 0.9.x and 1.x.x.")
   @NotNull
 
-  @Valid
 
-  public StacVersion getStacVersion() {
+  public String getStacVersion() {
     return stacVersion;
   }
 
-  public void setStacVersion(StacVersion stacVersion) {
+  public void setStacVersion(String stacVersion) {
     this.stacVersion = stacVersion;
   }
 

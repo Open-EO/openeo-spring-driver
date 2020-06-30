@@ -15,9 +15,8 @@ import java.util.Map;
 import java.util.Set;
 import org.openeo.spring.model.AnyOfURIstring;
 import org.openeo.spring.model.Asset;
-import org.openeo.spring.model.GeoJsonGeometry;
 import org.openeo.spring.model.Link;
-import org.openeo.spring.model.StacVersion;
+import org.openeo.spring.model.OneOfGeoJsonGeometrystring;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
@@ -25,10 +24,10 @@ import javax.validation.constraints.*;
 /**
  * JobResult
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T14:48:14.663+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
 public class JobResult   {
   @JsonProperty("stac_version")
-  private StacVersion stacVersion;
+  private String stacVersion;
 
   @JsonProperty("stac_extensions")
   @Valid
@@ -75,10 +74,10 @@ public class JobResult   {
 
   @JsonProperty("bbox")
   @Valid
-  private List<BigDecimal> bbox = new ArrayList<>();
+  private List<BigDecimal> bbox = null;
 
   @JsonProperty("geometry")
-  private GeoJsonGeometry geometry = null;
+  private OneOfGeoJsonGeometrystring geometry = null;
 
   @JsonProperty("properties")
   @Valid
@@ -92,25 +91,24 @@ public class JobResult   {
   @Valid
   private List<Link> links = new ArrayList<>();
 
-  public JobResult stacVersion(StacVersion stacVersion) {
+  public JobResult stacVersion(String stacVersion) {
     this.stacVersion = stacVersion;
     return this;
   }
 
   /**
-   * Get stacVersion
+   * The [version of the STAC specification](https://github.com/radiantearth/stac-spec/releases), which MAY not be equal to the [STAC API version](#section/STAC). Supports versions 0.9.x and 1.x.x.
    * @return stacVersion
   */
-  @ApiModelProperty(required = true, value = "")
+  @ApiModelProperty(required = true, value = "The [version of the STAC specification](https://github.com/radiantearth/stac-spec/releases), which MAY not be equal to the [STAC API version](#section/STAC). Supports versions 0.9.x and 1.x.x.")
   @NotNull
 
-  @Valid
 
-  public StacVersion getStacVersion() {
+  public String getStacVersion() {
     return stacVersion;
   }
 
-  public void setStacVersion(StacVersion stacVersion) {
+  public void setStacVersion(String stacVersion) {
     this.stacVersion = stacVersion;
   }
 
@@ -191,19 +189,21 @@ public class JobResult   {
   }
 
   public JobResult addBboxItem(BigDecimal bboxItem) {
+    if (this.bbox == null) {
+      this.bbox = new ArrayList<>();
+    }
     this.bbox.add(bboxItem);
     return this;
   }
 
   /**
-   * Potential *spatial extent* covered by the data. The bounding box is provided as four or six numbers, depending on whether the coordinate reference system includes a vertical axis (height or depth):  - West (lower left corner, coordinate axis 1) - South (lower left corner, coordinate axis 2) - Base (optional, lower left corner, coordinate axis 3) - East (upper right corner, coordinate axis 1) - North (upper right corner, coordinate axis 2) - Height (optional, upper right corner, coordinate axis 3)  The coordinate reference system of the values is WGS84 longitude/latitude.
+   * Potential *spatial extent* covered by the data.  The bounding box is provided as four or six numbers. Six numbers are specified, if the coordinate reference system includes a vertical axis (height or depth). The order of the elements in the array:  - West (lower left corner, coordinate axis 1) - South (lower left corner, coordinate axis 2) - Base (optional, lower left corner, coordinate axis 3) - East (upper right corner, coordinate axis 1) - North (upper right corner, coordinate axis 2) - Height (optional, upper right corner, coordinate axis 3)  The coordinate reference system of the values is WGS84 longitude/latitude.  Specifying the `bbox` is strongly RECOMMENDED for STAC compliance, but can be omitted if the result is unlocated and the `geometry` is set to `null`.
    * @return bbox
   */
-  @ApiModelProperty(example = "[-180,-90,180,90]", required = true, value = "Potential *spatial extent* covered by the data. The bounding box is provided as four or six numbers, depending on whether the coordinate reference system includes a vertical axis (height or depth):  - West (lower left corner, coordinate axis 1) - South (lower left corner, coordinate axis 2) - Base (optional, lower left corner, coordinate axis 3) - East (upper right corner, coordinate axis 1) - North (upper right corner, coordinate axis 2) - Height (optional, upper right corner, coordinate axis 3)  The coordinate reference system of the values is WGS84 longitude/latitude.")
-  @NotNull
+  @ApiModelProperty(example = "[-180,-90,180,90]", value = "Potential *spatial extent* covered by the data.  The bounding box is provided as four or six numbers. Six numbers are specified, if the coordinate reference system includes a vertical axis (height or depth). The order of the elements in the array:  - West (lower left corner, coordinate axis 1) - South (lower left corner, coordinate axis 2) - Base (optional, lower left corner, coordinate axis 3) - East (upper right corner, coordinate axis 1) - North (upper right corner, coordinate axis 2) - Height (optional, upper right corner, coordinate axis 3)  The coordinate reference system of the values is WGS84 longitude/latitude.  Specifying the `bbox` is strongly RECOMMENDED for STAC compliance, but can be omitted if the result is unlocated and the `geometry` is set to `null`.")
 
   @Valid
-@Size(min=4,max=6) 
+
   public List<BigDecimal> getBbox() {
     return bbox;
   }
@@ -212,25 +212,25 @@ public class JobResult   {
     this.bbox = bbox;
   }
 
-  public JobResult geometry(GeoJsonGeometry geometry) {
+  public JobResult geometry(OneOfGeoJsonGeometrystring geometry) {
     this.geometry = geometry;
     return this;
   }
 
   /**
-   * Defines the full footprint of the asset represented by this item as GeoJSON Geometry.
+   * Defines the full footprint of the asset represented by this item as GeoJSON Geometry. Results without a known location can set this value to `null`.
    * @return geometry
   */
-  @ApiModelProperty(example = "{\"type\":\"Polygon\",\"coordinates\":[[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]]]}", required = true, value = "Defines the full footprint of the asset represented by this item as GeoJSON Geometry.")
+  @ApiModelProperty(example = "{\"type\":\"Polygon\",\"coordinates\":[[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]]]}", required = true, value = "Defines the full footprint of the asset represented by this item as GeoJSON Geometry. Results without a known location can set this value to `null`.")
   @NotNull
 
   @Valid
 
-  public GeoJsonGeometry getGeometry() {
+  public OneOfGeoJsonGeometrystring getGeometry() {
     return geometry;
   }
 
-  public void setGeometry(GeoJsonGeometry geometry) {
+  public void setGeometry(OneOfGeoJsonGeometrystring geometry) {
     this.geometry = geometry;
   }
 
@@ -271,10 +271,10 @@ public class JobResult   {
   }
 
   /**
-   * Dictionary of asset objects for data that can be downloaded, each with a unique key. The keys MAY be used by clients as file names.
+   * Dictionary of asset objects for data that can be downloaded, each with a unique key. The keys MAY be used by clients as file names.  It is RECOMMENDED to link to a copy of this STAC Item with relative links in the assets, which allows users to easily publish their processed data with a basic set of metadata.
    * @return assets
   */
-  @ApiModelProperty(example = "{\"preview.png\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/preview.png\",\"type\":\"image/png\",\"title\":\"Thumbnail\",\"roles\":[\"thumbnail\"]},\"process.json\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/process.json\",\"type\":\"application/json\",\"title\":\"Original Process\",\"roles\":[\"process\",\"reproduction\"]},\"1.tif\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/1.tif\",\"type\":\"image/tiff; application=geotiff\",\"title\":\"Band 1\",\"roles\":[\"data\"]},\"2.tif\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/2.tif\",\"type\":\"image/tiff; application=geotiff\",\"title\":\"Band 2\",\"roles\":[\"data\"]},\"inspire.xml\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/inspire.xml\",\"type\":\"application/xml\",\"title\":\"INSPIRE metadata\",\"description\":\"INSPIRE compliant XML metadata\",\"roles\":[\"metadata\"]}}", required = true, value = "Dictionary of asset objects for data that can be downloaded, each with a unique key. The keys MAY be used by clients as file names.")
+  @ApiModelProperty(example = "{\"preview.png\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/preview.png\",\"type\":\"image/png\",\"title\":\"Thumbnail\",\"roles\":[\"thumbnail\"]},\"process.json\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/process.json\",\"type\":\"application/json\",\"title\":\"Original Process\",\"roles\":[\"process\",\"reproduction\"]},\"1.tif\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/1.tif\",\"type\":\"image/tiff; application=geotiff\",\"title\":\"Band 1\",\"roles\":[\"data\"]},\"2.tif\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/2.tif\",\"type\":\"image/tiff; application=geotiff\",\"title\":\"Band 2\",\"roles\":[\"data\"]},\"inspire.xml\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/inspire.xml\",\"type\":\"application/xml\",\"title\":\"INSPIRE metadata\",\"description\":\"INSPIRE compliant XML metadata\",\"roles\":[\"metadata\"]}}", required = true, value = "Dictionary of asset objects for data that can be downloaded, each with a unique key. The keys MAY be used by clients as file names.  It is RECOMMENDED to link to a copy of this STAC Item with relative links in the assets, which allows users to easily publish their processed data with a basic set of metadata.")
   @NotNull
 
   @Valid

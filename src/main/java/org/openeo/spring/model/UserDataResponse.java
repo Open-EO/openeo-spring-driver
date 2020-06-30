@@ -18,7 +18,7 @@ import javax.validation.constraints.*;
  * Holds user information. If no budget or storage limit applies to the user account the corresponding properties MUST be set to null.
  */
 @ApiModel(description = "Holds user information. If no budget or storage limit applies to the user account the corresponding properties MUST be set to null.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T14:48:14.663+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
 public class UserDataResponse   {
   @JsonProperty("user_id")
   private String userId;
