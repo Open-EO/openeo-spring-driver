@@ -22,7 +22,7 @@ import javax.validation.constraints.*;
  * A user-defined process, may only contain metadata and no process graph.
  */
 @ApiModel(description = "A user-defined process, may only contain metadata and no process graph.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class UserDefinedProcessMeta extends NullableProcess  {
 
   @Override

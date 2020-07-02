@@ -5,38 +5,47 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.ArrayList;
+import java.util.List;
+import org.openeo.spring.model.GeoJsonGeometry;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
 
 /**
- * Data that is expected to be passed from another process.
+ * GeoJSONGeometryCollection
  */
-@ApiModel(description = "Data that is expected to be passed from another process.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class ResultReference   {
-  @JsonProperty("from_node")
-  private String fromNode;
+public class GeoJSONGeometryCollection   {
+  @JsonProperty("geometries")
+  @Valid
+  private List<GeoJsonGeometry> geometries = new ArrayList<>();
 
-  public ResultReference fromNode(String fromNode) {
-    this.fromNode = fromNode;
+  public GeoJSONGeometryCollection geometries(List<GeoJsonGeometry> geometries) {
+    this.geometries = geometries;
+    return this;
+  }
+
+  public GeoJSONGeometryCollection addGeometriesItem(GeoJsonGeometry geometriesItem) {
+    this.geometries.add(geometriesItem);
     return this;
   }
 
   /**
-   * The ID of the node that data is expected to come from.
-   * @return fromNode
+   * Get geometries
+   * @return geometries
   */
-  @ApiModelProperty(required = true, value = "The ID of the node that data is expected to come from.")
+  @ApiModelProperty(required = true, value = "")
   @NotNull
 
+  @Valid
 
-  public String getFromNode() {
-    return fromNode;
+  public List<GeoJsonGeometry> getGeometries() {
+    return geometries;
   }
 
-  public void setFromNode(String fromNode) {
-    this.fromNode = fromNode;
+  public void setGeometries(List<GeoJsonGeometry> geometries) {
+    this.geometries = geometries;
   }
 
 
@@ -48,21 +57,21 @@ public class ResultReference   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ResultReference resultReference = (ResultReference) o;
-    return Objects.equals(this.fromNode, resultReference.fromNode);
+    GeoJSONGeometryCollection geoJSONGeometryCollection = (GeoJSONGeometryCollection) o;
+    return Objects.equals(this.geometries, geoJSONGeometryCollection.geometries);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(fromNode);
+    return Objects.hash(geometries);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ResultReference {\n");
+    sb.append("class GeoJSONGeometryCollection {\n");
     
-    sb.append("    fromNode: ").append(toIndentedString(fromNode)).append("\n");
+    sb.append("    geometries: ").append(toIndentedString(geometries)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -22,7 +22,7 @@ import javax.validation.constraints.*;
  * A process graph, optionally enriched with process metadata.
  */
 @ApiModel(description = "A process graph, optionally enriched with process metadata.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class ProcessGraphWithMetadata extends NullableProcess  {
   @JsonProperty("id")
   private JsonNullable<Object> id = JsonNullable.undefined();

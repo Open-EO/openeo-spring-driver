@@ -17,7 +17,7 @@ import javax.validation.constraints.*;
 /**
  * UdfDocker
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class UdfDocker extends UdfRuntime  {
   @JsonProperty("docker")
   private String docker;

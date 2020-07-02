@@ -17,7 +17,7 @@ import javax.validation.constraints.*;
  * The metadata of a batch jobs that has been submitted by the authenticated user.
  */
 @ApiModel(description = "The metadata of a batch jobs that has been submitted by the authenticated user.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class BatchJob   {
   @JsonProperty("id")
   private String id;

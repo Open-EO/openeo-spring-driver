@@ -17,7 +17,7 @@ import javax.validation.constraints.*;
  * Describes a general argument for various entities.
  */
 @ApiModel(description = "Describes a general argument for various entities.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class Argument   {
   /**
    * The type is the expected data type for the content of the parameter. `null` is allowed for all types. If no type is specified, any type is allowed to be passed.

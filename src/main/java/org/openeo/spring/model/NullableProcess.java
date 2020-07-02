@@ -21,7 +21,7 @@ import javax.validation.constraints.*;
 /**
  * NullableProcess
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class NullableProcess extends Process  {
   @JsonProperty("summary")
   private JsonNullable<Object> summary = JsonNullable.undefined();

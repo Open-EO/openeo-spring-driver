@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * A link to another resource on the web. Bases on [RFC 5899](https://tools.ietf.org/html/rfc5988).
  */
 @ApiModel(description = "A link to another resource on the web. Bases on [RFC 5899](https://tools.ietf.org/html/rfc5988).")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class Link   {
   @JsonProperty("rel")
   private String rel;

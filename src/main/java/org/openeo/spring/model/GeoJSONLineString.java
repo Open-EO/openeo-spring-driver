@@ -5,38 +5,47 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
 
 /**
- * Data that is expected to be passed from another process.
+ * GeoJSONLineString
  */
-@ApiModel(description = "Data that is expected to be passed from another process.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class ResultReference   {
-  @JsonProperty("from_node")
-  private String fromNode;
+public class GeoJSONLineString   {
+  @JsonProperty("coordinates")
+  @Valid
+  private List<List<BigDecimal>> coordinates = new ArrayList<>();
 
-  public ResultReference fromNode(String fromNode) {
-    this.fromNode = fromNode;
+  public GeoJSONLineString coordinates(List<List<BigDecimal>> coordinates) {
+    this.coordinates = coordinates;
+    return this;
+  }
+
+  public GeoJSONLineString addCoordinatesItem(List<BigDecimal> coordinatesItem) {
+    this.coordinates.add(coordinatesItem);
     return this;
   }
 
   /**
-   * The ID of the node that data is expected to come from.
-   * @return fromNode
+   * Get coordinates
+   * @return coordinates
   */
-  @ApiModelProperty(required = true, value = "The ID of the node that data is expected to come from.")
+  @ApiModelProperty(required = true, value = "")
   @NotNull
 
+  @Valid
 
-  public String getFromNode() {
-    return fromNode;
+  public List<List<BigDecimal>> getCoordinates() {
+    return coordinates;
   }
 
-  public void setFromNode(String fromNode) {
-    this.fromNode = fromNode;
+  public void setCoordinates(List<List<BigDecimal>> coordinates) {
+    this.coordinates = coordinates;
   }
 
 
@@ -48,21 +57,21 @@ public class ResultReference   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ResultReference resultReference = (ResultReference) o;
-    return Objects.equals(this.fromNode, resultReference.fromNode);
+    GeoJSONLineString geoJSONLineString = (GeoJSONLineString) o;
+    return Objects.equals(this.coordinates, geoJSONLineString.coordinates);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(fromNode);
+    return Objects.hash(coordinates);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ResultReference {\n");
+    sb.append("class GeoJSONLineString {\n");
     
-    sb.append("    fromNode: ").append(toIndentedString(fromNode)).append("\n");
+    sb.append("    coordinates: ").append(toIndentedString(coordinates)).append("\n");
     sb.append("}");
     return sb.toString();
   }

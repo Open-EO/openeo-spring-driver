@@ -16,7 +16,7 @@ import javax.validation.constraints.*;
  * A dimension for the bands.  The band dimension only specifies the band names as dimension labels. Further information to the bands are available in either &#x60;sar:bands&#x60; or &#x60;eo:bands&#x60; in the &#x60;summaries&#x60; property.
  */
 @ApiModel(description = "A dimension for the bands.  The band dimension only specifies the band names as dimension labels. Further information to the bands are available in either `sar:bands` or `eo:bands` in the `summaries` property.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class BandDimension   {
   @JsonProperty("values")
   @Valid

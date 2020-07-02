@@ -16,7 +16,7 @@ import javax.validation.constraints.*;
 /**
  * UserDefinedProcesses
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class UserDefinedProcesses   {
   @JsonProperty("processes")
   @Valid

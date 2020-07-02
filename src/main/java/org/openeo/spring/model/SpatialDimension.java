@@ -18,7 +18,7 @@ import javax.validation.constraints.*;
  * A spatial dimension in one of the horizontal (x or y) or vertical (z) directions.
  */
 @ApiModel(description = "A spatial dimension in one of the horizontal (x or y) or vertical (z) directions.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class SpatialDimension   {
   /**
    * Axis of the spatial dimension (`x`, `y` or `z`).
