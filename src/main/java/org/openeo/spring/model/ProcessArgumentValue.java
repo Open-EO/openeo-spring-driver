@@ -14,6 +14,8 @@ import org.openeo.spring.model.ObjectRestricted;
 import org.openeo.spring.model.ParameterReference;
 import org.openeo.spring.model.ProcessExample;
 import org.openeo.spring.model.ProcessGraphWithMetadata;
+import org.openeo.spring.model.ProcessParameter;
+import org.openeo.spring.model.ProcessReturnValue;
 import org.openeo.spring.model.ResultReference;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
@@ -23,7 +25,7 @@ import javax.validation.constraints.*;
  * Arguments for a process. See the API documentation for more information.
  */
 @ApiModel(description = "Arguments for a process. See the API documentation for more information.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
 public class ProcessArgumentValue   {
   @JsonProperty("from_parameter")
   private String fromParameter;
@@ -36,23 +38,24 @@ public class ProcessArgumentValue   {
   private Map<String, Object> processGraph = new HashMap<>();
 
   @JsonProperty("id")
-  private JsonNullable<Object> id = JsonNullable.undefined();
+  private String id;
 
   @JsonProperty("summary")
-  private JsonNullable<Object> summary = JsonNullable.undefined();
+  private String summary;
 
   @JsonProperty("description")
-  private JsonNullable<Object> description = JsonNullable.undefined();
+  private String description;
 
   @JsonProperty("categories")
   @Valid
   private List<String> categories = null;
 
   @JsonProperty("parameters")
-  private JsonNullable<Object> parameters = JsonNullable.undefined();
+  @Valid
+  private List<ProcessParameter> parameters = null;
 
   @JsonProperty("returns")
-  private JsonNullable<Object> returns = JsonNullable.undefined();
+  private ProcessReturnValue returns;
 
   @JsonProperty("deprecated")
   private Boolean deprecated = false;
@@ -140,63 +143,63 @@ public class ProcessArgumentValue   {
     this.processGraph = processGraph;
   }
 
-  public ProcessArgumentValue id(Object id) {
-    this.id = JsonNullable.of(id);
+  public ProcessArgumentValue id(String id) {
+    this.id = id;
     return this;
   }
 
   /**
-   * Get id
+   * Unique identifier for the process.  MUST be unique across all predefined and user-defined processes available for the authenticated user. If a back-end adds a process with the name of a user-defined process, the user-defined process takes preference over predefined processes in execution to not break existing process graphs.  Back-ends may choose to enforce a prefix for user-defined processes while storing the process, e.g. `user_ndvi` with `user_` being the prefix. Prefixes must still follow the pattern.
    * @return id
   */
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(example = "ndvi", value = "Unique identifier for the process.  MUST be unique across all predefined and user-defined processes available for the authenticated user. If a back-end adds a process with the name of a user-defined process, the user-defined process takes preference over predefined processes in execution to not break existing process graphs.  Back-ends may choose to enforce a prefix for user-defined processes while storing the process, e.g. `user_ndvi` with `user_` being the prefix. Prefixes must still follow the pattern.")
 
-
-  public JsonNullable<Object> getId() {
+@Pattern(regexp="^\\w+$") 
+  public String getId() {
     return id;
   }
 
-  public void setId(JsonNullable<Object> id) {
+  public void setId(String id) {
     this.id = id;
   }
 
-  public ProcessArgumentValue summary(Object summary) {
-    this.summary = JsonNullable.of(summary);
+  public ProcessArgumentValue summary(String summary) {
+    this.summary = summary;
     return this;
   }
 
   /**
-   * Get summary
+   * A short summary of what the process does.
    * @return summary
   */
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "A short summary of what the process does.")
 
 
-  public JsonNullable<Object> getSummary() {
+  public String getSummary() {
     return summary;
   }
 
-  public void setSummary(JsonNullable<Object> summary) {
+  public void setSummary(String summary) {
     this.summary = summary;
   }
 
-  public ProcessArgumentValue description(Object description) {
-    this.description = JsonNullable.of(description);
+  public ProcessArgumentValue description(String description) {
+    this.description = description;
     return this;
   }
 
   /**
-   * Get description
+   * Detailed description to explain the entity.  [CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation. In addition to the CommonMark syntax, clients can convert process IDs that are formatted as in the following example into links instead of code blocks: ``` ``process_id()`` ```
    * @return description
   */
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Detailed description to explain the entity.  [CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation. In addition to the CommonMark syntax, clients can convert process IDs that are formatted as in the following example into links instead of code blocks: ``` ``process_id()`` ```")
 
 
-  public JsonNullable<Object> getDescription() {
+  public String getDescription() {
     return description;
   }
 
-  public void setDescription(JsonNullable<Object> description) {
+  public void setDescription(String description) {
     this.description = description;
   }
 
@@ -228,28 +231,37 @@ public class ProcessArgumentValue   {
     this.categories = categories;
   }
 
-  public ProcessArgumentValue parameters(Object parameters) {
-    this.parameters = JsonNullable.of(parameters);
+  public ProcessArgumentValue parameters(List<ProcessParameter> parameters) {
+    this.parameters = parameters;
+    return this;
+  }
+
+  public ProcessArgumentValue addParametersItem(ProcessParameter parametersItem) {
+    if (this.parameters == null) {
+      this.parameters = new ArrayList<>();
+    }
+    this.parameters.add(parametersItem);
     return this;
   }
 
   /**
-   * Get parameters
+   * A list of parameters.  The order in the array corresponds to the parameter order to be used in clients that don't support named parameters.  **Note:** Specifying an empty array is different from (if allowed) `null` or the property being absent. An empty array means the process has no parameters. `null` / property absent means that the parameters are unknown as the user has not specified them. There could still be parameters in the process graph, if one is specified.
    * @return parameters
   */
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "A list of parameters.  The order in the array corresponds to the parameter order to be used in clients that don't support named parameters.  **Note:** Specifying an empty array is different from (if allowed) `null` or the property being absent. An empty array means the process has no parameters. `null` / property absent means that the parameters are unknown as the user has not specified them. There could still be parameters in the process graph, if one is specified.")
 
+  @Valid
 
-  public JsonNullable<Object> getParameters() {
+  public List<ProcessParameter> getParameters() {
     return parameters;
   }
 
-  public void setParameters(JsonNullable<Object> parameters) {
+  public void setParameters(List<ProcessParameter> parameters) {
     this.parameters = parameters;
   }
 
-  public ProcessArgumentValue returns(Object returns) {
-    this.returns = JsonNullable.of(returns);
+  public ProcessArgumentValue returns(ProcessReturnValue returns) {
+    this.returns = returns;
     return this;
   }
 
@@ -259,12 +271,13 @@ public class ProcessArgumentValue   {
   */
   @ApiModelProperty(value = "")
 
+  @Valid
 
-  public JsonNullable<Object> getReturns() {
+  public ProcessReturnValue getReturns() {
     return returns;
   }
 
-  public void setReturns(JsonNullable<Object> returns) {
+  public void setReturns(ProcessReturnValue returns) {
     this.returns = returns;
   }
 

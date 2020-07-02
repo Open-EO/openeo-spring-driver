@@ -13,7 +13,7 @@ import javax.validation.constraints.*;
  * A parameter for a process graph. Data that is expected to be passed to a process graph either from the user directly or from the process that is executing the process graph.
  */
 @ApiModel(description = "A parameter for a process graph. Data that is expected to be passed to a process graph either from the user directly or from the process that is executing the process graph.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
 public class ParameterReference   {
   @JsonProperty("from_parameter")
   private String fromParameter;

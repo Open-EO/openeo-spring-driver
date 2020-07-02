@@ -5,7 +5,7 @@
  */
 package org.openeo.spring.api;
 
-import org.openeo.spring.model.CapabilitiesResponse;
+import org.openeo.spring.model.Capabilities;
 import org.openeo.spring.model.Error;
 import io.swagger.annotations.*;
 import org.springframework.http.HttpStatus;
@@ -28,7 +28,7 @@ import javax.validation.constraints.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
 @Validated
 @Api(value = "default", description = "the default API")
 public interface DefaultApi {
@@ -45,15 +45,15 @@ public interface DefaultApi {
      *         or The request can&#39;t be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request usually does not respond with HTTP status codes 401 and 403 due to missing authorization. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 400)
      *         or The request can&#39;t be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 500)
      */
-    @ApiOperation(value = "Information about the back-end", nickname = "capabilities", notes = "Returns general information about the back-end, including which version and endpoints of the openEO API are supported. May also include billing information.", response = CapabilitiesResponse.class, tags={ "Capabilities", })
+    @ApiOperation(value = "Information about the back-end", nickname = "capabilities", notes = "Returns general information about the back-end, including which version and endpoints of the openEO API are supported. May also include billing information.", response = Capabilities.class, tags={ "Capabilities", })
     @ApiResponses(value = { 
-        @ApiResponse(code = 200, message = "Information about the API version and supported endpoints / features.", response = CapabilitiesResponse.class),
+        @ApiResponse(code = 200, message = "Information about the API version and supported endpoints / features.", response = Capabilities.class),
         @ApiResponse(code = 400, message = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request usually does not respond with HTTP status codes 401 and 403 due to missing authorization. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)", response = Error.class),
         @ApiResponse(code = 500, message = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)", response = Error.class) })
     @RequestMapping(value = "/",
         produces = { "application/json" }, 
         method = RequestMethod.GET)
-    default ResponseEntity<CapabilitiesResponse> capabilities() {
+    default ResponseEntity<Capabilities> capabilities() {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {

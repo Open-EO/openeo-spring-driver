@@ -5,6 +5,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.openeo.spring.model.Link;
+import org.openeo.spring.model.Process;
+import org.openeo.spring.model.ProcessExample;
+import org.openeo.spring.model.ProcessParameter;
+import org.openeo.spring.model.ProcessReturnValue;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
@@ -12,8 +21,8 @@ import javax.validation.constraints.*;
 /**
  * NullableProcess
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
-public class NullableProcess   {
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+public class NullableProcess extends Process  {
   @JsonProperty("summary")
   private JsonNullable<Object> summary = JsonNullable.undefined();
 
@@ -119,19 +128,20 @@ public class NullableProcess   {
     return Objects.equals(this.summary, nullableProcess.summary) &&
         Objects.equals(this.description, nullableProcess.description) &&
         Objects.equals(this.parameters, nullableProcess.parameters) &&
-        Objects.equals(this.returns, nullableProcess.returns);
+        Objects.equals(this.returns, nullableProcess.returns) &&
+        super.equals(o);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(summary, description, parameters, returns);
+    return Objects.hash(summary, description, parameters, returns, super.hashCode());
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class NullableProcess {\n");
-    
+    sb.append("    ").append(toIndentedString(super.toString())).append("\n");
     sb.append("    summary: ").append(toIndentedString(summary)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");
     sb.append("    parameters: ").append(toIndentedString(parameters)).append("\n");

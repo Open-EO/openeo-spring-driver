@@ -18,7 +18,7 @@ import javax.validation.constraints.*;
  * An log message that communicates information about the processed data.
  */
 @ApiModel(description = "An log message that communicates information about the processed data.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
 public class LogEntry   {
   @JsonProperty("id")
   private String id;

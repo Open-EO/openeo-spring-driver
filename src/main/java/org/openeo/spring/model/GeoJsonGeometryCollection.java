@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
 import java.util.List;
+import org.openeo.spring.model.GeoJSONGeometryCollection;
 import org.openeo.spring.model.GeoJsonGeometry;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
@@ -16,68 +17,11 @@ import javax.validation.constraints.*;
 /**
  * GeoJsonGeometryCollection
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
-public class GeoJsonGeometryCollection   {
-  /**
-   * Gets or Sets type
-   */
-  public enum TypeEnum {
-    GEOMETRYCOLLECTION("GeometryCollection");
-
-    private String value;
-
-    TypeEnum(String value) {
-      this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-      return value;
-    }
-
-    @Override
-    public String toString() {
-      return String.valueOf(value);
-    }
-
-    @JsonCreator
-    public static TypeEnum fromValue(String value) {
-      for (TypeEnum b : TypeEnum.values()) {
-        if (b.value.equals(value)) {
-          return b;
-        }
-      }
-      throw new IllegalArgumentException("Unexpected value '" + value + "'");
-    }
-  }
-
-  @JsonProperty("type")
-  private TypeEnum type;
-
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+public class GeoJsonGeometryCollection extends GeoJsonGeometry  {
   @JsonProperty("geometries")
   @Valid
   private List<GeoJsonGeometry> geometries = new ArrayList<>();
-
-  public GeoJsonGeometryCollection type(TypeEnum type) {
-    this.type = type;
-    return this;
-  }
-
-  /**
-   * Get type
-   * @return type
-  */
-  @ApiModelProperty(required = true, value = "")
-  @NotNull
-
-
-  public TypeEnum getType() {
-    return type;
-  }
-
-  public void setType(TypeEnum type) {
-    this.type = type;
-  }
 
   public GeoJsonGeometryCollection geometries(List<GeoJsonGeometry> geometries) {
     this.geometries = geometries;
@@ -116,21 +60,20 @@ public class GeoJsonGeometryCollection   {
       return false;
     }
     GeoJsonGeometryCollection geoJsonGeometryCollection = (GeoJsonGeometryCollection) o;
-    return Objects.equals(this.type, geoJsonGeometryCollection.type) &&
-        Objects.equals(this.geometries, geoJsonGeometryCollection.geometries);
+    return Objects.equals(this.geometries, geoJsonGeometryCollection.geometries) &&
+        super.equals(o);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(type, geometries);
+    return Objects.hash(geometries, super.hashCode());
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class GeoJsonGeometryCollection {\n");
-    
-    sb.append("    type: ").append(toIndentedString(type)).append("\n");
+    sb.append("    ").append(toIndentedString(super.toString())).append("\n");
     sb.append("    geometries: ").append(toIndentedString(geometries)).append("\n");
     sb.append("}");
     return sb.toString();

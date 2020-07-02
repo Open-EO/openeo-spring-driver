@@ -6,12 +6,17 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.openeo.spring.model.AnyOfURIstring;
+import org.openeo.spring.model.Asset;
+import org.openeo.spring.model.CollectionExtent;
+import org.openeo.spring.model.Dimension;
 import org.openeo.spring.model.Link;
-import org.openeo.spring.model.STACCollectionExtent;
+import org.openeo.spring.model.OneOfarraycollectionSummaryStats;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
@@ -19,7 +24,7 @@ import javax.validation.constraints.*;
 /**
  * Collection
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
 public class Collection   {
   @JsonProperty("stac_version")
   private String stacVersion;
@@ -55,11 +60,23 @@ public class Collection   {
   private List<Object> providers = null;
 
   @JsonProperty("extent")
-  private STACCollectionExtent extent;
+  private CollectionExtent extent;
 
   @JsonProperty("links")
   @Valid
   private List<Link> links = new ArrayList<>();
+
+  @JsonProperty("cube:dimensions")
+  @Valid
+  private Map<String, Dimension> cubeColonDimensions = null;
+
+  @JsonProperty("summaries")
+  @Valid
+  private Map<String, OneOfarraycollectionSummaryStats> summaries = null;
+
+  @JsonProperty("assets")
+  @Valid
+  private Map<String, Asset> assets = null;
 
   public Collection stacVersion(String stacVersion) {
     this.stacVersion = stacVersion;
@@ -290,7 +307,7 @@ public class Collection   {
     this.providers = providers;
   }
 
-  public Collection extent(STACCollectionExtent extent) {
+  public Collection extent(CollectionExtent extent) {
     this.extent = extent;
     return this;
   }
@@ -304,11 +321,11 @@ public class Collection   {
 
   @Valid
 
-  public STACCollectionExtent getExtent() {
+  public CollectionExtent getExtent() {
     return extent;
   }
 
-  public void setExtent(STACCollectionExtent extent) {
+  public void setExtent(CollectionExtent extent) {
     this.extent = extent;
   }
 
@@ -339,6 +356,93 @@ public class Collection   {
     this.links = links;
   }
 
+  public Collection cubeColonDimensions(Map<String, Dimension> cubeColonDimensions) {
+    this.cubeColonDimensions = cubeColonDimensions;
+    return this;
+  }
+
+  public Collection putCubeColonDimensionsItem(String key, Dimension cubeColonDimensionsItem) {
+    if (this.cubeColonDimensions == null) {
+      this.cubeColonDimensions = new HashMap<>();
+    }
+    this.cubeColonDimensions.put(key, cubeColonDimensionsItem);
+    return this;
+  }
+
+  /**
+   * Uniquely named dimensions of the data cube.  The keys of the object are the dimension names. For interoperability, it is RECOMMENDED to use the following dimension names if there is only a single dimension with the specified criteria:  * `x` for the dimension of type `spatial` with the axis set to `x` * `y` for the dimension of type `spatial` with the axis set to `y` * `z` for the dimension of type `spatial` with the axis set to `z` * `t` for the dimension of type `temporal` * `bands` for dimensions of type `bands`  This property REQUIRES to add `datacube` to the list of `stac_extensions`.
+   * @return cubeColonDimensions
+  */
+  @ApiModelProperty(value = "Uniquely named dimensions of the data cube.  The keys of the object are the dimension names. For interoperability, it is RECOMMENDED to use the following dimension names if there is only a single dimension with the specified criteria:  * `x` for the dimension of type `spatial` with the axis set to `x` * `y` for the dimension of type `spatial` with the axis set to `y` * `z` for the dimension of type `spatial` with the axis set to `z` * `t` for the dimension of type `temporal` * `bands` for dimensions of type `bands`  This property REQUIRES to add `datacube` to the list of `stac_extensions`.")
+
+  @Valid
+
+  public Map<String, Dimension> getCubeColonDimensions() {
+    return cubeColonDimensions;
+  }
+
+  public void setCubeColonDimensions(Map<String, Dimension> cubeColonDimensions) {
+    this.cubeColonDimensions = cubeColonDimensions;
+  }
+
+  public Collection summaries(Map<String, OneOfarraycollectionSummaryStats> summaries) {
+    this.summaries = summaries;
+    return this;
+  }
+
+  public Collection putSummariesItem(String key, OneOfarraycollectionSummaryStats summariesItem) {
+    if (this.summaries == null) {
+      this.summaries = new HashMap<>();
+    }
+    this.summaries.put(key, summariesItem);
+    return this;
+  }
+
+  /**
+   * Collection properties from STAC extensions (e.g. EO, SAR, Satellite or Scientific) or even custom extensions.  Summaries are either a unique set of all available values *or* statistics. Statistics by default only specify the range (minimum and maximum values), but can optionally be accompanied by additional statistical values. The range can specify the potential range of values, but it is recommended to be as precise as possible. The set of values must contain at least one element and it is strongly recommended to list all values. It is recommended to list as many properties as reasonable so that consumers get a full overview of the Collection. Properties that are covered by the Collection specification (e.g. `providers` and `license`) may not be repeated in the summaries.  Potential fields for the summaries can be found here:  * **[STAC Common Metadata](https://github.com/radiantearth/stac-spec/tree/v0.9.0/item-spec/common-metadata.md)**:   A list of commonly used fields throughout all domains * **[Content Extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions/README.md#list-of-content-extensions)**:   Domain-specific fields for domains such as EO, SAR and point clouds. * **Custom Properties**:   It is generally allowed to add custom fields.
+   * @return summaries
+  */
+  @ApiModelProperty(value = "Collection properties from STAC extensions (e.g. EO, SAR, Satellite or Scientific) or even custom extensions.  Summaries are either a unique set of all available values *or* statistics. Statistics by default only specify the range (minimum and maximum values), but can optionally be accompanied by additional statistical values. The range can specify the potential range of values, but it is recommended to be as precise as possible. The set of values must contain at least one element and it is strongly recommended to list all values. It is recommended to list as many properties as reasonable so that consumers get a full overview of the Collection. Properties that are covered by the Collection specification (e.g. `providers` and `license`) may not be repeated in the summaries.  Potential fields for the summaries can be found here:  * **[STAC Common Metadata](https://github.com/radiantearth/stac-spec/tree/v0.9.0/item-spec/common-metadata.md)**:   A list of commonly used fields throughout all domains * **[Content Extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions/README.md#list-of-content-extensions)**:   Domain-specific fields for domains such as EO, SAR and point clouds. * **Custom Properties**:   It is generally allowed to add custom fields.")
+
+  @Valid
+
+  public Map<String, OneOfarraycollectionSummaryStats> getSummaries() {
+    return summaries;
+  }
+
+  public void setSummaries(Map<String, OneOfarraycollectionSummaryStats> summaries) {
+    this.summaries = summaries;
+  }
+
+  public Collection assets(Map<String, Asset> assets) {
+    this.assets = assets;
+    return this;
+  }
+
+  public Collection putAssetsItem(String key, Asset assetsItem) {
+    if (this.assets == null) {
+      this.assets = new HashMap<>();
+    }
+    this.assets.put(key, assetsItem);
+    return this;
+  }
+
+  /**
+   * Dictionary of asset objects for data that can be downloaded, each with a unique key. The keys MAY be used by clients as file names. Implementing this property REQUIRES to add `collection-assets` to the list of `stac_extensions`.
+   * @return assets
+  */
+  @ApiModelProperty(value = "Dictionary of asset objects for data that can be downloaded, each with a unique key. The keys MAY be used by clients as file names. Implementing this property REQUIRES to add `collection-assets` to the list of `stac_extensions`.")
+
+  @Valid
+
+  public Map<String, Asset> getAssets() {
+    return assets;
+  }
+
+  public void setAssets(Map<String, Asset> assets) {
+    this.assets = assets;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -360,12 +464,15 @@ public class Collection   {
         Objects.equals(this.license, collection.license) &&
         Objects.equals(this.providers, collection.providers) &&
         Objects.equals(this.extent, collection.extent) &&
-        Objects.equals(this.links, collection.links);
+        Objects.equals(this.links, collection.links) &&
+        Objects.equals(this.cubeColonDimensions, collection.cubeColonDimensions) &&
+        Objects.equals(this.summaries, collection.summaries) &&
+        Objects.equals(this.assets, collection.assets);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(stacVersion, stacExtensions, id, title, description, keywords, version, deprecated, license, providers, extent, links);
+    return Objects.hash(stacVersion, stacExtensions, id, title, description, keywords, version, deprecated, license, providers, extent, links, cubeColonDimensions, summaries, assets);
   }
 
   @Override
@@ -385,6 +492,9 @@ public class Collection   {
     sb.append("    providers: ").append(toIndentedString(providers)).append("\n");
     sb.append("    extent: ").append(toIndentedString(extent)).append("\n");
     sb.append("    links: ").append(toIndentedString(links)).append("\n");
+    sb.append("    cubeColonDimensions: ").append(toIndentedString(cubeColonDimensions)).append("\n");
+    sb.append("    summaries: ").append(toIndentedString(summaries)).append("\n");
+    sb.append("    assets: ").append(toIndentedString(assets)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -6,7 +6,7 @@
 package org.openeo.spring.api;
 
 import org.openeo.spring.model.Error;
-import org.openeo.spring.model.OGCConformanceResponse;
+import org.openeo.spring.model.OGCConformanceClasses;
 import io.swagger.annotations.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,7 +28,7 @@ import javax.validation.constraints.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
 @Validated
 @Api(value = "conformance", description = "the conformance API")
 public interface ConformanceApi {
@@ -44,14 +44,14 @@ public interface ConformanceApi {
      * @return The URIs of all conformance classes supported by the server. (status code 200)
      *         or The request can&#39;t be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 500)
      */
-    @ApiOperation(value = "OGC specifications this API conforms to", nickname = "conformance", notes = "A list of all conformance classes specified in OGC standards that the server conforms to. This endpoint is only required if full compliance with OGC API standards is desired. Therefore, openEO back-ends may implement it for compatibility with OGC API clients and openEO clients don't need to request it.", response = OGCConformanceResponse.class, tags={ "Capabilities", })
+    @ApiOperation(value = "OGC specifications this API conforms to", nickname = "conformance", notes = "A list of all conformance classes specified in OGC standards that the server conforms to. This endpoint is only required if full compliance with OGC API standards is desired. Therefore, openEO back-ends may implement it for compatibility with OGC API clients and openEO clients don't need to request it.", response = OGCConformanceClasses.class, tags={ "Capabilities", })
     @ApiResponses(value = { 
-        @ApiResponse(code = 200, message = "The URIs of all conformance classes supported by the server.", response = OGCConformanceResponse.class),
+        @ApiResponse(code = 200, message = "The URIs of all conformance classes supported by the server.", response = OGCConformanceClasses.class),
         @ApiResponse(code = 500, message = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)", response = Error.class) })
     @RequestMapping(value = "/conformance",
         produces = { "application/json" }, 
         method = RequestMethod.GET)
-    default ResponseEntity<OGCConformanceResponse> conformance() {
+    default ResponseEntity<OGCConformanceClasses> conformance() {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {

@@ -9,6 +9,8 @@ import io.swagger.annotations.ApiModelProperty;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import org.openeo.spring.model.GeoJSONLineString;
+import org.openeo.spring.model.GeoJsonGeometry;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
@@ -16,68 +18,11 @@ import javax.validation.constraints.*;
 /**
  * GeoJsonMultiPoint
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
-public class GeoJsonMultiPoint   {
-  /**
-   * Gets or Sets type
-   */
-  public enum TypeEnum {
-    MULTIPOINT("MultiPoint");
-
-    private String value;
-
-    TypeEnum(String value) {
-      this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-      return value;
-    }
-
-    @Override
-    public String toString() {
-      return String.valueOf(value);
-    }
-
-    @JsonCreator
-    public static TypeEnum fromValue(String value) {
-      for (TypeEnum b : TypeEnum.values()) {
-        if (b.value.equals(value)) {
-          return b;
-        }
-      }
-      throw new IllegalArgumentException("Unexpected value '" + value + "'");
-    }
-  }
-
-  @JsonProperty("type")
-  private TypeEnum type;
-
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
+public class GeoJsonMultiPoint extends GeoJsonGeometry  {
   @JsonProperty("coordinates")
   @Valid
   private List<List<BigDecimal>> coordinates = new ArrayList<>();
-
-  public GeoJsonMultiPoint type(TypeEnum type) {
-    this.type = type;
-    return this;
-  }
-
-  /**
-   * Get type
-   * @return type
-  */
-  @ApiModelProperty(required = true, value = "")
-  @NotNull
-
-
-  public TypeEnum getType() {
-    return type;
-  }
-
-  public void setType(TypeEnum type) {
-    this.type = type;
-  }
 
   public GeoJsonMultiPoint coordinates(List<List<BigDecimal>> coordinates) {
     this.coordinates = coordinates;
@@ -116,21 +61,20 @@ public class GeoJsonMultiPoint   {
       return false;
     }
     GeoJsonMultiPoint geoJsonMultiPoint = (GeoJsonMultiPoint) o;
-    return Objects.equals(this.type, geoJsonMultiPoint.type) &&
-        Objects.equals(this.coordinates, geoJsonMultiPoint.coordinates);
+    return Objects.equals(this.coordinates, geoJsonMultiPoint.coordinates) &&
+        super.equals(o);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(type, coordinates);
+    return Objects.hash(coordinates, super.hashCode());
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class GeoJsonMultiPoint {\n");
-    
-    sb.append("    type: ").append(toIndentedString(type)).append("\n");
+    sb.append("    ").append(toIndentedString(super.toString())).append("\n");
     sb.append("    coordinates: ").append(toIndentedString(coordinates)).append("\n");
     sb.append("}");
     return sb.toString();

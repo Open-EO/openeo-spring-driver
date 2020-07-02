@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.openeo.spring.model.AnyOfarrayjsonSchema;
 import org.openeo.spring.model.OneOfjsonSchemaTypeset;
-import org.openeo.spring.model.Parameter;
 import org.openeo.spring.model.ParameterJsonSchema;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
@@ -20,7 +19,7 @@ import javax.validation.constraints.*;
  * Either a single data type or a list of data types.
  */
 @ApiModel(description = "Either a single data type or a list of data types.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
 public class ParameterSchema   {
 
   @Override

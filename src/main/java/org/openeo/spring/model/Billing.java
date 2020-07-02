@@ -16,7 +16,7 @@ import javax.validation.constraints.*;
  * Billing related data, e.g. the currency used or available plans to process jobs. This property MUST be specified if the back-end uses any billing related API functionalities, e.g. budgeting or estimates. The absence of this property doesn&#39;t mean the back-end is necessarily free to use for all. Providers may choose to bill users outside of the API, e.g. with a monthly fee that is not depending on individual API interactions.
  */
 @ApiModel(description = "Billing related data, e.g. the currency used or available plans to process jobs. This property MUST be specified if the back-end uses any billing related API functionalities, e.g. budgeting or estimates. The absence of this property doesn't mean the back-end is necessarily free to use for all. Providers may choose to bill users outside of the API, e.g. with a monthly fee that is not depending on individual API interactions.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
 public class Billing   {
   @JsonProperty("currency")
   private JsonNullable<String> currency = JsonNullable.undefined();

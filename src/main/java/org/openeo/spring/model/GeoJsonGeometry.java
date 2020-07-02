@@ -8,16 +8,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import org.openeo.spring.model.GeoJsonGeometryCollection;
-import org.openeo.spring.model.GeoJsonLineString;
-import org.openeo.spring.model.GeoJsonMultiLineString;
-import org.openeo.spring.model.GeoJsonMultiPoint;
-import org.openeo.spring.model.GeoJsonMultiPolygon;
-import org.openeo.spring.model.GeoJsonPoint;
-import org.openeo.spring.model.GeoJsonPolygon;
 import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
@@ -25,7 +15,7 @@ import javax.validation.constraints.*;
 /**
  * GeoJsonGeometry
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", visible = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = GeoJsonPoint.class, name = "Point"),
@@ -86,14 +76,6 @@ public class GeoJsonGeometry   {
   @JsonProperty("type")
   private TypeEnum type;
 
-  @JsonProperty("coordinates")
-  @Valid
-  private List<List<List<List<BigDecimal>>>> coordinates = new ArrayList<>();
-
-  @JsonProperty("geometries")
-  @Valid
-  private List<GeoJsonGeometry> geometries = new ArrayList<>();
-
   public GeoJsonGeometry type(TypeEnum type) {
     this.type = type;
     return this;
@@ -115,60 +97,6 @@ public class GeoJsonGeometry   {
     this.type = type;
   }
 
-  public GeoJsonGeometry coordinates(List<List<List<List<BigDecimal>>>> coordinates) {
-    this.coordinates = coordinates;
-    return this;
-  }
-
-  public GeoJsonGeometry addCoordinatesItem(List<List<List<BigDecimal>>> coordinatesItem) {
-    this.coordinates.add(coordinatesItem);
-    return this;
-  }
-
-  /**
-   * Get coordinates
-   * @return coordinates
-  */
-  @ApiModelProperty(required = true, value = "")
-  @NotNull
-
-  @Valid
-
-  public List<List<List<List<BigDecimal>>>> getCoordinates() {
-    return coordinates;
-  }
-
-  public void setCoordinates(List<List<List<List<BigDecimal>>>> coordinates) {
-    this.coordinates = coordinates;
-  }
-
-  public GeoJsonGeometry geometries(List<GeoJsonGeometry> geometries) {
-    this.geometries = geometries;
-    return this;
-  }
-
-  public GeoJsonGeometry addGeometriesItem(GeoJsonGeometry geometriesItem) {
-    this.geometries.add(geometriesItem);
-    return this;
-  }
-
-  /**
-   * Get geometries
-   * @return geometries
-  */
-  @ApiModelProperty(required = true, value = "")
-  @NotNull
-
-  @Valid
-
-  public List<GeoJsonGeometry> getGeometries() {
-    return geometries;
-  }
-
-  public void setGeometries(List<GeoJsonGeometry> geometries) {
-    this.geometries = geometries;
-  }
-
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -179,14 +107,12 @@ public class GeoJsonGeometry   {
       return false;
     }
     GeoJsonGeometry geoJsonGeometry = (GeoJsonGeometry) o;
-    return Objects.equals(this.type, geoJsonGeometry.type) &&
-        Objects.equals(this.coordinates, geoJsonGeometry.coordinates) &&
-        Objects.equals(this.geometries, geoJsonGeometry.geometries);
+    return Objects.equals(this.type, geoJsonGeometry.type);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(type, coordinates, geometries);
+    return Objects.hash(type);
   }
 
   @Override
@@ -195,8 +121,6 @@ public class GeoJsonGeometry   {
     sb.append("class GeoJsonGeometry {\n");
     
     sb.append("    type: ").append(toIndentedString(type)).append("\n");
-    sb.append("    coordinates: ").append(toIndentedString(coordinates)).append("\n");
-    sb.append("    geometries: ").append(toIndentedString(geometries)).append("\n");
     sb.append("}");
     return sb.toString();
   }

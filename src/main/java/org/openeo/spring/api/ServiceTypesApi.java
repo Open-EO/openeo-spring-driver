@@ -28,7 +28,7 @@ import javax.validation.constraints.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
 @Validated
 @Api(value = "service_types", description = "the service_types API")
 public interface ServiceTypesApi {
@@ -56,15 +56,6 @@ public interface ServiceTypesApi {
         produces = { "application/json" }, 
         method = RequestMethod.GET)
     default ResponseEntity<Map<String, ServiceType>> listServiceTypes() {
-        getRequest().ifPresent(request -> {
-            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
-                if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-                    String exampleString = "{ \"WMS\" : { \"title\" : \"OGC Web Map Service\", \"configuration\" : { \"version\" : { \"type\" : \"string\", \"description\" : \"The WMS version offered to consumers of the service.\", \"default\" : \"1.3.0\", \"enum\" : [ \"1.1.1\", \"1.3.0\" ] } }, \"process_parameters\" : [ { \"name\" : \"layer\", \"description\" : \"The layer name.\", \"schema\" : { \"type\" : \"string\" }, \"default\" : \"roads\" }, { \"name\" : \"spatial_extent_west\", \"description\" : \"The lower left corner for coordinate axis 1 of the extent currently shown to the consumer.\", \"schema\" : { \"type\" : \"number\" } }, { \"name\" : \"spatial_extent_south\", \"description\" : \"The lower left corner for coordinate axis 2 of the extent currently shown to the consumer.\", \"schema\" : { \"type\" : \"number\" } }, { \"name\" : \"spatial_extent_east\", \"description\" : \"The upper right corner for coordinate axis 1 of the extent currently shown to the consumer.\", \"schema\" : { \"type\" : \"number\" } }, { \"name\" : \"spatial_extent_north\", \"description\" : \"The upper right corner for coordinate axis 2 of the extent currently shown to the consumer.\", \"schema\" : { \"type\" : \"number\" } } ], \"links\" : [ { \"href\" : \"https://www.opengeospatial.org/standards/wms\", \"rel\" : \"about\", \"title\" : \"OGC Web Map Service Standard\" } ] }, \"WFS\" : { \"title\" : \"OGC Web Feature Service\", \"description\" : \"Exposes a OGC-compliant WFS service. Note: This is NOT compliant to OGC API - Features.\", \"configuration\" : { \"version\" : { \"type\" : \"string\", \"description\" : \"The WFS version offered to consumers of the service.\", \"default\" : \"2.0.0\", \"enum\" : [ \"1.0.0\", \"1.1.0\", \"2.0.0\" ] }, \"maxFeatures\" : { \"type\" : \"integer\", \"description\" : \"Maximum number of features (since WFS 2.0.0 only).\", \"default\" : 10000, \"minimum\" : 1, \"maximum\" : 100000 } }, \"links\" : [ { \"href\" : \"https://www.opengeospatial.org/standards/wfs\", \"rel\" : \"about\", \"title\" : \"OGC Web Feature Service Standard\" } ] } }";
-                    ApiUtil.setExampleResponse(request, "application/json", exampleString);
-                    break;
-                }
-            }
-        });
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }

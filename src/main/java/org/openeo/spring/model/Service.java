@@ -17,7 +17,7 @@ import javax.validation.constraints.*;
  * The metadata of a secondary web service that has been submitted by the authenticated user.
  */
 @ApiModel(description = "The metadata of a secondary web service that has been submitted by the authenticated user.")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-06-30T15:12:47.411+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:31:05.442+02:00[Europe/Rome]")
 public class Service   {
   @JsonProperty("id")
   private String id;
@@ -38,7 +38,7 @@ public class Service   {
   private Boolean enabled = true;
 
   @JsonProperty("process")
-  private ProcessGraphWithMetadata process = null;
+  private ProcessGraphWithMetadata process;
 
   @JsonProperty("configuration")
   private Object _configuration;
