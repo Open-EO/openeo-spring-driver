@@ -10,7 +10,6 @@ import java.util.Optional;
 import javax.validation.Valid;
 
 import org.openeo.spring.model.Error;
-import org.openeo.spring.model.ProcessGraphWithMetadata;
 import org.openeo.spring.model.ValidationResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -56,7 +55,7 @@ public interface ValidationApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.POST)
-    default ResponseEntity<ValidationResult> validateCustomProcess(@ApiParam(value = "Specifies the user-defined process to be validated." ,required=true )  @Valid @RequestBody ProcessGraphWithMetadata processGraphWithMetadata) {
+    default ResponseEntity<ValidationResult> validateCustomProcess(@ApiParam(value = "Specifies the user-defined process to be validated." ,required=true )  @Valid @RequestBody Process processGraphWithMetadata) {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {

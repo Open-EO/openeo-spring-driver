@@ -35,7 +35,7 @@ public class BatchJob   {
   private JsonNullable<String> description = JsonNullable.undefined();
 
   @JsonProperty("process")
-  private ProcessGraphWithMetadata process;
+  private Process process;
 
   /**
    * The current status of a batch job.  The following status changes can occur: * `POST /jobs`: The status is initialized as `created`. * `POST /jobs/{job_id}/results`: The status is set to `queued`, if processing doesn't start instantly.     * Once the processing starts the status is set to `running`.     * Once the data is available to download the status is set to `finished`.     * Whenever an error occurs during processing, the status must be set to `error`. * `DELETE /jobs/{job_id}/results`: The status is set to `canceled` if the status was `running` beforehand and partial or preliminary results are available to be downloaded. Otherwise the status is set to `created`. 
@@ -164,7 +164,7 @@ public class BatchJob   {
     this.description = description;
   }
 
-  public BatchJob process(ProcessGraphWithMetadata process) {
+  public BatchJob process(Process process) {
     this.process = process;
     return this;
   }
@@ -177,11 +177,11 @@ public class BatchJob   {
 
   @Valid
 
-  public ProcessGraphWithMetadata getProcess() {
+  public Process getProcess() {
     return process;
   }
 
-  public void setProcess(ProcessGraphWithMetadata process) {
+  public void setProcess(Process process) {
     this.process = process;
   }
 

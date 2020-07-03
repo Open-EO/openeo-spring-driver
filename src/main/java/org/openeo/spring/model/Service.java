@@ -41,7 +41,7 @@ public class Service   {
   private Boolean enabled = true;
 
   @JsonProperty("process")
-  private ProcessGraphWithMetadata process;
+  private Process process;
 
   @JsonProperty("configuration")
   private Object _configuration;
@@ -187,7 +187,7 @@ public class Service   {
     this.enabled = enabled;
   }
 
-  public Service process(ProcessGraphWithMetadata process) {
+  public Service process(Process process) {
     this.process = process;
     return this;
   }
@@ -200,11 +200,11 @@ public class Service   {
 
   @Valid
 
-  public ProcessGraphWithMetadata getProcess() {
+  public Process getProcess() {
     return process;
   }
 
-  public void setProcess(ProcessGraphWithMetadata process) {
+  public void setProcess(Process process) {
     this.process = process;
   }
 

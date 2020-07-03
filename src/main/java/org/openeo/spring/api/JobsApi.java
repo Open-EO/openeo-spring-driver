@@ -18,8 +18,6 @@ import org.openeo.spring.model.BatchJobs;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.LogEntries;
 import org.openeo.spring.model.LogEntry;
-import org.openeo.spring.model.StoreBatchJobRequest;
-import org.openeo.spring.model.UpdateBatchJobRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -66,7 +64,7 @@ public interface JobsApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.POST)
-    default ResponseEntity<Void> createJob(@ApiParam(value = "" ,required=true )  @Valid @RequestBody StoreBatchJobRequest storeBatchJobRequest) {
+    default ResponseEntity<Void> createJob(@ApiParam(value = "" ,required=true )  @Valid @RequestBody BatchJob storeBatchJobRequest) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }
@@ -333,7 +331,7 @@ public interface JobsApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.PATCH)
-    default ResponseEntity<Void> updateJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @ApiParam(value = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId,@ApiParam(value = "" ,required=true )  @Valid @RequestBody UpdateBatchJobRequest updateBatchJobRequest) {
+    default ResponseEntity<Void> updateJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @ApiParam(value = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId,@ApiParam(value = "" ,required=true )  @Valid @RequestBody BatchJob updateBatchJobRequest) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }

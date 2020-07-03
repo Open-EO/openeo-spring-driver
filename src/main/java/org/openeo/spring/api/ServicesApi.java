@@ -15,8 +15,6 @@ import org.openeo.spring.model.Error;
 import org.openeo.spring.model.LogEntries;
 import org.openeo.spring.model.SecondaryWebServices;
 import org.openeo.spring.model.Service;
-import org.openeo.spring.model.StoreSecondaryWebServiceRequest;
-import org.openeo.spring.model.UpdateSecondaryWebServiceRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -63,7 +61,7 @@ public interface ServicesApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.POST)
-    default ResponseEntity<Void> createService(@ApiParam(value = "" ,required=true )  @Valid @RequestBody StoreSecondaryWebServiceRequest storeSecondaryWebServiceRequest) {
+    default ResponseEntity<Void> createService(@ApiParam(value = "" ,required=true )  @Valid @RequestBody Service storeSecondaryWebServiceRequest) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }
@@ -210,7 +208,7 @@ public interface ServicesApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.PATCH)
-    default ResponseEntity<Void> updateService(@Pattern(regexp="^[\\w\\-\\.~]+$") @ApiParam(value = "Unique secondary web service identifier.",required=true) @PathVariable("service_id") String serviceId,@ApiParam(value = "" ,required=true )  @Valid @RequestBody UpdateSecondaryWebServiceRequest updateSecondaryWebServiceRequest) {
+    default ResponseEntity<Void> updateService(@Pattern(regexp="^[\\w\\-\\.~]+$") @ApiParam(value = "Unique secondary web service identifier.",required=true) @PathVariable("service_id") String serviceId,@ApiParam(value = "" ,required=true )  @Valid @RequestBody Service updateSecondaryWebServiceRequest) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }

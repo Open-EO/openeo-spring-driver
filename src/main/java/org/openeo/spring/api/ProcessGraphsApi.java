@@ -12,7 +12,6 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
 import org.openeo.spring.model.Error;
-import org.openeo.spring.model.ProcessGraphWithMetadata;
 import org.openeo.spring.model.UserDefinedProcessMeta;
 import org.openeo.spring.model.UserDefinedProcesses;
 import org.springframework.http.HttpStatus;
@@ -146,7 +145,7 @@ public interface ProcessGraphsApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.PUT)
-    default ResponseEntity<Void> storeCustomProcess(@Pattern(regexp="^\\w+$") @ApiParam(value = "Unique identifier for a user-defined process.",required=true) @PathVariable("process_graph_id") String processGraphId,@ApiParam(value = "Specifies the process graph with its meta data." ,required=true )  @Valid @RequestBody ProcessGraphWithMetadata processGraphWithMetadata) {
+    default ResponseEntity<Void> storeCustomProcess(@Pattern(regexp="^\\w+$") @ApiParam(value = "Unique identifier for a user-defined process.",required=true) @PathVariable("process_graph_id") String processGraphId,@ApiParam(value = "Specifies the process graph with its meta data." ,required=true )  @Valid @RequestBody Process processGraphWithMetadata) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }
