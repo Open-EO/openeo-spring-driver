@@ -1,25 +1,20 @@
 package org.openeo.spring.model;
 
-import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import org.openeo.spring.model.AnyOfURIstring;
-import org.openeo.spring.model.Asset;
-import org.openeo.spring.model.CollectionExtent;
-import org.openeo.spring.model.Dimension;
-import org.openeo.spring.model.Link;
-import org.openeo.spring.model.OneOfarraycollectionSummaryStats;
-import org.openapitools.jackson.nullable.JsonNullable;
+
 import javax.validation.Valid;
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Collection
@@ -31,7 +26,7 @@ public class Collection   {
 
   @JsonProperty("stac_extensions")
   @Valid
-  private Set<AnyOfURIstring> stacExtensions = null;
+  private Set<String> stacExtensions = null;
 
   @JsonProperty("id")
   private String id;
@@ -72,7 +67,7 @@ public class Collection   {
 
   @JsonProperty("summaries")
   @Valid
-  private Map<String, OneOfarraycollectionSummaryStats> summaries = null;
+  private Map<String, CollectionSummaryStats[]> summaries = null;
 
   @JsonProperty("assets")
   @Valid
@@ -99,12 +94,12 @@ public class Collection   {
     this.stacVersion = stacVersion;
   }
 
-  public Collection stacExtensions(Set<AnyOfURIstring> stacExtensions) {
+  public Collection stacExtensions(Set<String> stacExtensions) {
     this.stacExtensions = stacExtensions;
     return this;
   }
 
-  public Collection addStacExtensionsItem(AnyOfURIstring stacExtensionsItem) {
+  public Collection addStacExtensionsItem(String stacExtensionsItem) {
     if (this.stacExtensions == null) {
       this.stacExtensions = new LinkedHashSet<>();
     }
@@ -120,11 +115,11 @@ public class Collection   {
 
   @Valid
 
-  public Set<AnyOfURIstring> getStacExtensions() {
+  public Set<String> getStacExtensions() {
     return stacExtensions;
   }
 
-  public void setStacExtensions(Set<AnyOfURIstring> stacExtensions) {
+  public void setStacExtensions(Set<String> stacExtensions) {
     this.stacExtensions = stacExtensions;
   }
 
@@ -385,12 +380,12 @@ public class Collection   {
     this.cubeColonDimensions = cubeColonDimensions;
   }
 
-  public Collection summaries(Map<String, OneOfarraycollectionSummaryStats> summaries) {
+  public Collection summaries(Map<String, CollectionSummaryStats[]> summaries) {
     this.summaries = summaries;
     return this;
   }
 
-  public Collection putSummariesItem(String key, OneOfarraycollectionSummaryStats summariesItem) {
+  public Collection putSummariesItem(String key, CollectionSummaryStats[] summariesItem) {
     if (this.summaries == null) {
       this.summaries = new HashMap<>();
     }
@@ -406,11 +401,11 @@ public class Collection   {
 
   @Valid
 
-  public Map<String, OneOfarraycollectionSummaryStats> getSummaries() {
+  public Map<String, CollectionSummaryStats[]> getSummaries() {
     return summaries;
   }
 
-  public void setSummaries(Map<String, OneOfarraycollectionSummaryStats> summaries) {
+  public void setSummaries(Map<String, CollectionSummaryStats[]> summaries) {
     this.summaries = summaries;
   }
 

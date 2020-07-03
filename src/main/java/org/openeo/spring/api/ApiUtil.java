@@ -1,9 +1,10 @@
 package org.openeo.spring.api;
 
-import org.springframework.web.context.request.NativeWebRequest;
+import java.io.IOException;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+
+import org.springframework.web.context.request.NativeWebRequest;
 
 public class ApiUtil {
     public static void setExampleResponse(NativeWebRequest req, String contentType, String example) {

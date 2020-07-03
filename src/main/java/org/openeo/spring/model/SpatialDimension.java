@@ -1,18 +1,22 @@
 package org.openeo.spring.model;
 
-import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import org.openeo.spring.model.OneOfstringnumber;
-import org.openapitools.jackson.nullable.JsonNullable;
+import java.util.Objects;
+
 import javax.validation.Valid;
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import org.openapitools.jackson.nullable.JsonNullable;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * A spatial dimension in one of the horizontal (x or y) or vertical (z) directions.
@@ -72,7 +76,7 @@ public class SpatialDimension   {
   private JsonNullable<BigDecimal> step = JsonNullable.undefined();
 
   @JsonProperty("reference_system")
-  private OneOfstringnumber referenceSystem = null;
+  private String referenceSystem = null;
 
   public SpatialDimension axis(AxisEnum axis) {
     this.axis = axis;
@@ -174,7 +178,7 @@ public class SpatialDimension   {
     this.step = step;
   }
 
-  public SpatialDimension referenceSystem(OneOfstringnumber referenceSystem) {
+  public SpatialDimension referenceSystem(String referenceSystem) {
     this.referenceSystem = referenceSystem;
     return this;
   }
@@ -187,11 +191,11 @@ public class SpatialDimension   {
 
   @Valid
 
-  public OneOfstringnumber getReferenceSystem() {
+  public String getReferenceSystem() {
     return referenceSystem;
   }
 
-  public void setReferenceSystem(OneOfstringnumber referenceSystem) {
+  public void setReferenceSystem(String referenceSystem) {
     this.referenceSystem = referenceSystem;
   }
 

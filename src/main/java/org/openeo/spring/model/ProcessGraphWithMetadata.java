@@ -1,34 +1,22 @@
 package org.openeo.spring.model;
 
 import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.openeo.spring.model.Link;
-import org.openeo.spring.model.NullableProcess;
-import org.openeo.spring.model.ProcessExample;
-import org.openeo.spring.model.ProcessParameter;
-import org.openeo.spring.model.ProcessReturnValue;
-import org.openapitools.jackson.nullable.JsonNullable;
-import javax.validation.Valid;
-import javax.validation.constraints.*;
 
 /**
  * A process graph, optionally enriched with process metadata.
  */
 @ApiModel(description = "A process graph, optionally enriched with process metadata.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class ProcessGraphWithMetadata extends NullableProcess  {
+public class ProcessGraphWithMetadata extends Process  {
   @JsonProperty("id")
-  private JsonNullable<Object> id = JsonNullable.undefined();
+  private String id;
 
-  public ProcessGraphWithMetadata id(Object id) {
-    this.id = JsonNullable.of(id);
+  public ProcessGraphWithMetadata id(String id) {
     return this;
   }
 
@@ -39,11 +27,11 @@ public class ProcessGraphWithMetadata extends NullableProcess  {
   @ApiModelProperty(value = "")
 
 
-  public JsonNullable<Object> getId() {
+  public String getId() {
     return id;
   }
 
-  public void setId(JsonNullable<Object> id) {
+  public void setId(String id) {
     this.id = id;
   }
 

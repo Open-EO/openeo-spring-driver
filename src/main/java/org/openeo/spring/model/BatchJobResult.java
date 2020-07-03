@@ -1,25 +1,25 @@
 package org.openeo.spring.model;
 
-import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import org.openeo.spring.model.AnyOfURIstring;
-import org.openeo.spring.model.Asset;
-import org.openeo.spring.model.GeoJsonGeometry;
-import org.openeo.spring.model.Link;
-import org.openapitools.jackson.nullable.JsonNullable;
+
 import javax.validation.Valid;
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+
+import org.openapitools.jackson.nullable.JsonNullable;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * BatchJobResult
@@ -31,7 +31,7 @@ public class BatchJobResult   {
 
   @JsonProperty("stac_extensions")
   @Valid
-  private Set<AnyOfURIstring> stacExtensions = null;
+  private Set<String> stacExtensions = null;
 
   @JsonProperty("id")
   private String id;
@@ -112,12 +112,12 @@ public class BatchJobResult   {
     this.stacVersion = stacVersion;
   }
 
-  public BatchJobResult stacExtensions(Set<AnyOfURIstring> stacExtensions) {
+  public BatchJobResult stacExtensions(Set<String> stacExtensions) {
     this.stacExtensions = stacExtensions;
     return this;
   }
 
-  public BatchJobResult addStacExtensionsItem(AnyOfURIstring stacExtensionsItem) {
+  public BatchJobResult addStacExtensionsItem(String stacExtensionsItem) {
     if (this.stacExtensions == null) {
       this.stacExtensions = new LinkedHashSet<>();
     }
@@ -133,11 +133,11 @@ public class BatchJobResult   {
 
   @Valid
 
-  public Set<AnyOfURIstring> getStacExtensions() {
+  public Set<String> getStacExtensions() {
     return stacExtensions;
   }
 
-  public void setStacExtensions(Set<AnyOfURIstring> stacExtensions) {
+  public void setStacExtensions(Set<String> stacExtensions) {
     this.stacExtensions = stacExtensions;
   }
 

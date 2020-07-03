@@ -1,20 +1,18 @@
 package org.openeo.spring.model;
 
-import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import org.openeo.spring.model.AnyOfarrayjsonSchema;
-import org.openeo.spring.model.OneOfjsonSchemaTypeset;
-import org.openapitools.jackson.nullable.JsonNullable;
+import java.util.Objects;
+
 import javax.validation.Valid;
-import javax.validation.constraints.*;
+import javax.validation.constraints.DecimalMin;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Specifies a data type supported by a parameter or return value.  The data types are specified according to the [JSON Schema draft-07](http://json-schema.org/) specification. See the chapter [&#39;Schemas&#39; in &#39;Defining Processes&#39;](#section/Processes/Defining-Processes) for more information.  It is discouraged to specify JSON Schemas with &#x60;default&#x60;, &#x60;anyOf&#x60;, &#x60;oneOf&#x60;, &#x60;allOf&#x60; or &#x60;not&#x60; at the top-level of the schema. Instead specify each data type in a separate array element.  It is recommended to refrain from using the following more complex JSON Schema keywords: &#x60;if&#x60;, &#x60;then&#x60;, &#x60;else&#x60;, &#x60;readOnly&#x60;, &#x60;writeOnly&#x60;, &#x60;dependencies&#x60;, &#x60;minProperties&#x60;, &#x60;maxProperties&#x60;, &#x60;patternProperties&#x60;, &#x60;multipleOf&#x60;.  JSON Schemas should always be dereferenced (i.e. all &#x60;$refs&#x60; should be resolved). This allows clients to consume the schemas much better. Clients are not expected to support dereferencing &#x60;$refs&#x60;.  Note: The specified schema is only a common subset of JSON Schema. Additional keywords MAY be used.
@@ -23,7 +21,7 @@ import javax.validation.constraints.*;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class JsonSchema extends HashMap<String, Object>  {
   @JsonProperty("type")
-  private OneOfjsonSchemaTypeset type = null;
+  private JsonSchemaType type = null;
 
   @JsonProperty("subtype")
   private String subtype;
@@ -42,15 +40,15 @@ public class JsonSchema extends HashMap<String, Object>  {
   private BigDecimal maximum;
 
   @JsonProperty("minItems")
-  private BigDecimal minItems = 0d;
+  private BigDecimal minItems = new BigDecimal(0);
 
   @JsonProperty("maxItems")
   private BigDecimal maxItems;
 
   @JsonProperty("items")
-  private AnyOfarrayjsonSchema items = null;
+  private JsonSchema[] items = null;
 
-  public JsonSchema type(OneOfjsonSchemaTypeset type) {
+  public JsonSchema type(JsonSchemaType type) {
     this.type = type;
     return this;
   }
@@ -63,11 +61,11 @@ public class JsonSchema extends HashMap<String, Object>  {
 
   @Valid
 
-  public OneOfjsonSchemaTypeset getType() {
+  public JsonSchemaType getType() {
     return type;
   }
 
-  public void setType(OneOfjsonSchemaTypeset type) {
+  public void setType(JsonSchemaType type) {
     this.type = type;
   }
 
@@ -225,7 +223,7 @@ public class JsonSchema extends HashMap<String, Object>  {
     this.maxItems = maxItems;
   }
 
-  public JsonSchema items(AnyOfarrayjsonSchema items) {
+  public JsonSchema items(JsonSchema[] items) {
     this.items = items;
     return this;
   }
@@ -238,11 +236,11 @@ public class JsonSchema extends HashMap<String, Object>  {
 
   @Valid
 
-  public AnyOfarrayjsonSchema getItems() {
+  public JsonSchema[]  getItems() {
     return items;
   }
 
-  public void setItems(AnyOfarrayjsonSchema items) {
+  public void setItems(JsonSchema[]  items) {
     this.items = items;
   }
 

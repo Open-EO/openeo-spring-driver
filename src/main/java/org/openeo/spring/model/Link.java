@@ -1,14 +1,15 @@
 package org.openeo.spring.model;
 
+import java.net.URI;
 import java.util.Objects;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.net.URI;
-import org.openapitools.jackson.nullable.JsonNullable;
-import javax.validation.Valid;
-import javax.validation.constraints.*;
 
 /**
  * A link to another resource on the web. Bases on [RFC 5899](https://tools.ietf.org/html/rfc5988).

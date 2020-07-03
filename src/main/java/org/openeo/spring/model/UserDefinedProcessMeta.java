@@ -1,29 +1,15 @@
 package org.openeo.spring.model;
 
 import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
+
 import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.openeo.spring.model.Link;
-import org.openeo.spring.model.NullableProcess;
-import org.openeo.spring.model.ProcessExample;
-import org.openeo.spring.model.ProcessParameter;
-import org.openeo.spring.model.ProcessReturnValue;
-import org.openapitools.jackson.nullable.JsonNullable;
-import javax.validation.Valid;
-import javax.validation.constraints.*;
 
 /**
  * A user-defined process, may only contain metadata and no process graph.
  */
 @ApiModel(description = "A user-defined process, may only contain metadata and no process graph.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class UserDefinedProcessMeta extends NullableProcess  {
+public class UserDefinedProcessMeta extends Process  {
 
   @Override
   public boolean equals(java.lang.Object o) {

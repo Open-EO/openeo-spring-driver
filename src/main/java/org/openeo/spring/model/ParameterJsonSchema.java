@@ -1,20 +1,14 @@
 package org.openeo.spring.model;
 
-import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import org.openeo.spring.model.AnyOfarrayjsonSchema;
-import org.openeo.spring.model.JsonSchema;
-import org.openeo.spring.model.OneOfjsonSchemaTypeset;
-import org.openeo.spring.model.Parameter;
-import org.openapitools.jackson.nullable.JsonNullable;
+import java.util.Objects;
+
 import javax.validation.Valid;
-import javax.validation.constraints.*;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * ParameterJsonSchema

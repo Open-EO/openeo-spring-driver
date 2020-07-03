@@ -1,16 +1,17 @@
 package org.openeo.spring.model;
 
-import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
 import java.util.List;
-import org.openeo.spring.model.OneOfnumberstring;
-import org.openapitools.jackson.nullable.JsonNullable;
+import java.util.Objects;
+
 import javax.validation.Valid;
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * A dimension for the bands.  The band dimension only specifies the band names as dimension labels. Further information to the bands are available in either &#x60;sar:bands&#x60; or &#x60;eo:bands&#x60; in the &#x60;summaries&#x60; property.
@@ -20,14 +21,14 @@ import javax.validation.constraints.*;
 public class BandDimension   {
   @JsonProperty("values")
   @Valid
-  private List<OneOfnumberstring> values = new ArrayList<>();
+  private List<String> values = new ArrayList<>();
 
-  public BandDimension values(List<OneOfnumberstring> values) {
+  public BandDimension values(List<String> values) {
     this.values = values;
     return this;
   }
 
-  public BandDimension addValuesItem(OneOfnumberstring valuesItem) {
+  public BandDimension addValuesItem(String valuesItem) {
     this.values.add(valuesItem);
     return this;
   }
@@ -41,11 +42,11 @@ public class BandDimension   {
 
   @Valid
 @Size(min=1) 
-  public List<OneOfnumberstring> getValues() {
+  public List<String> getValues() {
     return values;
   }
 
-  public void setValues(List<OneOfnumberstring> values) {
+  public void setValues(List<String> values) {
     this.values = values;
   }
 

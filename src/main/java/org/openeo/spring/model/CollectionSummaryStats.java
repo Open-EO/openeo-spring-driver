@@ -1,14 +1,14 @@
 package org.openeo.spring.model;
 
 import java.util.Objects;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.openeo.spring.model.AnyOfstringnumber;
-import org.openapitools.jackson.nullable.JsonNullable;
-import javax.validation.Valid;
-import javax.validation.constraints.*;
 
 /**
  * By default, only ranges with a minimum and a maximum value can be specified. Ranges can be specified for ordinal values only, which means they need to have a rank order. Therefore, ranges can only be specified for numbers and some special types of strings. Examples: grades (A to F), dates or times. Implementors are free to add other derived statistical values to the object, for example &#x60;mean&#x60; or &#x60;stddev&#x60;.
@@ -17,12 +17,12 @@ import javax.validation.constraints.*;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class CollectionSummaryStats   {
   @JsonProperty("min")
-  private AnyOfstringnumber min = null;
+  private String min = null;
 
   @JsonProperty("max")
-  private AnyOfstringnumber max = null;
+  private String max = null;
 
-  public CollectionSummaryStats min(AnyOfstringnumber min) {
+  public CollectionSummaryStats min(String min) {
     this.min = min;
     return this;
   }
@@ -36,15 +36,15 @@ public class CollectionSummaryStats   {
 
   @Valid
 
-  public AnyOfstringnumber getMin() {
+  public String getMin() {
     return min;
   }
 
-  public void setMin(AnyOfstringnumber min) {
+  public void setMin(String min) {
     this.min = min;
   }
 
-  public CollectionSummaryStats max(AnyOfstringnumber max) {
+  public CollectionSummaryStats max(String max) {
     this.max = max;
     return this;
   }
@@ -58,11 +58,11 @@ public class CollectionSummaryStats   {
 
   @Valid
 
-  public AnyOfstringnumber getMax() {
+  public Object getMax() {
     return max;
   }
 
-  public void setMax(AnyOfstringnumber max) {
+  public void setMax(String max) {
     this.max = max;
   }
 

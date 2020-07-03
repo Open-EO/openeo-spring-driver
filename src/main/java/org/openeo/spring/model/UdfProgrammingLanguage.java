@@ -1,21 +1,15 @@
 package org.openeo.spring.model;
 
-import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import org.openeo.spring.model.Link;
-import org.openeo.spring.model.ProgrammingLanguage;
-import org.openeo.spring.model.ProgrammingLanguageVersion;
-import org.openeo.spring.model.UdfRuntime;
-import org.openapitools.jackson.nullable.JsonNullable;
+import java.util.Objects;
+
 import javax.validation.Valid;
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * UdfProgrammingLanguage
@@ -23,14 +17,13 @@ import javax.validation.constraints.*;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class UdfProgrammingLanguage extends UdfRuntime  {
   @JsonProperty("default")
-  private JsonNullable<Object> _default = JsonNullable.undefined();
+  private String _default;
 
   @JsonProperty("versions")
   @Valid
   private Map<String, ProgrammingLanguageVersion> versions = new HashMap<>();
 
-  public UdfProgrammingLanguage _default(Object _default) {
-    this._default = JsonNullable.of(_default);
+  public UdfProgrammingLanguage _default(String _default) {
     return this;
   }
 
@@ -42,11 +35,11 @@ public class UdfProgrammingLanguage extends UdfRuntime  {
   @NotNull
 
 
-  public JsonNullable<Object> getDefault() {
+  public String getDefault() {
     return _default;
   }
 
-  public void setDefault(JsonNullable<Object> _default) {
+  public void setDefault(String _default) {
     this._default = _default;
   }
 

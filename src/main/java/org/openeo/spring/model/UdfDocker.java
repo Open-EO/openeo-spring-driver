@@ -1,18 +1,16 @@
 package org.openeo.spring.model;
 
-import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
 import java.util.List;
-import org.openeo.spring.model.DockerContainer;
-import org.openeo.spring.model.Link;
-import org.openeo.spring.model.UdfRuntime;
-import org.openapitools.jackson.nullable.JsonNullable;
+import java.util.Objects;
+
 import javax.validation.Valid;
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * UdfDocker
@@ -23,7 +21,7 @@ public class UdfDocker extends UdfRuntime  {
   private String docker;
 
   @JsonProperty("default")
-  private JsonNullable<Object> _default = JsonNullable.undefined();
+  private String _default;
 
   @JsonProperty("tags")
   @Valid
@@ -50,8 +48,7 @@ public class UdfDocker extends UdfRuntime  {
     this.docker = docker;
   }
 
-  public UdfDocker _default(Object _default) {
-    this._default = JsonNullable.of(_default);
+  public UdfDocker _default(String _default) {
     return this;
   }
 
@@ -63,11 +60,11 @@ public class UdfDocker extends UdfRuntime  {
   @NotNull
 
 
-  public JsonNullable<Object> getDefault() {
+  public String getDefault() {
     return _default;
   }
 
-  public void setDefault(JsonNullable<Object> _default) {
+  public void setDefault(String _default) {
     this._default = _default;
   }
 

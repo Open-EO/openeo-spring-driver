@@ -1,19 +1,16 @@
 package org.openeo.spring.model;
 
-import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
 import java.util.List;
-import org.openeo.spring.model.BandDimension;
-import org.openeo.spring.model.Dimension;
-import org.openeo.spring.model.OneOfnumberstring;
-import org.openapitools.jackson.nullable.JsonNullable;
+import java.util.Objects;
+
 import javax.validation.Valid;
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * DimensionBands
@@ -22,14 +19,14 @@ import javax.validation.constraints.*;
 public class DimensionBands extends Dimension  {
   @JsonProperty("values")
   @Valid
-  private List<OneOfnumberstring> values = new ArrayList<>();
+  private List<String> values = new ArrayList<>();
 
-  public DimensionBands values(List<OneOfnumberstring> values) {
+  public DimensionBands values(List<String> values) {
     this.values = values;
     return this;
   }
 
-  public DimensionBands addValuesItem(OneOfnumberstring valuesItem) {
+  public DimensionBands addValuesItem(String valuesItem) {
     this.values.add(valuesItem);
     return this;
   }
@@ -43,11 +40,11 @@ public class DimensionBands extends Dimension  {
 
   @Valid
 @Size(min=1) 
-  public List<OneOfnumberstring> getValues() {
+  public List<String> getValues() {
     return values;
   }
 
-  public void setValues(List<OneOfnumberstring> values) {
+  public void setValues(List<String> values) {
     this.values = values;
   }
 

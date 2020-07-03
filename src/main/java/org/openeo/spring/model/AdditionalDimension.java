@@ -1,17 +1,18 @@
 package org.openeo.spring.model;
 
-import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import org.openeo.spring.model.OneOfnumberstring;
-import org.openapitools.jackson.nullable.JsonNullable;
+import java.util.Objects;
+
 import javax.validation.Valid;
-import javax.validation.constraints.*;
+import javax.validation.constraints.Size;
+
+import org.openapitools.jackson.nullable.JsonNullable;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * AdditionalDimension
@@ -24,7 +25,7 @@ public class AdditionalDimension   {
 
   @JsonProperty("values")
   @Valid
-  private List<OneOfnumberstring> values = null;
+  private List<String> values = null;
 
   @JsonProperty("step")
   private JsonNullable<BigDecimal> step = JsonNullable.undefined();
@@ -64,12 +65,12 @@ public class AdditionalDimension   {
     this.extent = extent;
   }
 
-  public AdditionalDimension values(List<OneOfnumberstring> values) {
+  public AdditionalDimension values(List<String> values) {
     this.values = values;
     return this;
   }
 
-  public AdditionalDimension addValuesItem(OneOfnumberstring valuesItem) {
+  public AdditionalDimension addValuesItem(String valuesItem) {
     if (this.values == null) {
       this.values = new ArrayList<>();
     }
@@ -85,11 +86,11 @@ public class AdditionalDimension   {
 
   @Valid
 @Size(min=1) 
-  public List<OneOfnumberstring> getValues() {
+  public List<String> getValues() {
     return values;
   }
 
-  public void setValues(List<OneOfnumberstring> values) {
+  public void setValues(List<String> values) {
     this.values = values;
   }
 
