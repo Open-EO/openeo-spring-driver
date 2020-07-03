@@ -18,18 +18,18 @@ import io.swagger.annotations.ApiModelProperty;
 public class BatchJobs   {
   @JsonProperty("jobs")
   @Valid
-  private List<BatchJob> jobs = new ArrayList<>();
+  private List<Job> jobs = new ArrayList<>();
 
   @JsonProperty("links")
   @Valid
   private List<Link> links = new ArrayList<>();
 
-  public BatchJobs jobs(List<BatchJob> jobs) {
+  public BatchJobs jobs(List<Job> jobs) {
     this.jobs = jobs;
     return this;
   }
 
-  public BatchJobs addJobsItem(BatchJob jobsItem) {
+  public BatchJobs addJobsItem(Job jobsItem) {
     this.jobs.add(jobsItem);
     return this;
   }
@@ -43,11 +43,11 @@ public class BatchJobs   {
 
   @Valid
 
-  public List<BatchJob> getJobs() {
+  public List<Job> getJobs() {
     return jobs;
   }
 
-  public void setJobs(List<BatchJob> jobs) {
+  public void setJobs(List<Job> jobs) {
     this.jobs = jobs;
   }
 

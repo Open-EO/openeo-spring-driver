@@ -11,7 +11,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
-import org.openeo.spring.model.BatchJob;
+import org.openeo.spring.model.Job;
 import org.openeo.spring.model.BatchJobEstimate;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobs;
@@ -64,7 +64,7 @@ public interface JobsApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.POST)
-    default ResponseEntity<Void> createJob(@ApiParam(value = "" ,required=true )  @Valid @RequestBody BatchJob storeBatchJobRequest) {
+    default ResponseEntity<Void> createJob(@ApiParam(value = "" ,required=true )  @Valid @RequestBody Job storeBatchJobRequest) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }
@@ -140,17 +140,17 @@ public interface JobsApi {
      *         or The request can&#39;t be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 400)
      *         or The request can&#39;t be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 500)
      */
-    @ApiOperation(value = "Full metadata for a batch job", nickname = "describeJob", notes = "Returns all information about a submitted batch job.", response = BatchJob.class, authorizations = {
+    @ApiOperation(value = "Full metadata for a batch job", nickname = "describeJob", notes = "Returns all information about a submitted batch job.", response = Job.class, authorizations = {
         @Authorization(value = "Bearer")
     }, tags={ "Data Processing","Batch Jobs", })
     @ApiResponses(value = { 
-        @ApiResponse(code = 200, message = "Full job information.", response = BatchJob.class),
+        @ApiResponse(code = 200, message = "Full job information.", response = Job.class),
         @ApiResponse(code = 400, message = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)", response = Error.class),
         @ApiResponse(code = 500, message = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)", response = Error.class) })
     @RequestMapping(value = "/jobs/{job_id}",
         produces = { "application/json" }, 
         method = RequestMethod.GET)
-    default ResponseEntity<BatchJob> describeJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @ApiParam(value = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId) {
+    default ResponseEntity<Job> describeJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @ApiParam(value = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }
@@ -331,7 +331,7 @@ public interface JobsApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.PATCH)
-    default ResponseEntity<Void> updateJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @ApiParam(value = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId,@ApiParam(value = "" ,required=true )  @Valid @RequestBody BatchJob updateBatchJobRequest) {
+    default ResponseEntity<Void> updateJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @ApiParam(value = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId,@ApiParam(value = "" ,required=true )  @Valid @RequestBody Job updateBatchJobRequest) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }

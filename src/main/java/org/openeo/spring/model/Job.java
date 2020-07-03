@@ -24,7 +24,7 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(description = "The metadata of a batch jobs that has been submitted by the authenticated user.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class BatchJob   {
+public class Job   {
   @JsonProperty("id")
   private String id;
 
@@ -103,7 +103,7 @@ public class BatchJob   {
   @JsonProperty("budget")
   private JsonNullable<BigDecimal> budget = JsonNullable.undefined();
 
-  public BatchJob id(String id) {
+  public Job id(String id) {
     this.id = id;
     return this;
   }
@@ -124,7 +124,7 @@ public class BatchJob   {
     this.id = id;
   }
 
-  public BatchJob title(String title) {
+  public Job title(String title) {
     this.title = JsonNullable.of(title);
     return this;
   }
@@ -144,7 +144,7 @@ public class BatchJob   {
     this.title = title;
   }
 
-  public BatchJob description(String description) {
+  public Job description(String description) {
     this.description = JsonNullable.of(description);
     return this;
   }
@@ -164,7 +164,7 @@ public class BatchJob   {
     this.description = description;
   }
 
-  public BatchJob process(Process process) {
+  public Job process(Process process) {
     this.process = process;
     return this;
   }
@@ -185,7 +185,7 @@ public class BatchJob   {
     this.process = process;
   }
 
-  public BatchJob status(StatusEnum status) {
+  public Job status(StatusEnum status) {
     this.status = status;
     return this;
   }
@@ -206,7 +206,7 @@ public class BatchJob   {
     this.status = status;
   }
 
-  public BatchJob progress(BigDecimal progress) {
+  public Job progress(BigDecimal progress) {
     this.progress = progress;
     return this;
   }
@@ -229,7 +229,7 @@ public class BatchJob   {
     this.progress = progress;
   }
 
-  public BatchJob created(OffsetDateTime created) {
+  public Job created(OffsetDateTime created) {
     this.created = created;
     return this;
   }
@@ -251,7 +251,7 @@ public class BatchJob   {
     this.created = created;
   }
 
-  public BatchJob updated(OffsetDateTime updated) {
+  public Job updated(OffsetDateTime updated) {
     this.updated = updated;
     return this;
   }
@@ -272,7 +272,7 @@ public class BatchJob   {
     this.updated = updated;
   }
 
-  public BatchJob plan(String plan) {
+  public Job plan(String plan) {
     this.plan = plan;
     return this;
   }
@@ -292,7 +292,7 @@ public class BatchJob   {
     this.plan = plan;
   }
 
-  public BatchJob costs(BigDecimal costs) {
+  public Job costs(BigDecimal costs) {
     this.costs = JsonNullable.of(costs);
     return this;
   }
@@ -313,7 +313,7 @@ public class BatchJob   {
     this.costs = costs;
   }
 
-  public BatchJob budget(BigDecimal budget) {
+  public Job budget(BigDecimal budget) {
     this.budget = JsonNullable.of(budget);
     return this;
   }
@@ -343,7 +343,7 @@ public class BatchJob   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    BatchJob batchJob = (BatchJob) o;
+    Job batchJob = (Job) o;
     return Objects.equals(this.id, batchJob.id) &&
         Objects.equals(this.title, batchJob.title) &&
         Objects.equals(this.description, batchJob.description) &&

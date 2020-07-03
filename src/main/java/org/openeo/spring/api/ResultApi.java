@@ -9,7 +9,7 @@ import java.util.Optional;
 
 import javax.validation.Valid;
 
-import org.openeo.spring.model.BatchJob;
+import org.openeo.spring.model.Job;
 import org.openeo.spring.model.Error;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,7 +54,7 @@ public interface ResultApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.POST)
-    default ResponseEntity<Void> computeResult(@ApiParam(value = "" ,required=true )  @Valid @RequestBody BatchJob synchronousResultRequest) {
+    default ResponseEntity<Void> computeResult(@ApiParam(value = "" ,required=true )  @Valid @RequestBody Job synchronousResultRequest) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }
