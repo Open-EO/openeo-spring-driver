@@ -59,7 +59,13 @@ public interface CollectionsApi {
         produces = { "application/json" }, 
         method = RequestMethod.GET)
     default ResponseEntity<Collection> describeCollection(@Pattern(regexp="^[\\w\\-\\.~/]+$") @ApiParam(value = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    	
+    	Collection currentCollection = new Collection();
+    	currentCollection.setId(collectionId);
+    	//TODO get description from rasdaman and add it here to the collection object
+    	currentCollection.setDescription("my description");
+    	
+        return new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
 
     }
 
