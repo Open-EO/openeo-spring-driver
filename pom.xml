@@ -9,7 +9,7 @@
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <springfox-version>2.8.0</springfox-version>
+        <springfox-version>2.10.5</springfox-version>
         <gdal.path>/usr/share/java/gdal.jar</gdal.path>
         <gdal.version>3.0.4</gdal.version>
         <netcdfJavaVersion>5.2.0</netcdfJavaVersion>
@@ -32,8 +32,38 @@
                             <goal>repackage</goal>
                         </goals>
                     </execution>
+                    <execution>
+			            <id>pre-integration-test</id>
+			            <goals>
+			                <goal>start</goal>
+			            </goals>
+			        </execution>
+			        <execution>
+			            <id>post-integration-test</id>
+			            <goals>
+			                <goal>stop</goal>
+			            </goals>
+			        </execution>
                 </executions>
             </plugin>
+            <plugin>
+			    <groupId>org.springdoc</groupId>
+			    <artifactId>springdoc-openapi-maven-plugin</artifactId>
+			    <version>0.2</version>
+			    <executions>
+			        <execution>
+			            <phase>integration-test</phase>
+			            <goals>
+			                <goal>generate</goal>
+			            </goals>
+			        </execution>
+			    </executions>
+			    <configuration> 
+			        <apiDocsUrl>http://localhost:8181/v3/api-docs</apiDocsUrl> 
+			        <outputFileName>openapi.json</outputFileName> 
+			        <outputDir>${project.build.directory}</outputDir> 
+			    </configuration>
+			</plugin>
         </plugins>
     </build>
     <dependencies>
@@ -47,6 +77,11 @@
             <artifactId>springfox-swagger2</artifactId>
             <version>${springfox-version}</version>
         </dependency>
+        <dependency>
+    		<groupId>org.springdoc</groupId>
+    		<artifactId>springdoc-openapi-ui</artifactId>
+    		<version>1.2.32</version>
+		</dependency>
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger-ui</artifactId>

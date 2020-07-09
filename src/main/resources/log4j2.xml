@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+  <Appenders>
+  	<File name="FILE" fileName="logs/openeo_0.4.2.log" append="true">
+      <PatternLayout pattern="%p %d{ISO8601} [%t] %r %c %m%n"/>
+    </File>
+    <Console name="STDOUT" target="SYSTEM_OUT">
+      <PatternLayout pattern="%p %d{ISO8601} [%t] %r %c %m%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>   
+    <Logger name="org.openeo.spring.api" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.spring.dao" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.spring.model" level="error" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openapitools" level="error" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Root level="warn">
+      <AppenderRef ref="STDOUT"/>
+      <AppenderRef ref="FILE"/>
+    </Root>  
+  </Loggers>
+</Configuration>

@@ -14,11 +14,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModelProperty;
 
+
 /**
  * AdditionalDimension
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class AdditionalDimension   {
+
   @JsonProperty("extent")
   @Valid
   private List<BigDecimal> extent = null;

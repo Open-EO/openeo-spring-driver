@@ -11,15 +11,13 @@ import springfox.documentation.service.ApiInfo;
 import springfox.documentation.service.Contact;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.paths.Paths;
-import springfox.documentation.spring.web.paths.RelativePathProvider;
+import springfox.documentation.spring.web.paths.DefaultPathProvider;
 import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import javax.servlet.ServletContext;
 
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Configuration
-@EnableSwagger2
 public class OpenAPIDocumentationConfig {
 
     ApiInfo apiInfo() {
@@ -40,23 +38,18 @@ public class OpenAPIDocumentationConfig {
                 .select()
                     .apis(RequestHandlerSelectors.basePackage("org.openeo.spring.api"))
                     .build()
-                .pathProvider(new BasePathAwareRelativePathProvider(servletContext, basePath))
+                .pathProvider(new DefaultPathProvider())
                 .directModelSubstitute(java.time.LocalDate.class, java.sql.Date.class)
                 .directModelSubstitute(java.time.OffsetDateTime.class, java.util.Date.class)
                 .apiInfo(apiInfo());
     }
 
-    class BasePathAwareRelativePathProvider extends RelativePathProvider {
+    class BasePathAwareRelativePathProvider extends DefaultPathProvider {
         private String basePath;
 
         public BasePathAwareRelativePathProvider(ServletContext servletContext, String basePath) {
-            super(servletContext);
+            super();
             this.basePath = basePath;
-        }
-
-        @Override
-        protected String applicationPath() {
-            return  Paths.removeAdjacentForwardSlashes(UriComponentsBuilder.fromPath(super.applicationPath()).path(basePath).build().toString());
         }
 
         @Override
