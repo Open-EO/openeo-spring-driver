@@ -56,7 +56,7 @@ public class CollectionsApiController implements CollectionsApi {
     	//TODO get description from rasdaman and add it here to the collection object
     	currentCollection.setDescription("my description");
     	
-        return  new ResponseEntity<Collection>(HttpStatus.OK);
+        return  new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
 
     }
     

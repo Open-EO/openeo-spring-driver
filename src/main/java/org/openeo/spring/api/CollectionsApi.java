@@ -47,7 +47,6 @@ public interface CollectionsApi {
     @GetMapping(value = "/collections/{collection_id}", produces = { "application/json" })
     default ResponseEntity<Collection> describeCollection(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId){
         return new ResponseEntity<Collection>(HttpStatus.NOT_IMPLEMENTED);
-
     }
 
 
