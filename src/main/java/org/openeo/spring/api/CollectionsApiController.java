@@ -14,7 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.validation.Valid;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
+
+import org.springframework.http.MediaType;
 
 import org.gdal.osr.CoordinateTransformation;
 import org.gdal.osr.SpatialReference;
@@ -28,6 +32,7 @@ import org.openeo.spring.model.CollectionExtent;
 import org.openeo.spring.model.CollectionSpatialExtent;
 import org.openeo.spring.model.CollectionSummaryStats;
 import org.openeo.spring.model.CollectionTemporalExtent;
+import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.Dimension;
 import org.openeo.spring.model.Dimension.TypeEnum;
 import org.openeo.spring.model.DimensionBands;
@@ -41,9 +46,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
-
 
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -66,6 +71,372 @@ public class CollectionsApiController implements CollectionsApi {
     }
     
     /**
+     * GET /collections : Basic metadata for all datasets
+     * Lists available collections with at least the required information.  It is **strongly RECOMMENDED** to keep the response size small by omitting larger optional values from the objects in &#x60;collections&#x60; (e.g. the &#x60;summaries&#x60; and &#x60;cube:dimensions&#x60; properties). To get the full metadata for a collection clients MUST request &#x60;GET /collections/{collection_id}&#x60;.  This endpoint is compatible with [STAC 0.9.0](https://stacspec.org) and [OGC API - Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features / extensions and [STAC extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions) can be implemented in addition to what is documented here.
+     *
+     * @param limit This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the &#x60;links&#x60; array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined &#x60;rel&#x60; types. See the links array schema for supported &#x60;rel&#x60; types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn&#39;t care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding &#x60;rel&#x60; types. (optional)
+     * @return Lists of collections and related links. (status code 200)
+     *         or The request can&#39;t be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 400)
+     *         or The request can&#39;t be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 500)
+     */
+    @Operation(summary = "Basic metadata for all datasets", operationId = "listCollections", description = "Lists available collections with at least the required information.  It is **strongly RECOMMENDED** to keep the response size small by omitting larger optional values from the objects in `collections` (e.g. the `summaries` and `cube:dimensions` properties). To get the full metadata for a collection clients MUST request `GET /collections/{collection_id}`.  This endpoint is compatible with [STAC 0.9.0](https://stacspec.org) and [OGC API - Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features / extensions and [STAC extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions) can be implemented in addition to what is documented here.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lists of collections and related links."),
+        @ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
+        @ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
+    @GetMapping(value = "/collections", produces = { "application/json" })
+    @Override
+    public ResponseEntity<Collections> listCollections(@Min(1)@Parameter(name = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
+    	Collections collectionsList = new Collections();
+    	Collection currentCollection = new Collection();
+    	try {
+			URL url;
+			url = new URL("http://saocompute.eurac.edu/rasdaman/ows" + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCapabilities");
+    	
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			SAXBuilder builder = new SAXBuilder();
+			Document capabilititesDoc = (Document) builder.build(conn.getInputStream()); 
+			Element rootNode = capabilititesDoc.getRootElement();
+			Namespace defaultNS = rootNode.getNamespace();
+//			log.debug("root node info: " + rootNode.getName());
+			List<Element> coverageList = rootNode.getChildren("Contents", defaultNS).get(0).getChildren("CoverageSummary", defaultNS);
+			
+			for(int coll = 0; coll < coverageList.size(); coll++) {
+				Element coverage = coverageList.get(coll);
+				//				log.debug("root node info: " + coverage.getName() + ":" + coverage.getChildText("CoverageId", defaultNS));		
+
+				String coverageID = coverage.getChildText("CoverageId", defaultNS);
+
+				URL urlCollections = new URL("http://saocompute.eurac.edu/rasdaman/ows"
+						+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + coverageID);
+
+				HttpURLConnection connCollections = (HttpURLConnection) urlCollections.openConnection();
+				connCollections.setRequestMethod("GET");
+				SAXBuilder builderInt = new SAXBuilder();
+				Document capabilititesDocCollections = (Document) builderInt.build(connCollections.getInputStream());
+				List<Namespace> namespacesCollections = capabilititesDocCollections.getNamespacesIntroduced();
+				Element rootNodeCollections = capabilititesDocCollections.getRootElement();
+				Namespace defaultNSCollections = rootNodeCollections.getNamespace();
+				Namespace gmlNS = null;
+				Namespace sweNS = null;
+				for (int n = 0; n < namespacesCollections.size(); n++) {
+					Namespace current = namespacesCollections.get(n);
+					if(current.getPrefix().equals("swe")) {
+						sweNS = current;
+					}
+					if(current.getPrefix().equals("gmlcov")) {
+						gmlNS = current;
+					}
+				}
+
+				//				log.debug("root node info: " + rootNodeCollections.getName());		
+
+				Element coverageDescElement = rootNodeCollections.getChild("CoverageDescription", defaultNSCollections);
+				Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
+				Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
+				Element metadataElement = rootNodeCollections.getChild("CoverageDescription", defaultNSCollections).getChild("metadata", gmlNS).getChild("Extension", gmlNS);
+
+				currentCollection.setId(coverageID);				
+				currentCollection.setStacVersion("0.9.0");
+
+//				try {
+//					metadataElement = rootNode.getChild("CoverageDescription", defaultNS).getChild("metadata", gmlNS).getChild("Extension", gmlNS).getChild("covMetadata", gmlNS);
+//				}catch(Exception e) {
+//					//					log.warn("Error in parsing bands :" + e.getMessage());
+//				}
+//
+//				List<Element> bandsList = null;
+//				List<Element> bandsListSwe = null;
+//				Boolean bandsMeta = false;
+//				try {
+//					bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
+//					bandsMeta = true;
+//				}catch(Exception e) {
+//					//					log.warn("Error in parsing bands :" + e.getMessage());
+//				}
+//				
+//				try {
+//				bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
+//				}catch(Exception e) {
+//					//					log.warn("Error in parsing bands List :" + e.getMessage());
+//				}
+//				//metadataObj = new JSONObject(metadataString1);
+//				//String metadataString2 = metadataString1.replaceAll("\\n","");
+//				//String metadataString3 = metadataString2.replaceAll("\"\"","\"");
+//				//metadataObj = new JSONObject(metadataString3);
+//				//JSONArray slices = metadataObj.getJSONArray("slices");
+//
+//				String srsDescription = boundingBoxElement.getAttributeValue("srsName");
+//				try {
+//					srsDescription = srsDescription.substring(srsDescription.indexOf("EPSG"), srsDescription.indexOf("&")).replace("/0/", ":");
+//					srsDescription = srsDescription.replaceAll("EPSG:","");
+//
+//				}catch(StringIndexOutOfBoundsException e) {
+//					srsDescription = srsDescription.substring(srsDescription.indexOf("EPSG")).replace("/0/", ":");
+//					srsDescription = srsDescription.replaceAll("EPSG:","");							
+//				}
+//
+//				SpatialReference src = new SpatialReference();
+//				src.ImportFromEPSG(Integer.parseInt(srsDescription));
+//
+//				SpatialReference dst = new SpatialReference();
+//				dst.ImportFromEPSG(4326);
+//
+//				String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
+//				String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");			
+//
+//				CoordinateTransformation tx = new CoordinateTransformation(src, dst);
+//
+//				String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
+//				int xIndex = 0;
+//				int yIndex = 0;
+//
+//				Map<String, Dimension> cubeColonDimensions = new HashMap<String, Dimension>();
+//				DimensionBands dimensionbands = new DimensionBands();
+//				dimensionbands.setType(TypeEnum.BANDS);
+//				//					log.debug("number of bands found: " + bandsListSwe.size());			
+//				DimensionSpatial dimensionXspatial = new DimensionSpatial();
+//				dimensionXspatial.setType(TypeEnum.SPATIAL);
+//				DimensionSpatial dimensionYspatial = new DimensionSpatial();
+//				dimensionYspatial.setType(TypeEnum.SPATIAL);
+//				DimensionTemporal dimensionTemporal = new DimensionTemporal();
+//				dimensionTemporal.setType(TypeEnum.TEMPORAL);
+//
+//				String bandId = null;
+//				if (bandsMeta) {
+//					try {
+//						for(int c = 0; c < bandsList.size(); c++) {
+//							String bandWave = null;
+//							String bandCommonName = null;
+//							String bandGSD = null;
+//							Element band = bandsList.get(c);
+//							try {
+//								bandId = band.getName();
+//							}catch(Exception e) {
+//								//									log.warn("Error in parsing band ID:" + e.getMessage());
+//							}							
+//							dimensionbands.addValuesItem(bandId);
+//							try {
+//								bandWave = band.getChildText("WAVELENGTH");
+//							}catch(Exception e) {
+//								//									log.warn("Error in parsing band wave-lenght:" + e.getMessage());
+//							}
+//							try {
+//								bandCommonName = band.getChildText("common_name");
+//							}catch(Exception e) {
+//								//									log.warn("Error in parsing band common name:" + e.getMessage());
+//							}
+//							try {
+//								bandGSD = band.getChildText("gsd");
+//							}catch(Exception e) {
+//								//									log.warn("Error in parsing band gsd:" + e.getMessage());
+//							}
+//						}
+//					}catch(Exception e) {
+//						//							log.warn("Error in parsing bands :" + e.getMessage());
+//					}
+//				}
+//				else {
+//					try {
+//					for(int c = 0; c < bandsListSwe.size(); c++) {
+//						try {
+//						    bandId = bandsListSwe.get(c).getAttributeValue("name");
+//						}catch(Exception e) {
+//							//									log.warn("Error in parsing band ID:" + e.getMessage());
+//						}
+//						dimensionbands.addValuesItem(bandId);
+//					}
+//					}catch(Exception e) {
+//						//							log.warn("Error in parsing bands List:" + e.getMessage());
+//					}
+//				}			
+//				cubeColonDimensions.put("bands", dimensionbands);
+//				currentCollection.setCubeColonDimensions(cubeColonDimensions);			
+//
+//				double[] c1 = null;
+//				double[] c2 = null;
+//				int j = 0;
+//
+//				for(int a = 0; a < axis.length; a++) {
+//					//				    	log.debug(axis[a]);
+//					if(axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long") || axis[a].equals("N") || axis[a].equals("Y") || axis[a].equals("Lat")){
+//						j = a;
+//						break;
+//					}
+//				}
+//				//					log.debug(j);
+//
+//				c1 = tx.TransformPoint(Double.parseDouble(minValues[j]), Double.parseDouble(minValues[j+1]));
+//				c2 = tx.TransformPoint(Double.parseDouble(maxValues[j]), Double.parseDouble(maxValues[j+1]));
+//
+//				for(int a = 0; a < axis.length; a++) {
+//					//				    	log.debug(axis[a]);
+//					if(axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long")){
+//						xIndex=a;
+//						dimensionXspatial.setReferenceSystem(srsDescription);
+//						dimensionXspatial.setAxis(AxisEnum.X);
+//						List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
+//						xExtent.add(0, new BigDecimal(c1[1]));
+//						xExtent.add(1, new BigDecimal(c2[1]));
+//						dimensionXspatial.setExtent(xExtent);
+//						cubeColonDimensions.put(axis[a], dimensionXspatial);
+//					}
+//					if(axis[a].equals("N") || axis[a].equals("Y") || axis[a].equals("Lat")){
+//						yIndex=a;
+//						dimensionYspatial.setReferenceSystem(srsDescription);
+//						dimensionYspatial.setAxis(AxisEnum.Y);
+//						List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
+//						yExtent.add(0, new BigDecimal(c1[0]));
+//						yExtent.add(1, new BigDecimal(c2[0]));
+//						dimensionYspatial.setExtent(yExtent);
+//						cubeColonDimensions.put(axis[a], dimensionYspatial);
+//					}
+//					if(axis[a].equals("DATE")  || axis[a].equals("TIME") || axis[a].equals("ANSI") || axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time") || axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")){
+//						List<String> temporalExtent = new ArrayList<String>();
+//						temporalExtent.add(0, minValues[a].replaceAll("\"", ""));
+//						temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
+//						dimensionTemporal.setExtent(temporalExtent);
+//						dimensionTemporal.setStep(null);
+//						cubeColonDimensions.put(axis[a], dimensionTemporal);
+//					}
+//				}		    
+//				//					log.debug(srsDescription);
+//
+//				CollectionExtent extent = new CollectionExtent();
+//				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
+//				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
+//				List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
+//
+//				bbox1.add(new BigDecimal(c1[1]));
+//				bbox1.add(new BigDecimal(c1[0]));
+//				bbox1.add(new BigDecimal(c2[1]));
+//				bbox1.add(new BigDecimal(c2[0]));
+//				bbox.add(bbox1);
+//				spatialExtent.setBbox(bbox);
+//				extent.setSpatial(spatialExtent);			
+//
+//				int k = 0;
+//				for(int a = 0; a < axis.length; a++) {
+//					//				    	log.debug(axis[a]);
+//					String timeAxis = axis[a].toUpperCase();
+//					if(timeAxis.equals("DATE") || timeAxis.equals("TIME") || timeAxis.equals("ANSI") || timeAxis.equals("UNIX"))
+//					{
+//						k = a;
+//						break;
+//					}
+//				}
+//
+//				String startTime = minValues[k].replaceAll("\"", "");
+//				String endTime = maxValues[k].replaceAll("\"", "");
+//
+//				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
+//				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
+//				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();			
+//
+//				interval1.add(OffsetDateTime.parse(startTime));
+//				interval1.add(OffsetDateTime.parse(endTime));
+//				interval.add(interval1);
+//				temporalExtent.setInterval(interval);
+//				extent.setTemporal(temporalExtent);
+//
+//				currentCollection.setExtent(extent);
+//
+//				Link link1 = new Link();
+//				List<Link> links = new ArrayList<Link>();
+//				link1.setRel("license");
+//				link1.setType("text/html");
+//				try {
+//					link1.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
+//				} catch (URISyntaxException e1) {
+//					// TODO Auto-generated catch block
+//					e1.printStackTrace();
+//				}
+//				links.add(0, link1);
+//				currentCollection.setLinks(links);
+//
+//
+//				String title = null;
+//				String description = null;
+//				try {
+//					title = metadataElement.getChildText("Project", gmlNS);
+//					currentCollection.setTitle(title);
+//				}catch(Exception e) {
+//					//				    	log.warn("Error in parsing Project Name :" + e.getMessage());
+//				}
+//				try {
+//					description = metadataElement.getChildText("Title", gmlNS);
+//					currentCollection.setDescription(description);
+//				}catch(Exception e) {
+//					//		            	log.warn("Error in parsing Title :" + e.getMessage());
+//				}
+
+				collectionsList.addCollectionsItem(currentCollection);
+			}
+			Link linkItems = new Link();
+			linkItems.setRel("alternate");
+			try {
+				linkItems.setHref(new URI ("http://saocompute.eurac.edu/rasdaman/ows"));
+			} catch (URISyntaxException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			linkItems.setTitle("openEO STAC Catalog (STAC Version 0.9.0)");
+			collectionsList.addLinksItem(linkItems);
+
+
+//			getRequest().ifPresent(request -> {
+//				for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
+//					if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
+//
+//
+//						String exampleString = "{ \"collections\" : [ { \"extent\" : { \"spatial\" : { \"bbox\" : [ [ -180, -90, 180, 90 ], [ -180, -90, 180, 90 ] ] }, \"temporal\" : { \"interval\" : [ [ \"2011-11-11T12:22:11Z\", null ], [ \"2011-11-11T12:22:11Z\", null ] ] } }, \"stac_version\" : \"stac_version\", \"keywords\" : [ \"keywords\", \"keywords\" ], \"deprecated\" : false, \"description\" : \"description\", \"cube:dimensions\" : { \"key\" : \"\" }, \"title\" : \"title\", \"version\" : \"version\", \"license\" : \"Apache-2.0\", \"assets\" : { \"key\" : { \"roles\" : [ \"data\" ], \"description\" : \"description\", \"href\" : \"href\", \"title\" : \"title\", \"type\" : \"image/tiff; application=geotiff\" } }, \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ], \"id\" : \"Sentinel-2A\", \"stac_extensions\" : [ \"\", \"\" ], \"providers\" : [ \"{}\", \"{}\" ], \"summaries\" : { \"key\" : \"\" } }, { \"extent\" : { \"spatial\" : { \"bbox\" : [ [ -180, -90, 180, 90 ], [ -180, -90, 180, 90 ] ] }, \"temporal\" : { \"interval\" : [ [ \"2011-11-11T12:22:11Z\", null ], [ \"2011-11-11T12:22:11Z\", null ] ] } }, \"stac_version\" : \"stac_version\", \"keywords\" : [ \"keywords\", \"keywords\" ], \"deprecated\" : false, \"description\" : \"description\", \"cube:dimensions\" : { \"key\" : \"\" }, \"title\" : \"title\", \"version\" : \"version\", \"license\" : \"Apache-2.0\", \"assets\" : { \"key\" : { \"roles\" : [ \"data\" ], \"description\" : \"description\", \"href\" : \"href\", \"title\" : \"title\", \"type\" : \"image/tiff; application=geotiff\" } }, \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ], \"id\" : \"Sentinel-2A\", \"stac_extensions\" : [ \"\", \"\" ], \"providers\" : [ \"{}\", \"{}\" ], \"summaries\" : { \"key\" : \"\" } } ], \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ] }";
+//						ApiUtil.setExampleResponse(request, "application/json", exampleString);
+//						break;
+//					}
+//				}
+//			});
+    	
+    	return new ResponseEntity<Collections>(collectionsList, HttpStatus.OK);
+    	}
+    	
+    	catch (MalformedURLException e) {
+//			log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());
+//			for( StackTraceElement element: e.getStackTrace()) {
+//				log.error(element.toString());
+//			}
+//			return Response.serverError()
+//					.entity(new ApiResponseMessage(ApiResponseMessage.ERROR,
+//							"An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage()))
+//					.build();
+			return  new ResponseEntity<Collections>(collectionsList, HttpStatus.BAD_REQUEST);
+		} 
+    	
+    	catch (IOException e) {
+//			log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());
+//			for( StackTraceElement element: e.getStackTrace()) {
+//				log.error(element.toString());
+//			}
+//			return Response.serverError()
+//					.entity(new ApiResponseMessage(ApiResponseMessage.ERROR,
+//							"An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage()))
+//					.build();
+			return  new ResponseEntity<Collections>(collectionsList, HttpStatus.BAD_REQUEST);
+		} 
+    	
+    	catch (JDOMException e) {
+//			log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());
+//			for( StackTraceElement element: e.getStackTrace()) {
+//				log.error(element.toString());
+//			}
+//			return Response.serverError()
+//					.entity(new ApiResponseMessage(ApiResponseMessage.ERROR,
+//							"An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage())).build();
+			return  new ResponseEntity<Collections>(collectionsList, HttpStatus.BAD_REQUEST);
+		}        
+    }
+    
+    /**
      * GET /collections/{collection_id} : Full metadata for a specific dataset
      * Lists **all** information about a specific collection specified by the identifier &#x60;collection_id&#x60;.  This endpoint is compatible with [STAC 0.9.0](https://stacspec.org) and [OGC API - Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features / extensions and [STAC extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions) can be implemented in addition to what is documented here.
      *
@@ -82,15 +453,13 @@ public class CollectionsApiController implements CollectionsApi {
     @GetMapping(value = "/collections/{collection_id}", produces = { "application/json" })
     @Override
     public ResponseEntity<Collection> describeCollection(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId) {
-    	    	
+    	
     	URL url;
     	Collection currentCollection = new Collection();
-    	
-    	try {    		
+    	try {
     		currentCollection.setId(collectionId);
     		currentCollection.setStacVersion("0.9.0");
 			url = new URL("http://saocompute.eurac.edu/rasdaman/ows" + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionId);
-
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
 			SAXBuilder builder = new SAXBuilder();
@@ -153,11 +522,7 @@ public class CollectionsApiController implements CollectionsApi {
 			}catch(StringIndexOutOfBoundsException e) {
 				srsDescription = srsDescription.substring(srsDescription.indexOf("EPSG")).replace("/0/", ":");
 				srsDescription = srsDescription.replaceAll("EPSG:","");							
-			}			
-			
-//          JSONObject extentCollection = new JSONObject();			
-//			JSONArray spatialExtent = new JSONArray();
-//			JSONArray temporalExtent =  new JSONArray();
+			}
 			
 			SpatialReference src = new SpatialReference();
 			src.ImportFromEPSG(Integer.parseInt(srsDescription));
@@ -322,14 +687,27 @@ public class CollectionsApiController implements CollectionsApi {
 				e1.printStackTrace();
 			}
 			links.add(0, link1);
-			currentCollection.setLinks(links);
+			currentCollection.setLinks(links);				
 			
-			
-			Map<String, CollectionSummaryStats[]> summaries = new HashMap<String, CollectionSummaryStats[]>();
+			String title = null;
+			String description = null;
+			try {
+			title = metadataElement.getChildText("Project", gmlNS);
+			currentCollection.setTitle(title);
+		    }catch(Exception e) {
+//		    	log.warn("Error in parsing Project Name :" + e.getMessage());
+		    }
+		    try {
+			description = metadataElement.getChildText("Title", gmlNS);
+			currentCollection.setDescription(description);
+            }catch(Exception e) {
+//            	log.warn("Error in parsing Title :" + e.getMessage());
+	        }
+		    
+		    Map<String, CollectionSummaryStats[]> summaries = new HashMap<String, CollectionSummaryStats[]>();
 			CollectionSummaryStats instrument = new CollectionSummaryStats();
 						
-			currentCollection.setSummaries(summaries);		
-			
+			currentCollection.setSummaries(summaries);	
 			
 //			JSONArray links = new JSONArray();
 //			
@@ -381,22 +759,7 @@ public class CollectionsApiController implements CollectionsApi {
 //			JSONArray platform_values = new JSONArray();
 //			platform_values.put("Sentinel-2A");
 //			platform_values.put("Sentinel-2B");
-//			pltfrmvalues.put("values", platform_values);
-			
-			String title = null;
-			String description = null;
-			try {
-			title = metadataElement.getChildText("Project", gmlNS);
-			currentCollection.setTitle(title);
-		    }catch(Exception e) {
-//		    	log.warn("Error in parsing Project Name :" + e.getMessage());
-		    }
-		    try {
-			description = metadataElement.getChildText("Title", gmlNS);
-			currentCollection.setDescription(description);
-            }catch(Exception e) {
-//            	log.warn("Error in parsing Title :" + e.getMessage());
-	        }
+//			pltfrmvalues.put("values", platform_values);			
 		    
 //			JSONArray cloud_cover = new JSONArray();
 //			JSONObject cloud_cover_extent = new JSONObject();			
@@ -493,39 +856,23 @@ public class CollectionsApiController implements CollectionsApi {
 //						
 //			other_properties.put("eo:platform", pltfrmvalues);
 //			other_properties.put("eo:epsg", epsgvalues);			
-//								
-////			JSONObject coverage = new JSONObject();
-//			
-//			coverage.put("stac_version", "0.6.2");
-//			coverage.put("id", collectionId);
-//			coverage.put("title", title);
-//			coverage.put("description", description);
-//			coverage.put("license", "CC-BY-4.0");
-//			coverage.put("keywords", keywords);
-//			coverage.put("providers", provider1);
-//			coverage.put("links", links);
-//			extentCollection.put("spatial", spatialExtent);
-//			extentCollection.put("temporal", temporalExtent);
-//			coverage.put("extent", extentCollection);
-//			coverage.put("properties", properties);
-//			coverage.put("other_properties", other_properties);
 
-			return  new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
-		
-    }
+			return  new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);		
+            }
     
-//    	catch (MalformedURLException e) {
-////			log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());
+    	catch (MalformedURLException e) {
+//			log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());
 //			StringBuilder builder = new StringBuilder();
 //			for( StackTraceElement element: e.getStackTrace()) {
 //				builder.append(element.toString()+"\n");
 //			}
-////			log.error(builder.toString());
+//			log.error(builder.toString());
 //			return Response.serverError()
 //					.entity(new ApiResponseMessage(ApiResponseMessage.ERROR,
 //							"An error occured while describing coverage from WCPS endpoint: " + e.getMessage()))
 //					.build();
-//		} 
+    		return  new ResponseEntity<Collection>(currentCollection, HttpStatus.BAD_REQUEST);
+		} 
     	catch (IOException e) {
 //			log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());
 //			StringBuilder builder = new StringBuilder();
@@ -538,7 +885,7 @@ public class CollectionsApiController implements CollectionsApi {
 //							"An error occured while describing coverage from WCPS endpoint: " + e.getMessage()))
 //					.build();
 		    return  new ResponseEntity<Collection>(currentCollection, HttpStatus.BAD_REQUEST);
-    		} 
+    		}
     	    
     	catch (JDOMException e) {
 //			log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());
@@ -555,5 +902,4 @@ public class CollectionsApiController implements CollectionsApi {
 
     }
     
-
 }
