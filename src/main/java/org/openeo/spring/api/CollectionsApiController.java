@@ -88,7 +88,7 @@ public class CollectionsApiController implements CollectionsApi {
     @Override
     public ResponseEntity<Collections> listCollections(@Min(1)@Parameter(name = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
     	Collections collectionsList = new Collections();
-    	Collection currentCollection = new Collection();
+    	
     	try {
 			URL url;
 			url = new URL("http://saocompute.eurac.edu/rasdaman/ows" + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCapabilities");
@@ -103,6 +103,8 @@ public class CollectionsApiController implements CollectionsApi {
 			List<Element> coverageList = rootNode.getChildren("Contents", defaultNS).get(0).getChildren("CoverageSummary", defaultNS);
 			
 			for(int coll = 0; coll < coverageList.size(); coll++) {
+				
+				Collection currentCollection = new Collection();
 				Element coverage = coverageList.get(coll);
 				//				log.debug("root node info: " + coverage.getName() + ":" + coverage.getChildText("CoverageId", defaultNS));		
 
