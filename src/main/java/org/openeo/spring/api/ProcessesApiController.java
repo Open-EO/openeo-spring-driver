@@ -64,6 +64,7 @@ public class ProcessesApiController implements ProcessesApi {
     	
     	this.mapper = new ObjectMapper();
     	this.processes = new HashMap<String, Process>();
+    	this.links = new HashMap<String, Link>();
     	
     	try {
 			Process[] processArray = this.mapper.readValue(stream, Process[].class);
@@ -114,7 +115,7 @@ public class ProcessesApiController implements ProcessesApi {
     	for(String key : this.processes.keySet()){
 			Process process = this.processes.get(key);
 			Process processDef = new Process();	    	
-	    	process.setId(process.getId());
+	    	processDef.setId(process.getId());
 			processDef.setSummary(process.getSummary());
 			processDef.setDescription(process.getDescription());
 			processDef.setParameters(process.getParameters());
