@@ -4,37 +4,25 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.Date;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.openeo.spring.dao.JobDAO;
+import org.openeo.spring.model.Job;
+import org.openeo.spring.model.Job.StatusEnum;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class JobResultDeletion implements Runnable {
 	
 	Logger log = LogManager.getLogger();
-	private ConnectionSource connection = null;
-	private Dao<BatchJobResponse, String> jobDao = null;
 	
-	public JobResultDeletion() {
-		try {
-			String dbURL = "jdbc:sqlite:" + ConvenienceHelper.readProperties("job-database");
-			connection = new JdbcConnectionSource(dbURL);		
-			jobDao = DaoManager.createDao(connection, BatchJobResponse.class);
-			log.debug("JobResultDeletion() has been called and established a connection to the openEO DB."); 
-		} catch (SQLException sqle) {
-			StringBuilder builder = new StringBuilder();
-			for (StackTraceElement element : sqle.getStackTrace()) {
-				builder.append(element.toString() + "\n");
-			}
-			log.error(builder.toString());
-		} catch (IOException ioe) {
-			StringBuilder builder = new StringBuilder();
-			for (StackTraceElement element : ioe.getStackTrace()) {
-				builder.append(element.toString() + "\n");
-			}
-			log.error(builder.toString());
-		}
-		
+	JobDAO jobDAO;
+	
+	@Autowired
+	public void setDao(JobDAO injectedDAO) {
+		jobDAO = injectedDAO;
 	}
 
 	@Override
@@ -56,7 +44,7 @@ public class JobResultDeletion implements Runnable {
 		try {
 			File f = new File(ConvenienceHelper.readProperties("temp-dir"));			
 			File[] listFiles = f.listFiles();
-			BatchJobResponse job = null;
+			Job job = null;
 			
 			for (int i=0; i<listFiles.length; i++) {
 				File currentFile = listFiles[i];
@@ -65,24 +53,17 @@ public class JobResultDeletion implements Runnable {
 						currentFile.delete();
 						String jobId = currentFile.getName().substring(0, currentFile.getName().indexOf("."));
 						log.debug("The current file " + currentFile.getName() + " is expired.\nIt will be deleted and the its job's status will be set to SUBMITTED.");
-						job = jobDao.queryForId(jobId);
+						job = jobDAO.findOne(jobId);
 						if (job == null) {
 							log.debug("A job with the specified identifier is not available.");
 						} else {
-							job.setStatus(Status.SUBMITTED);
-							job.setUpdated(new Date());
-							jobDao.update(job);
+							job.setStatus(StatusEnum.CANCELED);
+							job.setUpdated(OffsetDateTime.now());
+							jobDAO.update(job);
 						}
 					}
 				}
-			}		
-		} catch (SQLException sqle) {
-			log.error("An error occured while performing an SQL-query: " + sqle.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for (StackTraceElement element : sqle.getStackTrace()) {
-				builder.append(element.toString() + "\n");
 			}
-			log.error(builder.toString());
 		} catch (IOException ioe) {
 			log.error("An IO error occured");
 			StringBuilder builder = new StringBuilder();

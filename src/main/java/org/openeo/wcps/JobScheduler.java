@@ -18,6 +18,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -26,24 +27,31 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
+import org.openeo.spring.dao.JobDAO;
+import org.openeo.spring.model.Job;
+import org.openeo.spring.model.Job.StatusEnum;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
 import org.openeo.wcps.events.UDFEvent;
 import org.openeo.wcps.events.UDFEventListener;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class JobScheduler implements JobEventListener, UDFEventListener{
 	
 	Logger log = LogManager.getLogger();
 	
-	private Dao<BatchJobResponse,String> jobDao = null;
-//	private ConnectionSource connection = null;
+	JobDAO jobDAO;
+	
+	@Autowired
+	public void setDao(JobDAO injectedDAO) {
+		jobDAO = injectedDAO;
+	}
+	
 	private String wcpsEndpoint = null;
 	private JSONObject processGraphJSON = new JSONObject();
 	private JSONObject processGraphAfterUDF = null;
 	
-	public JobScheduler(Dao<BatchJobResponse,String> jobDao, String wcpsEndpoint) {
-		this.jobDao = jobDao;
+	public JobScheduler(String wcpsEndpoint) {
 		this.wcpsEndpoint = wcpsEndpoint;
 //		try {
 ////			String dbURL = "jdbc:sqlite:" + ConvenienceHelper.readProperties("job-database");
@@ -69,15 +77,15 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 
 	@Override
 	public void jobQueued(JobEvent jobEvent) {
-		BatchJobResponse job = null;
+		Job job = null;
 		try {
-			job = jobDao.queryForId(jobEvent.getJobId());
+			job = jobDAO.findOne(jobEvent.getJobId());
 			if(job == null) {
 				log.error("A job with the specified identifier is not available.");
 			}
 			log.debug("The following job was retrieved: \n" + job.toString());
 						
-			processGraphJSON = (JSONObject) job.getProcessGraph();
+			processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
 			JSONArray nodesSortedArray = getProcessesNodesSequence();
 			JSONArray processesSequence = new JSONArray();
 			
@@ -336,13 +344,6 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 						+ URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 				executeWCPS(url, job, wcpsFactory);
 			}
-		} catch (SQLException sqle) {
-			log.error("An error occured while performing an SQL-query: " + sqle.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for( StackTraceElement element: sqle.getStackTrace()) {
-				builder.append(element.toString()+"\n");
-			}
-			log.error(builder.toString());
 		} catch (MalformedURLException e1) {
 			e1.printStackTrace();
 		} catch (UnsupportedEncodingException e1) {
@@ -357,19 +358,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 	//TODO check if this is still needed. Currently this event chain is unused...	
 	}
 	
-	private void executeWCPS(URL url, BatchJobResponse job, WCPSQueryFactory wcpsQuery) {
+	private void executeWCPS(URL url, Job job, WCPSQueryFactory wcpsQuery) {
 					
-		job.setUpdated(new Date());
-		try {
-			jobDao.update(job);
-		} catch (SQLException e) {
-			log.error("An error occured when updating job in database: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for (StackTraceElement element : e.getStackTrace()) {
-				builder.append(element.toString() + "\n");
-			}
-			log.error(builder.toString());
-		}
+		job.setUpdated(OffsetDateTime.now());
+		jobDAO.update(job);
 
 		JSONObject linkProcessGraph = new JSONObject();
 		linkProcessGraph.put("job_id", job.getId());
@@ -408,18 +400,9 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 			log.error(builder.toString());
 		}
 
-		job.setStatus(Status.FINISHED);
-		job.setUpdated(new Date());
-		try {
-			jobDao.update(job);
-		} catch (SQLException e) {
-			log.error("\"An error occured when updating job in database: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for (StackTraceElement element : e.getStackTrace()) {
-				builder.append(element.toString() + "\n");
-			}
-			log.error(builder.toString());
-		}
+		job.setStatus(StatusEnum.FINISHED);
+		job.setUpdated(OffsetDateTime.now());
+		jobDAO.update(job);
 		log.debug("The following job was set to status finished: \n" + job.toString());
 	}
 	
@@ -555,9 +538,9 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 
 	@Override
 	public void udfExecuted(UDFEvent jobEvent) {
-		BatchJobResponse job = null;
+		Job job = null;
 		try {
-			job = jobDao.queryForId(jobEvent.getJobId());
+			job = jobDAO.findOne(jobEvent.getJobId());
 			if(job == null) {
 				log.error("A job with the specified identifier is not available.");
 			}
@@ -569,13 +552,6 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 			URL urlUDF = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages" + "&QUERY="
 					+ URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 			executeWCPS(urlUDF, job, wcpsFactory);
-		}catch (SQLException e) {
-			log.error("An error occured while performing an SQL-query: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for( StackTraceElement element: e.getStackTrace()) {
-				builder.append(element.toString()+"\n");
-			}
-			log.error(builder.toString());
 		} catch (MalformedURLException e) {
 			log.error("An error occured: " + e.getMessage());
 			StringBuilder builder = new StringBuilder();

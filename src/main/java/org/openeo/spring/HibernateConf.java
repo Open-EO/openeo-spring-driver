@@ -20,7 +20,7 @@ public class HibernateConf {
     public LocalSessionFactoryBean sessionFactory() {
         LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
         sessionFactory.setDataSource(dataSource());
-        sessionFactory.setPackagesToScan( "org.openeo.spring.model" );
+        sessionFactory.setPackagesToScan( new String[] {"org.openeo.spring.model" });
         sessionFactory.setHibernateProperties(hibernateProperties());
  
         return sessionFactory;
