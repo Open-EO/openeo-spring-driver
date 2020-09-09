@@ -5,8 +5,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
-import javax.activation.MimetypesFileTypeMap;
-
 import org.springframework.util.MimeTypeUtils;
 
 import org.apache.commons.io.IOUtils;

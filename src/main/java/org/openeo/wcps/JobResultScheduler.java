@@ -33,6 +33,7 @@ public class JobResultScheduler extends GenericServlet {
 	/**
 	 * @see Servlet#service(ServletRequest request, ServletResponse response)
 	 */
+	@Override
 	public void service(ServletRequest request, ServletResponse response) throws ServletException, IOException {
 	}
 

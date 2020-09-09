@@ -18,8 +18,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
-import org.springframework.http.MediaType;
-
 import org.gdal.osr.CoordinateTransformation;
 import org.gdal.osr.SpatialReference;
 import org.jdom2.Document;
@@ -39,7 +37,6 @@ import org.openeo.spring.model.DimensionBands;
 import org.openeo.spring.model.DimensionSpatial;
 import org.openeo.spring.model.DimensionSpatial.AxisEnum;
 import org.openeo.spring.model.DimensionTemporal;
-import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -96,7 +93,7 @@ public class CollectionsApiController implements CollectionsApi {
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
 			SAXBuilder builder = new SAXBuilder();
-			Document capabilititesDoc = (Document) builder.build(conn.getInputStream());
+			Document capabilititesDoc = builder.build(conn.getInputStream());
 			Element rootNodeCollectionsList = capabilititesDoc.getRootElement();
 			Namespace defaultNSCollectionsList = rootNodeCollectionsList.getNamespace();
 //			log.debug("root node info: " + rootNode.getName());
@@ -115,7 +112,7 @@ public class CollectionsApiController implements CollectionsApi {
 				HttpURLConnection connCollections = (HttpURLConnection) urlCollections.openConnection();
 				connCollections.setRequestMethod("GET");
 				SAXBuilder builderInt = new SAXBuilder();
-				Document capabilititesDocCollections = (Document) builderInt.build(connCollections.getInputStream());
+				Document capabilititesDocCollections = builderInt.build(connCollections.getInputStream());
 				List<Namespace> namespacesCollections = capabilititesDocCollections.getNamespacesIntroduced();
 
 				Element rootNode = capabilititesDocCollections.getRootElement();
@@ -455,7 +452,7 @@ public class CollectionsApiController implements CollectionsApi {
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
 			SAXBuilder builder = new SAXBuilder();
-			Document capabilititesDoc = (Document) builder.build(conn.getInputStream());
+			Document capabilititesDoc = builder.build(conn.getInputStream());
 			List<Namespace> namespaces = capabilititesDoc.getNamespacesIntroduced();
 			Element rootNode = capabilititesDoc.getRootElement();
 			Namespace defaultNS = rootNode.getNamespace();

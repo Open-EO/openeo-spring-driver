@@ -48,7 +48,8 @@ public class UdfDocker extends UdfRuntime  {
     this.docker = docker;
   }
 
-  public UdfDocker _default(String _default) {
+  @Override
+public UdfDocker _default(String _default) {
     return this;
   }
 
@@ -56,7 +57,8 @@ public class UdfDocker extends UdfRuntime  {
    * The default tag. MUST be one of the values in the `tags` array.
    * @return _default
   */
-  @ApiModelProperty(required = true, value = "The default tag. MUST be one of the values in the `tags` array.")
+  @Override
+@ApiModelProperty(required = true, value = "The default tag. MUST be one of the values in the `tags` array.")
   @NotNull
 
 
@@ -64,7 +66,8 @@ public class UdfDocker extends UdfRuntime  {
     return _default;
   }
 
-  public void setDefault(String _default) {
+  @Override
+public void setDefault(String _default) {
     this._default = _default;
   }
 

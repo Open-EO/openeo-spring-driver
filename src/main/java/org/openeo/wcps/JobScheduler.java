@@ -27,17 +27,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.j256.ormlite.dao.Dao;
-//import com.j256.ormlite.dao.DaoManager;
-//import com.j256.ormlite.jdbc.JdbcConnectionSource;
-//import com.j256.ormlite.support.ConnectionSource;
-
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
 import org.openeo.wcps.events.UDFEvent;
 import org.openeo.wcps.events.UDFEventListener;
-import org.openeo.model.BatchJobResponse;
-import org.openeo.model.Status;
 
 public class JobScheduler implements JobEventListener, UDFEventListener{
 	
