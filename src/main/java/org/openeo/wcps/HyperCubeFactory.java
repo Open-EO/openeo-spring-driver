@@ -40,7 +40,7 @@ public class HyperCubeFactory {
 		JSONObject resultJSON = new JSONObject();
 		SAXBuilder saxBuilder = new SAXBuilder();
 		try {
-			Document capabilititesDoc = (Document) saxBuilder.build(inputStream);
+			Document capabilititesDoc = saxBuilder.build(inputStream);
 			inputStream.close();
 			List<Namespace> namespaces = capabilititesDoc.getNamespacesIntroduced();
 			Element rootNode = capabilititesDoc.getRootElement();

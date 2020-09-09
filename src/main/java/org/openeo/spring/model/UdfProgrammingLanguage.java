@@ -23,7 +23,8 @@ public class UdfProgrammingLanguage extends UdfRuntime  {
   @Valid
   private Map<String, ProgrammingLanguageVersion> versions = new HashMap<>();
 
-  public UdfProgrammingLanguage _default(String _default) {
+  @Override
+public UdfProgrammingLanguage _default(String _default) {
     return this;
   }
 
@@ -31,7 +32,8 @@ public class UdfProgrammingLanguage extends UdfRuntime  {
    * The default version. MUST be one of the keys in the `versions` object.
    * @return _default
   */
-  @ApiModelProperty(required = true, value = "The default version. MUST be one of the keys in the `versions` object.")
+  @Override
+@ApiModelProperty(required = true, value = "The default version. MUST be one of the keys in the `versions` object.")
   @NotNull
 
 
@@ -39,7 +41,8 @@ public class UdfProgrammingLanguage extends UdfRuntime  {
     return _default;
   }
 
-  public void setDefault(String _default) {
+  @Override
+public void setDefault(String _default) {
     this._default = _default;
   }
 

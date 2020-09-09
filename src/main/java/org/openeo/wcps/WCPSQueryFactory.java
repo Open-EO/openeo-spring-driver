@@ -4266,8 +4266,8 @@ public class WCPSQueryFactory {
 		double res = Double.parseDouble(resSource)/Double.parseDouble(resTarget);
 		log.debug(xLow + " " + xHigh);
 		log.debug(yLow + " " + yHigh);
-		double xScale = (double)((Double.parseDouble(xHigh)-Double.parseDouble(xLow))*res)+Double.parseDouble(xLow);
-		double yScale = (double)((Double.parseDouble(yHigh)-Double.parseDouble(yLow))*res)+Double.parseDouble(yLow);
+		double xScale = (Double.parseDouble(xHigh)-Double.parseDouble(xLow))*res+Double.parseDouble(xLow);
+		double yScale = (Double.parseDouble(yHigh)-Double.parseDouble(yLow))*res+Double.parseDouble(yLow);
 		
 		String xLow1 = null;
 		String xHigh1 = null;
@@ -4384,10 +4384,10 @@ public class WCPSQueryFactory {
 
 		for (String outputMinMax : scaleArgumets.keySet()) {
 			if (outputMinMax.contentEquals("min")) {
-				min = (double) processGraph.getJSONObject(linearScaleNodeKey).getJSONObject("arguments").getDouble("min");		       
+				min = processGraph.getJSONObject(linearScaleNodeKey).getJSONObject("arguments").getDouble("min");		       
 			}
 			else if (outputMinMax.contentEquals("max")) {
-				max = (double) processGraph.getJSONObject(linearScaleNodeKey).getJSONObject("arguments").getDouble("max");
+				max = processGraph.getJSONObject(linearScaleNodeKey).getJSONObject("arguments").getDouble("max");
 			}
 		}
 
@@ -4632,7 +4632,7 @@ public class WCPSQueryFactory {
 			for (Object argsKey : argsObject.keySet()) {
 				String argsKeyStr = (String) argsKey;
 				if (argsKeyStr.equals("coordinates")) {
-					JSONArray polygonArray = (JSONArray) argsObject.getJSONArray(argsKeyStr).getJSONArray(0);
+					JSONArray polygonArray = argsObject.getJSONArray(argsKeyStr).getJSONArray(0);
 					for (int a = 0; a < polygonArray.length(); a++) {
 						polygonArrayLong = polygonArray.getJSONArray(a).getDouble(0);
 						polygonArrayLat = polygonArray.getJSONArray(a).getDouble(0);
@@ -5747,7 +5747,7 @@ public class WCPSQueryFactory {
 					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 					conn.setRequestMethod("GET");
 					SAXBuilder builder = new SAXBuilder();
-					Document capabilititesDoc = (Document) builder.build(conn.getInputStream());
+					Document capabilititesDoc = builder.build(conn.getInputStream());
 					List<Namespace> namespaces = capabilititesDoc.getNamespacesIntroduced();
 					Element rootNode = capabilititesDoc.getRootElement();
 					Namespace defaultNS = rootNode.getNamespace();
