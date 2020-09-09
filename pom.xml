@@ -9,7 +9,8 @@
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <springfox-version>2.10.5</springfox-version>
+        <springfox-version>3.0.0</springfox-version>
+        <springdoc-version>1.4.6</springdoc-version>
         <gdal.path>/usr/share/java/gdal.jar</gdal.path>
         <gdal.version>3.0.4</gdal.version>
         <netcdfJavaVersion>5.2.0</netcdfJavaVersion>
@@ -18,11 +19,17 @@
         <json.version>20200518</json.version>
         <!-- Keycloak -->
         <keycloak.version>10.0.2</keycloak.version>
+        <hibernate.version>5.4.21</hibernate.version>
+        <spring.orm.version>5.2.8.RELEASE</spring.orm.version>
+        <h2.version>1.4.200</h2.version>
+        <tomcat.dbcp.version>9.0.37</tomcat.dbcp.version>
+        <jaxb.api.version>2.3.1</jaxb.api.version>
+        <jackson.nullable.version>0.2.1</jackson.nullable.version>
     </properties>
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.0.1.RELEASE</version>
+        <version>2.3.3.RELEASE</version>
     </parent>
     <build>
         <sourceDirectory>src/main/java</sourceDirectory>
@@ -84,7 +91,7 @@
         <dependency>
     		<groupId>org.springdoc</groupId>
     		<artifactId>springdoc-openapi-ui</artifactId>
-    		<version>1.2.32</version>
+    		<version>${springdoc-version}</version>
 		</dependency>
         <dependency>
             <groupId>io.springfox</groupId>
@@ -94,7 +101,7 @@
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
-            <version>2.2.11</version>
+            <version>${jaxb.api.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -103,7 +110,7 @@
         <dependency>
             <groupId>org.openapitools</groupId>
             <artifactId>jackson-databind-nullable</artifactId>
-            <version>0.1.0</version>
+            <version>${jackson.nullable.version}</version>
         </dependency>
     <!-- Bean Validation API support -->
         <dependency>
@@ -166,6 +173,26 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+        <dependency>
+		    <groupId>org.hibernate</groupId>
+		    <artifactId>hibernate-core</artifactId>
+		    <version>${hibernate.version>}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-orm</artifactId>
+		    <version>${spring.orm.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.h2database</groupId> 
+		    <artifactId>h2</artifactId>
+		    <version>${h2.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.tomcat</groupId>
+		    <artifactId>tomcat-dbcp</artifactId>
+		    <version>${tomcat.dbcp.version}</version>
+		</dependency>
         <!--  
         <dependency>
         <groupId>org.springframework.boot</groupId>
