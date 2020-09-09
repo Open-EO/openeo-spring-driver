@@ -32,12 +32,12 @@ import com.j256.ormlite.dao.Dao;
 //import com.j256.ormlite.jdbc.JdbcConnectionSource;
 //import com.j256.ormlite.support.ConnectionSource;
 
-import eu.openeo.backend.wcps.events.JobEvent;
-import eu.openeo.backend.wcps.events.JobEventListener;
-import eu.openeo.backend.wcps.events.UDFEvent;
-import eu.openeo.backend.wcps.events.UDFEventListener;
-import eu.openeo.model.BatchJobResponse;
-import eu.openeo.model.Status;
+import org.openeo.wcps.events.JobEvent;
+import org.openeo.wcps.events.JobEventListener;
+import org.openeo.wcps.events.UDFEvent;
+import org.openeo.wcps.events.UDFEventListener;
+import org.openeo.model.BatchJobResponse;
+import org.openeo.model.Status;
 
 public class JobScheduler implements JobEventListener, UDFEventListener{
 	
