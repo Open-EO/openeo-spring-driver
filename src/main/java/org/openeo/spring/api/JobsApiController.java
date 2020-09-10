@@ -1,7 +1,6 @@
 package org.openeo.spring.api;
 
 import java.time.OffsetDateTime;
-import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,7 +15,6 @@ import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.BatchJobEstimate;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobs;
-import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.Job.JobStates;
 import org.openeo.spring.model.LogEntries;
@@ -24,12 +22,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
 
 import org.openeo.wcps.WCPSQueryFactory;
@@ -38,8 +36,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-@Controller
-@RequestMapping("${openapi.openEO.base-path:/api/v1.0}")
+@RestController
+@RequestMapping("${openapi.openEO.base-path:}")
 public class JobsApiController implements JobsApi {
 
     private final NativeWebRequest request;
@@ -86,7 +84,7 @@ public class JobsApiController implements JobsApi {
 		storeBatchJobRequest.setId(jobID.toString());
 		storeBatchJobRequest.setStatus(JobStates.CREATED);
 		storeBatchJobRequest.setCreated(OffsetDateTime.now());
-		JSONObject processGraph = (JSONObject)storeBatchJobRequest.getProcess().getProcessGraph();
+		JSONObject processGraph = new JSONObject(storeBatchJobRequest.getProcess().getProcessGraph());
 		WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 		log.info("Graph of job successfully parsed and job created with ID: " + jobID);
 		jobDAO.save(storeBatchJobRequest);
