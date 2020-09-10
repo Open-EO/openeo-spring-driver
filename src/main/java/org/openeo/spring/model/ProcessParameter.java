@@ -2,6 +2,9 @@ package org.openeo.spring.model;
 
 import java.util.Objects;
 
+import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -12,6 +15,7 @@ import io.swagger.annotations.ApiModelProperty;
 /**
  * ProcessParameter
  */
+@Embeddable
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class ProcessParameter extends BaseParameter  {
   @JsonProperty("schema")
@@ -21,7 +25,7 @@ public class ProcessParameter extends BaseParameter  {
     this.schema = schema;
     return this;
   }
-
+ 
   /**
    * Get schema
    * @return schema

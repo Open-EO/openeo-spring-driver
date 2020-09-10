@@ -18,7 +18,7 @@ import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobs;
 import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.Job;
-import org.openeo.spring.model.Job.StatusEnum;
+import org.openeo.spring.model.Job.JobStates;
 import org.openeo.spring.model.LogEntries;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -84,7 +84,7 @@ public class JobsApiController implements JobsApi {
     public ResponseEntity<Job> createJob(@Parameter(description = "" ,required=true )  @Valid @RequestBody Job storeBatchJobRequest) {
     	UUID jobID = UUID.randomUUID();
 		storeBatchJobRequest.setId(jobID.toString());
-		storeBatchJobRequest.setStatus(StatusEnum.CREATED);
+		storeBatchJobRequest.setStatus(JobStates.CREATED);
 		storeBatchJobRequest.setCreated(OffsetDateTime.now());
 		JSONObject processGraph = (JSONObject)storeBatchJobRequest.getProcess().getProcessGraph();
 		WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);

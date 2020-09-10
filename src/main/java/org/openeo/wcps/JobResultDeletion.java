@@ -11,7 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.Job;
-import org.openeo.spring.model.Job.StatusEnum;
+import org.openeo.spring.model.Job.JobStates;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class JobResultDeletion implements Runnable {
@@ -57,7 +57,7 @@ public class JobResultDeletion implements Runnable {
 						if (job == null) {
 							log.debug("A job with the specified identifier is not available.");
 						} else {
-							job.setStatus(StatusEnum.CANCELED);
+							job.setStatus(JobStates.CANCELED);
 							job.setUpdated(OffsetDateTime.now());
 							jobDAO.update(job);
 						}

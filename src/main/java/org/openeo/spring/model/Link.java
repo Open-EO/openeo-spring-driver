@@ -3,6 +3,7 @@ package org.openeo.spring.model;
 import java.net.URI;
 import java.util.Objects;
 
+import javax.persistence.Embeddable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -14,6 +15,7 @@ import io.swagger.annotations.ApiModelProperty;
 /**
  * A link to another resource on the web. Bases on [RFC 5899](https://tools.ietf.org/html/rfc5988).
  */
+@Embeddable
 @ApiModel(description = "A link to another resource on the web. Bases on [RFC 5899](https://tools.ietf.org/html/rfc5988).")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class Link   {

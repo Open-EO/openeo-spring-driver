@@ -5,8 +5,11 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.Valid;
 import javax.validation.constraints.DecimalMax;
@@ -46,8 +49,10 @@ public class Job implements Serializable {
 	private JsonNullable<String> title = JsonNullable.undefined();
 
 	@JsonProperty("description")
+	@Column(name = "job_description")
 	private JsonNullable<String> description = JsonNullable.undefined();
-
+	
+	@OneToOne(targetEntity = Process.class)
 	@JsonProperty("process")
 	private Process process;
 
@@ -62,7 +67,7 @@ public class Job implements Serializable {
 	 * if the status was `running` beforehand and partial or preliminary results are
 	 * available to be downloaded. Otherwise the status is set to `created`.
 	 */
-	public enum StatusEnum {
+	public enum JobStates {
 		CREATED("created"),
 
 		QUEUED("queued"),
@@ -77,7 +82,7 @@ public class Job implements Serializable {
 
 		private String value;
 
-		StatusEnum(String value) {
+		JobStates(String value) {
 			this.value = value;
 		}
 
@@ -92,8 +97,8 @@ public class Job implements Serializable {
 		}
 
 		@JsonCreator
-		public static StatusEnum fromValue(String value) {
-			for (StatusEnum b : StatusEnum.values()) {
+		public static JobStates fromValue(String value) {
+			for (JobStates b : JobStates.values()) {
 				if (b.value.equals(value)) {
 					return b;
 				}
@@ -103,7 +108,8 @@ public class Job implements Serializable {
 	}
 
 	@JsonProperty("status")
-	private StatusEnum status = StatusEnum.CREATED;
+	@Enumerated
+	private JobStates status = JobStates.CREATED;
 
 	@JsonProperty("progress")
 	private BigDecimal progress;
@@ -212,7 +218,7 @@ public class Job implements Serializable {
 		this.process = process;
 	}
 
-	public Job status(StatusEnum status) {
+	public Job status(JobStates status) {
 		this.status = status;
 		return this;
 	}
@@ -233,11 +239,11 @@ public class Job implements Serializable {
 	@ApiModelProperty(example = "running", required = true, value = "The current status of a batch job.  The following status changes can occur: * `POST /jobs`: The status is initialized as `created`. * `POST /jobs/{job_id}/results`: The status is set to `queued`, if processing doesn't start instantly.     * Once the processing starts the status is set to `running`.     * Once the data is available to download the status is set to `finished`.     * Whenever an error occurs during processing, the status must be set to `error`. * `DELETE /jobs/{job_id}/results`: The status is set to `canceled` if the status was `running` beforehand and partial or preliminary results are available to be downloaded. Otherwise the status is set to `created`. ")
 	@NotNull
 
-	public StatusEnum getStatus() {
+	public JobStates getStatus() {
 		return status;
 	}
 
-	public void setStatus(StatusEnum status) {
+	public void setStatus(JobStates status) {
 		this.status = status;
 	}
 

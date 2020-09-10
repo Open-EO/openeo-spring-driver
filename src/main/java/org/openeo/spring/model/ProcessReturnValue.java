@@ -2,6 +2,8 @@ package org.openeo.spring.model;
 
 import java.util.Objects;
 
+import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -20,6 +22,7 @@ public class ProcessReturnValue   {
   private String description;
 
   @JsonProperty("schema")
+  @Embedded
   private DataTypeSchema schema = null;
 
   public ProcessReturnValue description(String description) {
@@ -33,7 +36,7 @@ public class ProcessReturnValue   {
   */
   @ApiModelProperty(value = "Detailed description to explain the entity.  [CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation. In addition to the CommonMark syntax, clients can convert process IDs that are formatted as in the following example into links instead of code blocks: ``` ``process_id()`` ```")
 
-
+  @Column(name = "process_return_value_description")
   public String getDescription() {
     return description;
   }

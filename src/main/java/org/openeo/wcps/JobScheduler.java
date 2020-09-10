@@ -29,7 +29,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.Job;
-import org.openeo.spring.model.Job.StatusEnum;
+import org.openeo.spring.model.Job.JobStates;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
 import org.openeo.wcps.events.UDFEvent;
@@ -400,7 +400,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 			log.error(builder.toString());
 		}
 
-		job.setStatus(StatusEnum.FINISHED);
+		job.setStatus(JobStates.FINISHED);
 		job.setUpdated(OffsetDateTime.now());
 		jobDAO.update(job);
 		log.debug("The following job was set to status finished: \n" + job.toString());
