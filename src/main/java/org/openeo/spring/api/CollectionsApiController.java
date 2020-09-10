@@ -155,6 +155,7 @@ public class CollectionsApiController implements CollectionsApi {
 //				JSONArray slices = metadataObj.getJSONArray("slices");
 
 				String srsDescription = boundingBoxElement.getAttributeValue("srsName");
+				if (srsDescription.contains("EPSG")) {
 				try {
 					srsDescription = srsDescription.substring(srsDescription.indexOf("EPSG"), srsDescription.indexOf("&")).replace("/0/", ":");
 					srsDescription = srsDescription.replaceAll("EPSG:","");
@@ -331,6 +332,164 @@ public class CollectionsApiController implements CollectionsApi {
 				}catch(Exception e) {
 				}
 				currentCollection.setExtent(extent);
+				}
+				
+				else {
+					srsDescription = "0";
+
+					String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
+					String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");
+					String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
+					int xIndex = 0;
+					int yIndex = 0;
+
+					Map<String, Dimension> cubeColonDimensions = new HashMap<String, Dimension>();
+					DimensionBands dimensionbands = new DimensionBands();
+					dimensionbands.setType(TypeEnum.BANDS);
+//					log.debug("number of bands found: " + bandsListSwe.size());			
+					DimensionSpatial dimensionXspatial = new DimensionSpatial();
+					dimensionXspatial.setType(TypeEnum.SPATIAL);
+					DimensionSpatial dimensionYspatial = new DimensionSpatial();
+					dimensionYspatial.setType(TypeEnum.SPATIAL);
+					DimensionTemporal dimensionTemporal = new DimensionTemporal();
+					dimensionTemporal.setType(TypeEnum.TEMPORAL);
+					
+					List<Element> bandsList = null;
+					List<Element> bandsListSwe = null;
+					Boolean bandsMeta = false;
+					try {
+						bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
+						bandsMeta = true;
+					}catch(Exception e) {
+//				        log.warn("Error in parsing bands :" + e.getMessage());
+					}
+					try {
+						bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
+					}catch(Exception e) {
+//						log.warn("Error in parsing bands List :" + e.getMessage());
+					}
+					if (bandsMeta) {
+						try {
+							for(int c = 0; c < bandsList.size(); c++) {
+								String bandWave = null;
+								String bandCommonName = null;
+								String bandGSD = null;
+								Element band = bandsList.get(c);
+								String bandId = band.getName();
+								dimensionbands.addValuesItem(bandId);
+								try {
+									bandWave = band.getChildText("WAVELENGTH");
+								}catch(Exception e) {
+//									log.warn("Error in parsing band wave-lenght:" + e.getMessage());
+								}
+								try {
+									bandCommonName = band.getChildText("common_name");
+								}catch(Exception e) {
+//									log.warn("Error in parsing band common name:" + e.getMessage());
+								}
+								try {
+									bandGSD = band.getChildText("gsd");
+								}catch(Exception e) {
+//									log.warn("Error in parsing band gsd:" + e.getMessage());
+								}
+							}
+						}catch(Exception e) {
+//							log.warn("Error in parsing bands :" + e.getMessage());
+						}
+					}
+					else {
+						for(int c = 0; c < bandsListSwe.size(); c++) {
+							String bandId = bandsListSwe.get(c).getAttributeValue("name");
+							dimensionbands.addValuesItem(bandId);
+						}
+					}
+					cubeColonDimensions.put("bands", dimensionbands);
+					currentCollection.setCubeColonDimensions(cubeColonDimensions);
+
+					int j = 0;
+
+					for(int a = 0; a < axis.length; a++) {
+//					    log.debug(axis[a]);
+						if(axis[a].equals("i") || axis[a].equals("j")){
+							j = a;
+							break;
+						}
+					}
+//					log.debug(j);
+					
+					String startTime = null;
+					String endTime = null;
+					for(int a = 0; a < axis.length; a++) {
+//					    log.debug(axis[a]);
+						if(axis[a].equals("i")){
+							xIndex=a;
+							dimensionXspatial.setReferenceSystem(srsDescription);
+							dimensionXspatial.setAxis(AxisEnum.X);
+							List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
+							xExtent.add(0, new BigDecimal(minValues[j]));
+							xExtent.add(1, new BigDecimal(maxValues[j]));
+							dimensionXspatial.setExtent(xExtent);
+							cubeColonDimensions.put(axis[a], dimensionXspatial);
+						}
+						if(axis[a].equals("j")){
+							yIndex=a;
+							dimensionYspatial.setReferenceSystem(srsDescription);
+							dimensionYspatial.setAxis(AxisEnum.Y);
+							List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
+							yExtent.add(0, new BigDecimal(minValues[j+1]));
+							yExtent.add(1, new BigDecimal(minValues[j+1]));
+							dimensionYspatial.setExtent(yExtent);
+							cubeColonDimensions.put(axis[a], dimensionYspatial);
+						}
+						if(axis[a].equals("DATE")  || axis[a].equals("TIME") || axis[a].equals("ANSI") || axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time") || axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")){
+							List<String> temporalExtent = new ArrayList<String>();
+							temporalExtent.add(0, minValues[a].replaceAll("\"", ""));
+							temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
+							startTime = minValues[a].replaceAll("\"", "");
+							endTime = maxValues[a].replaceAll("\"", "");
+							dimensionTemporal.setExtent(temporalExtent);
+							dimensionTemporal.setStep(null);
+							cubeColonDimensions.put(axis[a], dimensionTemporal);
+						}
+					}
+
+					CollectionExtent extent = new CollectionExtent();
+					CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
+					List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
+					List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
+					CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
+					List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
+					List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
+
+					bbox1.add(new BigDecimal(minValues[j]));
+					bbox1.add(new BigDecimal(minValues[j+1]));
+					bbox1.add(new BigDecimal(maxValues[j]));
+					bbox1.add(new BigDecimal(maxValues[j+1]));
+					bbox.add(bbox1);
+					spatialExtent.setBbox(bbox);
+					extent.setSpatial(spatialExtent);
+
+//					int k = 0;
+//					for(int a = 0; a < axis.length; a++) {
+//						//				    	log.debug(axis[a]);
+//						String timeAxis = axis[a].toUpperCase();
+//						if(timeAxis.equals("DATE") || timeAxis.equals("TIME") || timeAxis.equals("ANSI") || timeAxis.equals("UNIX"))
+//						{
+//							k = a;
+//							break;
+//						}
+//					}							
+
+					try {
+						interval1.add(OffsetDateTime.parse(startTime));
+						interval1.add(OffsetDateTime.parse(endTime));
+						interval.add(interval1);
+						temporalExtent.setInterval(interval);
+						extent.setTemporal(temporalExtent);
+					}catch(Exception e) {
+					}
+					currentCollection.setExtent(extent);
+					}
 
 				Link link1 = new Link();
 				List<Link> links = new ArrayList<Link>();
@@ -494,6 +653,7 @@ public class CollectionsApiController implements CollectionsApi {
 //			JSONArray slices = metadataObj.getJSONArray("slices");
 			
 			String srsDescription = boundingBoxElement.getAttributeValue("srsName");
+			if (srsDescription.contains("EPSG")) {
 			try {
 				srsDescription = srsDescription.substring(srsDescription.indexOf("EPSG"), srsDescription.indexOf("&")).replace("/0/", ":");
 				srsDescription = srsDescription.replaceAll("EPSG:","");
@@ -670,6 +830,163 @@ public class CollectionsApiController implements CollectionsApi {
 			}catch(Exception e) {
 			}
 			currentCollection.setExtent(extent);
+			}
+			
+			else {
+				srsDescription = "0";				
+				
+				String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
+				String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");							    
+			    String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
+			    int xIndex = 0;
+			    int yIndex = 0;
+				
+			    Map<String, Dimension> cubeColonDimensions = new HashMap<String, Dimension>();
+				DimensionBands dimensionbands = new DimensionBands();
+				dimensionbands.setType(TypeEnum.BANDS);
+//				log.debug("number of bands found: " + bandsListSwe.size());			
+				DimensionSpatial dimensionXspatial = new DimensionSpatial();
+				dimensionXspatial.setType(TypeEnum.SPATIAL);
+				DimensionSpatial dimensionYspatial = new DimensionSpatial();
+				dimensionYspatial.setType(TypeEnum.SPATIAL);
+				DimensionTemporal dimensionTemporal = new DimensionTemporal();
+				dimensionTemporal.setType(TypeEnum.TEMPORAL);
+				
+				List<Element> bandsList = null;
+				List<Element> bandsListSwe = null;
+				Boolean bandsMeta = false;
+				try {
+					bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
+					bandsMeta = true;
+				}catch(Exception e) {
+					//			log.warn("Error in parsing bands :" + e.getMessage());
+				}
+				try {
+					bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
+				}catch(Exception e) {
+					//					log.warn("Error in parsing bands List :" + e.getMessage());
+				}
+				if (bandsMeta) {
+					try {
+						for(int c = 0; c < bandsList.size(); c++) {
+							String bandWave = null;
+							String bandCommonName = null;
+							String bandGSD = null;
+							Element band = bandsList.get(c);
+							String bandId = band.getName();
+							dimensionbands.addValuesItem(bandId);
+							try {
+								bandWave = band.getChildText("WAVELENGTH");
+							}catch(Exception e) {
+//								log.warn("Error in parsing band wave-lenght:" + e.getMessage());
+							}
+							try {
+								bandCommonName = band.getChildText("common_name");
+							}catch(Exception e) {
+//								log.warn("Error in parsing band common name:" + e.getMessage());
+							}
+							try {
+								bandGSD = band.getChildText("gsd");
+							}catch(Exception e) {
+//								log.warn("Error in parsing band gsd:" + e.getMessage());
+							}
+						}
+					}catch(Exception e) {
+//						log.warn("Error in parsing bands :" + e.getMessage());
+					}
+				}
+				else {
+					for(int c = 0; c < bandsListSwe.size(); c++) {
+						String bandId = bandsListSwe.get(c).getAttributeValue("name");
+						dimensionbands.addValuesItem(bandId);
+					}
+				}
+				cubeColonDimensions.put("bands", dimensionbands);
+				currentCollection.setCubeColonDimensions(cubeColonDimensions);
+				int j = 0;
+				
+				for(int a = 0; a < axis.length; a++) {
+//			    	log.debug(axis[a]);
+					if(axis[a].equals("i") || axis[a].equals("j")){
+						j = a;
+						break;
+					}
+				}
+//				log.debug(j);
+				String startTime = null;
+				String endTime = null;
+				
+				for(int a = 0; a < axis.length; a++) {
+//			    	log.debug(axis[a]);
+					if(axis[a].equals("i")){
+						xIndex=a;
+						dimensionXspatial.setReferenceSystem(srsDescription);
+						dimensionXspatial.setAxis(AxisEnum.X);
+						List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
+						xExtent.add(0, new BigDecimal(minValues[j]));
+						xExtent.add(1, new BigDecimal(maxValues[j]));
+						dimensionXspatial.setExtent(xExtent);
+						cubeColonDimensions.put(axis[a], dimensionXspatial);
+					}
+					if(axis[a].equals("j")){
+						yIndex=a;
+						dimensionYspatial.setReferenceSystem(srsDescription);
+						dimensionYspatial.setAxis(AxisEnum.Y);
+						List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
+						yExtent.add(0, new BigDecimal(minValues[j+1]));
+						yExtent.add(1, new BigDecimal(maxValues[j+1]));
+						dimensionYspatial.setExtent(yExtent);
+						cubeColonDimensions.put(axis[a], dimensionYspatial);
+					}
+					if(axis[a].equals("DATE")  || axis[a].equals("TIME") || axis[a].equals("ANSI") || axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time") || axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")){
+						List<String> temporalExtent = new ArrayList<String>();
+						temporalExtent.add(0, minValues[a].replaceAll("\"", ""));
+						temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
+						startTime = minValues[a].replaceAll("\"", "");
+						endTime = maxValues[a].replaceAll("\"", "");
+						dimensionTemporal.setExtent(temporalExtent);
+						dimensionTemporal.setStep(null);
+						cubeColonDimensions.put(axis[a], dimensionTemporal);
+					}
+			    }
+//				log.debug(srsDescription);
+				
+				CollectionExtent extent = new CollectionExtent();
+				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
+				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
+				List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
+				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
+				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
+				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
+				bbox1.add(new BigDecimal(minValues[j]));
+				bbox1.add(new BigDecimal(minValues[j+1]));
+				bbox1.add(new BigDecimal(maxValues[j]));
+				bbox1.add(new BigDecimal(maxValues[j+1]));
+				bbox.add(bbox1);
+				spatialExtent.setBbox(bbox);
+				extent.setSpatial(spatialExtent);
+				
+//				int k = 0;
+//				for(int a = 0; a < axis.length; a++) {
+//			    	log.debug(axis[a]);
+//					String timeAxis = axis[a].toUpperCase();
+//					if(timeAxis.equals("DATE") || timeAxis.equals("TIME") || timeAxis.equals("ANSI") || timeAxis.equals("UNIX"))
+//					{
+//						k = a;
+//						break;
+//					}
+//				}
+				
+				try {							
+					interval1.add(OffsetDateTime.parse(startTime));
+					interval1.add(OffsetDateTime.parse(endTime));
+					interval.add(interval1);
+					temporalExtent.setInterval(interval);
+					extent.setTemporal(temporalExtent);
+				}catch(Exception e) {
+				}
+				currentCollection.setExtent(extent);
+			}			
 			
 			Link link1 = new Link();
 			List<Link> links = new ArrayList<Link>();
@@ -682,7 +999,7 @@ public class CollectionsApiController implements CollectionsApi {
 				e1.printStackTrace();
 			}
 			links.add(0, link1);
-			currentCollection.setLinks(links);				
+			currentCollection.setLinks(links);
 			
 			String title = null;
 			String description = null;
