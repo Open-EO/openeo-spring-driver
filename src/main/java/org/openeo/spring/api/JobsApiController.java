@@ -42,7 +42,7 @@ public class JobsApiController implements JobsApi {
 
     private final NativeWebRequest request;
     
-    Logger log = LogManager.getLogger();
+    private final Logger log = LogManager.getLogger(JobsApiController.class);
     
     JobDAO jobDAO;
 	
@@ -84,7 +84,9 @@ public class JobsApiController implements JobsApi {
 		storeBatchJobRequest.setId(jobID.toString());
 		storeBatchJobRequest.setStatus(JobStates.CREATED);
 		storeBatchJobRequest.setCreated(OffsetDateTime.now());
+		log.debug("received jobs POST request for new job with ID + " + jobID);
 		JSONObject processGraph = new JSONObject(storeBatchJobRequest.getProcess().getProcessGraph());
+		log.debug("Process Graph attached: " + processGraph.toString(4));
 		WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 		log.info("Graph of job successfully parsed and job created with ID: " + jobID);
 		jobDAO.save(storeBatchJobRequest);

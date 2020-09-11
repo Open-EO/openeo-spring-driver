@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
   <Appenders>
-  	<File name="FILE" fileName="logs/openeo_0.4.2.log" append="true">
+  	<File name="FILE" fileName="logs/openeo_1.0.0.log" append="true">
       <PatternLayout pattern="%p %d{ISO8601} [%t] %r %c %m%n"/>
     </File>
     <Console name="STDOUT" target="SYSTEM_OUT">
@@ -25,7 +25,7 @@
     	<AppenderRef ref="STDOUT"/>
 		<AppenderRef ref="FILE"/>
     </Logger>
-    <Root level="warn">
+    <Root level="info">
       <AppenderRef ref="STDOUT"/>
       <AppenderRef ref="FILE"/>
     </Root>  
