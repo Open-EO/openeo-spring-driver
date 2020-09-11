@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,6 +43,9 @@ import org.openeo.spring.model.DimensionTemporal;
 import org.openeo.spring.model.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -603,7 +607,17 @@ public class CollectionsApiController implements CollectionsApi {
         @ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
     @GetMapping(value = "/collections/{collection_id}", produces = { "application/json" })
     @Override
-    public ResponseEntity<Collection> describeCollection(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId) {
+    public ResponseEntity<Collection> describeCollection(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId, Principal principal) {
+    	
+    	
+    	log.debug("The following user is authenticated: " + principal.getName());
+//    	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//    	if (!(authentication instanceof AnonymousAuthenticationToken)) {
+//    	    String currentUserName = authentication.getName();
+//    	    log.debug("The following user is authenticated: " + currentUserName);
+//    	}else {
+//    		log.warn("The current user is not authenticated!");
+//    	}
     	
     	URL url;
     	Collection currentCollection = new Collection();
