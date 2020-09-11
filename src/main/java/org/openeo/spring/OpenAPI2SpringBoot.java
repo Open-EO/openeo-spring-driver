@@ -7,6 +7,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.fasterxml.jackson.databind.Module;
@@ -39,13 +40,15 @@ public class OpenAPI2SpringBoot implements CommandLineRunner {
     @Bean
     public WebMvcConfigurer webConfigurer() {
         return new WebMvcConfigurer() {
-            /*@Override
+            @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedOrigins("*")
-                        .allowedMethods("*")
-                        .allowedHeaders("Content-Type");
-            }*/
+                        .allowedMethods("OPTIONS", "GET", "POST", "DELETE", "PUT", "PATCH")
+                        .allowedHeaders("Origin", "Content-Type", "Accept", "Authorization")
+                        .allowCredentials(true)
+                        .exposedHeaders("Location", "OpenEO-Identifier", "OpenEO-Costs");
+            }
         };
     }
 
