@@ -18,6 +18,8 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gdal.osr.CoordinateTransformation;
 import org.gdal.osr.SpatialReference;
 import org.jdom2.Document;
@@ -56,6 +58,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 @RequestMapping("${openapi.openEO.base-path:}")
 public class CollectionsApiController implements CollectionsApi {
     private final NativeWebRequest request;
+    
+    private final Logger log = LogManager.getLogger(CollectionsApiController.class);
 
     @org.springframework.beans.factory.annotation.Autowired
     public CollectionsApiController(NativeWebRequest request) {
@@ -103,7 +107,6 @@ public class CollectionsApiController implements CollectionsApi {
 				Collection currentCollection = new Collection();
 				Element coverage = coverageList.get(collection);
 //				log.debug("root node info: " + coverage.getName() + ":" + coverage.getChildText("CoverageId", defaultNS));		
-
 				String coverageID = coverage.getChildText("CoverageId", defaultNSCollectionsList);
 				currentCollection.setId(coverageID);				
 				currentCollection.setStacVersion("0.9.0");
