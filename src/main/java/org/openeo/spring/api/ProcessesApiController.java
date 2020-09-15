@@ -2,14 +2,21 @@ package org.openeo.spring.api;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import org.openeo.spring.model.Processes;
 import org.openeo.spring.model.Process;
+import org.openeo.spring.model.ProcessParameter;
+import org.openeo.spring.model.ProcessReturnValue;
+import org.openeo.spring.model.DataTypeSchema;
 import org.openeo.spring.model.Link;
+import org.openeo.spring.model.ParameterSchema;
+
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -96,49 +103,110 @@ public class ProcessesApiController implements ProcessesApi {
     	
     	Processes processesList = new Processes();
     	
-    	for(String key : this.processes.keySet()){
-			Process process = this.processes.get(key);
-			Process processDef = new Process();	    	
-	    	processDef.setId(process.getId());
-			processDef.setSummary(process.getSummary());
-			processDef.setDescription(process.getDescription());
-			processDef.setParameters(process.getParameters());
-			processDef.setCategories(process.getCategories());
-			processDef.setReturns(process.getReturns());
-			processesList.addProcessesItem(processDef);
-		}
+//    	for(String key : this.processes.keySet()){
+//			Process process = this.processes.get(key);
+//			Process processDef = new Process();	    	
+//	    	processDef.setId(process.getId());
+//			processDef.setSummary(process.getSummary());
+//			processDef.setDescription(process.getDescription());
+//			processDef.setParameters(process.getParameters());
+//			processDef.setCategories(process.getCategories());
+//			processDef.setReturns(process.getReturns());
+//			processesList.addProcessesItem(processDef);
+//		}
     	
-//    	Processes processesList = new Processes();
-//    	Process processCount = new Process ();
-//    	processCount.setId("count");
-//    	processCount.setSummary("Count the number of elements");
-//    	processCount.setDescription("Gives the number of elements in an array that matches the specified condition.\\n\\n**Remarks:**\\n\\n* Counts the number of valid elements by default (`condition` is set to `null`). A valid element is every element for which ``is_valid()`` returns `true`.\\n* To count all elements in a list set the `condition` parameter to boolean `true`.");
-//    	List<String> categoriesCount = new ArrayList<String>();
-//    	categoriesCount.add("arrays");
-//    	categoriesCount.add("reducer");
-//    	processCount.setCategories(categoriesCount);
-//    	ProcessParameter parametersItemCountDATA =  new ProcessParameter();
-//    	ProcessParameter parametersItemCountCONDITION =  new ProcessParameter();
-//    	ParameterSchema schemaParameterCountDATA = new ParameterSchema();
-//    	ParameterSchema schemaParameterCountCONDITION = new ParameterSchema();
-//    	parametersItemCountDATA.setName("data");
-//    	parametersItemCountCONDITION.setName("y");
-//    	parametersItemCountDATA.setDescription("An array with elements of any data type.");
-//    	parametersItemCountCONDITION.setDescription("A condition consists of one ore more processes, which in the end return a boolean value. It is evaluated against each element in the array. An element is counted only if the condition returns `true`. Defaults to count valid elements in a list (see ``is_valid()``). Setting this parameter to boolean `true` counts all elements in the list.");
-//    	
-//    	parametersItemCountDATA.setSchema(schemaParameterCountDATA);
-//    	parametersItemCountCONDITION.setSchema(schemaParameterCountCONDITION);
-//    	processCount.addParametersItem(parametersItemCountDATA);
-//    	processCount.addParametersItem(parametersItemCountCONDITION);
-//    	
-//    	ProcessReturnValue returnsCount = new ProcessReturnValue();
-//    	DataTypeSchema schemaReturnCount = new DataTypeSchema();
-//    	returnsCount.setDescription("The counted number of elements.");
-//    	
-//    	returnsCount.setSchema(schemaReturnCount);
-//    	processCount.setReturns(returnsCount);
-//    	
-//    	processesList.addProcessesItem(processCount);
+    	
+    	Process process1 = new Process ();
+    	process1.setId("load_collection");
+    	process1.setSummary("Load a collection");
+    	process1.setDescription("Loads a collection from the current back-end by its id and returns it as processable data cube. The data that is added to the data cube can be restricted with the additional `spatial_extent`, `temporal_extent`, `bands` and `properties`.\\n\\n**Remarks:**\\n\\n* The bands (and all dimensions that specify nominal dimension labels) are expected to be ordered as specified in the metadata if the `bands` parameter is set to `null`.\\n* If no additional parameter is specified this would imply that the whole data set is expected to be loaded. Due to the large size of many data sets this is not recommended and may be optimized by back-ends to only load the data that is actually required after evaluating subsequent processes such as filters. This means that the pixel values should be processed only after the data has been limited to the required extents and as a consequence also to a manageable size.");
+    	List<String> categories1 = new ArrayList<String>();
+    	categories1.add("cubes");
+    	categories1.add("import");
+    	process1.setCategories(categories1);
+    	ProcessParameter parametersItem1ID =  new ProcessParameter();
+    	ProcessParameter parametersItem1SpatExt =  new ProcessParameter();
+    	ProcessParameter parametersItem1TempExt =  new ProcessParameter();
+//    	ParameterSchema schemaParameter1ID = new ParameterSchema();
+//    	ParameterSchema schemaParameter1SpatExt = new ParameterSchema();
+    	parametersItem1ID.setName("id");
+    	parametersItem1SpatExt.setName("spatial_extent");
+    	parametersItem1TempExt.setName("temporal_extent");
+    	parametersItem1ID.setDescription("The collection id.");
+    	parametersItem1SpatExt.setDescription("Limits the data to load from the collection to the specified bounding box or polygons.\\n\\nThe process puts a pixel into the data cube if the point at the pixel center intersects with the bounding box or any of the polygons (as defined in the Simple Features standard by the OGC).\\n\\nThe GeoJSON can be one of the following GeoJSON types:\\n\\n* A `Polygon` geometry,\\n* a `GeometryCollection` containing Polygons,\\n* a `Feature` with a `Polygon` geometry or\\n* a `FeatureCollection` containing `Feature`s with a `Polygon` geometry.\\n\\nSet this parameter to `null` to set no limit for the spatial extent. Be careful with this when loading large datasets!");
+    	parametersItem1TempExt.setDescription("Limits the data to load from the collection to the specified left-closed temporal interval. Applies to all temporal dimensions. The interval has to be specified as an array with exactly two elements:\\n\\n1. The first element is the start of the temporal interval. The specified instance in time is **included** in the interval.\\n2. The second element is the end of the temporal interval. The specified instance in time is **excluded** from the interval.\\n\\nThe specified temporal strings follow [RFC 3339](https://tools.ietf.org/html/rfc3339). Also supports open intervals by setting one of the boundaries to `null`, but never both.\\n\\nSet this parameter to `null` to set no limit for the spatial extent. Be careful with this when loading large datasets!");
+//    	parametersItem1ID.setSchema(schemaParameter1ID);
+//    	parametersItem1SpatExt.setSchema(schemaParameter1SpatExt);
+    	process1.addParametersItem(parametersItem1ID);
+    	process1.addParametersItem(parametersItem1SpatExt);
+    	process1.addParametersItem(parametersItem1TempExt);
+    	
+    	ProcessReturnValue returns1 = new ProcessReturnValue();
+    	DataTypeSchema schemaReturn1 = new DataTypeSchema();
+    	returns1.setDescription("A data cube for further processing. The dimensions and dimension properties (name, type, labels, reference system and resolution) correspond to the collection's metadata, but the dimension labels are restricted as specified in the parameters.");
+    	
+//    	returns1.setSchema(schemaReturn1);
+    	process1.setReturns(returns1);
+    	
+    	
+    	Process process2 = new Process ();
+    	process2.setId("run_udf");
+    	process2.setSummary("Run an UDF");
+    	process2.setDescription("Runs an UDF in one of the supported runtime environments.\\n\\nThe process can either:\\n\\n1. load and run a locally stored UDF from a file in the workspace of the authenticated user. The path to the UDF file must be relative to the root directory of the user's workspace.\\n2. fetch and run a remotely stored and published UDF by absolute URI, for example from [openEO Hub](https://hub.openeo.org)).\\n3. run the source code specified inline as string.\\n\\nThe loaded UDF can be executed in several processes such as ``aggregate_spatial()``, ``apply()``, ``apply_dimension()`` and ``reduce_dimension()``. In this case an array is passed instead of a raster data cube. The user must ensure that the data is properly passed as an array so that the UDF can make sense of it.");
+    	List<String> categories2 = new ArrayList<String>();
+    	categories2.add("cubes");
+    	categories2.add("import");
+    	categories2.add("udf");
+    	process2.setCategories(categories2);
+    	ProcessParameter parametersItem2Data =  new ProcessParameter();
+    	ProcessParameter parametersItem2UDF =  new ProcessParameter();
+    	ProcessParameter parametersItem2Runtime =  new ProcessParameter();
+
+    	parametersItem2Data.setName("data");
+    	parametersItem2UDF.setName("udf");
+    	parametersItem2Runtime.setName("runtime");
+    	parametersItem2Data.setDescription("The data to be passed to the UDF as array or raster data cube.");    	
+    	parametersItem2UDF.setDescription("Either source code, an absolute URL or a path to an UDF script.");
+    	parametersItem2Runtime.setDescription("An UDF runtime identifier available at the back-end.");
+    	process2.addParametersItem(parametersItem2Data);
+    	process2.addParametersItem(parametersItem2UDF);
+    	process2.addParametersItem(parametersItem2Runtime);
+    	
+    	ProcessReturnValue returns2 = new ProcessReturnValue();
+    	DataTypeSchema schemaReturn2 = new DataTypeSchema();
+    	
+    	returns2.setDescription("The data processed by the UDF.\\n\\n* Returns a raster data cube, if a raster data cube is passed for `data`. Details on the dimensions and dimension properties (name, type, labels, reference system and resolution) depend on the UDF.\\n* If an array is passed for `data`, the returned value can be of any data type, but is exactly what the UDF returns.");
+    	process2.setReturns(returns2);
+    	
+    	
+    	Process process3 = new Process ();
+    	process3.setId("save_result");
+    	process3.setSummary("Save processed data to storage");
+    	process3.setDescription("Saves processed data to the local user workspace / data store of the authenticated user. This process aims to be compatible to GDAL/OGR formats and options. STAC-compatible metadata should be stored with the processed data.\\n\\nCalling this process may be rejected by back-ends in the context of secondary web services.");
+    	List<String> categories3 = new ArrayList<String>();
+    	categories3.add("cubes");
+    	categories3.add("export");
+    	process3.setCategories(categories3);
+    	ProcessParameter parametersItem3Data =  new ProcessParameter();
+    	ProcessParameter parametersItem3Format =  new ProcessParameter();
+
+    	parametersItem3Data.setName("data");
+    	parametersItem3Format.setName("format");
+    	parametersItem3Data.setDescription("The data to save.");
+    	parametersItem3Format.setDescription("The file format to save to. It must be one of the values that the server reports as supported output file formats, which usually correspond to the short GDAL/OGR codes. If the format is not suitable for storing the underlying data structure, a `FormatUnsuitable` exception will be thrown. This parameter is *case insensitive*.");
+    	process2.addParametersItem(parametersItem3Data);
+    	process2.addParametersItem(parametersItem3Format);
+    	
+    	ProcessReturnValue returns3 = new ProcessReturnValue();
+    	DataTypeSchema schemaReturn3 = new DataTypeSchema();
+    	
+    	returns2.setDescription("");
+    	process2.setReturns(returns3);
+    	
+    	
+    	processesList.addProcessesItem(process1);
+    	processesList.addProcessesItem(process2);
+    	processesList.addProcessesItem(process3);
     	
     	
 //    	getRequest().ifPresent(request -> {
