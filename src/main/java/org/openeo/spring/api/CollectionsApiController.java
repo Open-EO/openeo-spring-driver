@@ -610,7 +610,7 @@ public class CollectionsApiController implements CollectionsApi {
     public ResponseEntity<Collection> describeCollection(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId, Principal principal) {
     	
     	
-    	log.debug("The following user is authenticated: " + principal.getName());
+//    	log.debug("The following user is authenticated: " + principal.getName());
 //    	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 //    	if (!(authentication instanceof AnonymousAuthenticationToken)) {
 //    	    String currentUserName = authentication.getName();
