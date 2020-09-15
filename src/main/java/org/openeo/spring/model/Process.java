@@ -19,8 +19,13 @@ import javax.persistence.MapKey;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -33,6 +38,9 @@ import io.swagger.annotations.ApiModelProperty;
 @Entity
 @Table(name = "process")
 public class Process {
+	
+	@Transient
+	private final Logger log = LogManager.getLogger(Process.class);
 	
 	@Id
 	@JsonProperty("id")
@@ -96,12 +104,8 @@ public class Process {
 	
 	@JsonProperty("process_graph")
 	@Valid
-	@OneToMany(cascade = CascadeType.ALL)
-    @JoinTable(name = "process_graph_map", 
-      joinColumns = {@JoinColumn(name = "id", referencedColumnName = "id")},
-      inverseJoinColumns = {@JoinColumn(name = "object_id", referencedColumnName = "id")})
-    @MapKey(name = "id")
-	private Map<String, Process> processGraph = null;
+	@Embedded
+	private Object processGraph = null;
 
 	public Process id(String id) {
 		this.id = id;
@@ -410,18 +414,19 @@ public class Process {
 		this.links = links;
 	}
 
-	public Process processGraph(Map<String, Process> processGraph) {
+	public Process processGraph(Object processGraph) {
 		this.processGraph = processGraph;
 		return this;
+
 	}
 
-	public Process putProcessGraphItem(String key, Process processGraphItem) {
-		if (this.processGraph == null) {
-			this.processGraph = new HashMap<>();
-		}
-		this.processGraph.put(key, processGraphItem);
-		return this;
-	}
+//	public Process putProcessGraphItem(String key, Process processGraphItem) {
+//		if (this.processGraph == null) {
+//			this.processGraph = new HashMap<>();
+//		}
+//		this.processGraph.put(key, processGraphItem);
+//		return this;
+//	}
 
 	/**
 	 * A process graph defines a graph-like structure as a connected set of
@@ -431,12 +436,15 @@ public class Process {
 	 * @return processGraph
 	 */
 	@ApiModelProperty(example = "{\"dc\":{\"process_id\":\"load_collection\",\"arguments\":{\"id\":\"Sentinel-2\",\"spatial_extent\":{\"west\":16.1,\"east\":16.6,\"north\":48.6,\"south\":47.2},\"temporal_extent\":[\"2018-01-01\",\"2018-02-01\"]}},\"bands\":{\"process_id\":\"filter_bands\",\"description\":\"Filter and order the bands. The order is important for the following reduce operation.\",\"arguments\":{\"data\":{\"from_node\":\"dc\"},\"bands\":[\"B08\",\"B04\",\"B02\"]}},\"evi\":{\"process_id\":\"reduce\",\"description\":\"Compute the EVI. Formula: 2.5 * (NIR - RED) / (1 + NIR + 6*RED + -7.5*BLUE)\",\"arguments\":{\"data\":{\"from_node\":\"bands\"},\"dimension\":\"bands\",\"reducer\":{\"process_graph\":{\"nir\":{\"process_id\":\"array_element\",\"arguments\":{\"data\":{\"from_parameter\":\"data\"},\"index\":0}},\"red\":{\"process_id\":\"array_element\",\"arguments\":{\"data\":{\"from_parameter\":\"data\"},\"index\":1}},\"blue\":{\"process_id\":\"array_element\",\"arguments\":{\"data\":{\"from_parameter\":\"data\"},\"index\":2}},\"sub\":{\"process_id\":\"subtract\",\"arguments\":{\"data\":[{\"from_node\":\"nir\"},{\"from_node\":\"red\"}]}},\"p1\":{\"process_id\":\"product\",\"arguments\":{\"data\":[6,{\"from_node\":\"red\"}]}},\"p2\":{\"process_id\":\"product\",\"arguments\":{\"data\":[-7.5,{\"from_node\":\"blue\"}]}},\"sum\":{\"process_id\":\"sum\",\"arguments\":{\"data\":[1,{\"from_node\":\"nir\"},{\"from_node\":\"p1\"},{\"from_node\":\"p2\"}]}},\"div\":{\"process_id\":\"divide\",\"arguments\":{\"data\":[{\"from_node\":\"sub\"},{\"from_node\":\"sum\"}]}},\"p3\":{\"process_id\":\"product\",\"arguments\":{\"data\":[2.5,{\"from_node\":\"div\"}]},\"result\":true}}}}},\"mintime\":{\"process_id\":\"reduce\",\"description\":\"Compute a minimum time composite by reducing the temporal dimension\",\"arguments\":{\"data\":{\"from_node\":\"evi\"},\"dimension\":\"temporal\",\"reducer\":{\"process_graph\":{\"min\":{\"process_id\":\"min\",\"arguments\":{\"data\":{\"from_parameter\":\"data\"}},\"result\":true}}}}},\"save\":{\"process_id\":\"save_result\",\"arguments\":{\"data\":{\"from_node\":\"mintime\"},\"format\":\"GTiff\"},\"result\":true}}", value = "A process graph defines a graph-like structure as a connected set of executable processes. Each key is a unique identifier (node ID) that is used to refer to the process in the graph.")
-
-	public Map<String, Process> getProcessGraph() {
-		return processGraph;
+	
+	@JsonProperty("process_graph")
+	public Object getProcessGraph() {
+		log.debug("process graph object:" + this.processGraph.getClass());
+		log.debug(this.processGraph.toString());
+		return new JSONObject((Map<String, Object>) this.processGraph);
 	}
 
-	public void setProcessGraph(Map<String, Process> processGraph) {
+	public void setProcessGraph(Object processGraph) {
 		this.processGraph = processGraph;
 	}
 
@@ -482,7 +490,7 @@ public class Process {
 		sb.append("    exceptions: ").append(toIndentedString(exceptions)).append("\n");
 		sb.append("    examples: ").append(toIndentedString(examples)).append("\n");
 		sb.append("    links: ").append(toIndentedString(links)).append("\n");
-		sb.append("    processGraph: ").append(toIndentedString(processGraph)).append("\n");
+		sb.append("    processGraph: ").append(((JSONObject)this.getProcessGraph()).toString(4)).append("\n");
 		sb.append("}");
 		return sb.toString();
 	}
