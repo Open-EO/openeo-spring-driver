@@ -87,10 +87,11 @@ public class JobsApiController implements JobsApi {
 		log.debug("received jobs POST request for new job with ID + " + jobID);
 		JSONObject processGraph = (JSONObject) storeBatchJobRequest.getProcess().getProcessGraph();
 		log.debug("Process Graph attached: " + processGraph.toString(4));
-		WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 		log.info("Graph of job successfully parsed and job created with ID: " + jobID);
 		jobDAO.save(storeBatchJobRequest);
 		log.info("job saved to database: " + storeBatchJobRequest.getId());
+//		WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
+//		;
         return new ResponseEntity<Job>(storeBatchJobRequest, HttpStatus.OK);
     }
 
@@ -170,8 +171,8 @@ public class JobsApiController implements JobsApi {
         produces = { "application/json" }, 
         method = RequestMethod.GET)
     public ResponseEntity<Job> describeJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-
+    	Job job = jobDAO.findOne(jobId);
+        return new ResponseEntity<Job>(job, HttpStatus.OK);
     }
 
 
