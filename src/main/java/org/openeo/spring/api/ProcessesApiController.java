@@ -194,13 +194,13 @@ public class ProcessesApiController implements ProcessesApi {
     	parametersItem3Format.setName("format");
     	parametersItem3Data.setDescription("The data to save.");
     	parametersItem3Format.setDescription("The file format to save to. It must be one of the values that the server reports as supported output file formats, which usually correspond to the short GDAL/OGR codes. If the format is not suitable for storing the underlying data structure, a `FormatUnsuitable` exception will be thrown. This parameter is *case insensitive*.");
-    	process2.addParametersItem(parametersItem3Data);
-    	process2.addParametersItem(parametersItem3Format);
+    	process3.addParametersItem(parametersItem3Data);
+    	process3.addParametersItem(parametersItem3Format);
     	
     	ProcessReturnValue returns3 = new ProcessReturnValue();
     	DataTypeSchema schemaReturn3 = new DataTypeSchema();
     	
-    	returns2.setDescription("");
+    	returns2.setDescription("false` if saving failed, `true` otherwise.");
     	process2.setReturns(returns3);
     	
     	

@@ -439,8 +439,8 @@ public class Process {
 	
 	@JsonProperty("process_graph")
 	public Object getProcessGraph() {
-		log.debug("process graph object:" + this.processGraph.getClass());
-		log.debug(this.processGraph.toString());
+//		log.debug("process graph object:" + this.processGraph.getClass());
+//		log.debug(this.processGraph.toString());
 		return new JSONObject((Map<String, Object>) this.processGraph);
 	}
 
