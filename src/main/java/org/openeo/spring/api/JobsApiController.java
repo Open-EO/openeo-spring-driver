@@ -15,6 +15,7 @@ import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.BatchJobEstimate;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobs;
+import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.Job.JobStates;
 import org.openeo.spring.model.LogEntries;
@@ -147,8 +148,18 @@ public class JobsApiController implements JobsApi {
     @RequestMapping(value = "/jobs/{job_id}",
         produces = { "application/json" }, 
         method = RequestMethod.DELETE)
-    public ResponseEntity<Void> deleteJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    public ResponseEntity deleteJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId) {
+    	Job job = jobDAO.findOne(jobId);
+    	if(job != null) {
+    		jobDAO.delete(job);
+    		log.debug("The job " + jobId + " was successfully deleted.");
+    		return new ResponseEntity<Job>(job, HttpStatus.OK);
+    	}else {
+    		Error error = new Error();
+    		error.setCode("400");
+    		error.setMessage("The requested job " + jobId + " could not be found.");
+    		return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+    	}
 
     }
 
@@ -170,9 +181,17 @@ public class JobsApiController implements JobsApi {
     @RequestMapping(value = "/jobs/{job_id}",
         produces = { "application/json" }, 
         method = RequestMethod.GET)
-    public ResponseEntity<Job> describeJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId) {
+    public ResponseEntity describeJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId) {
     	Job job = jobDAO.findOne(jobId);
-        return new ResponseEntity<Job>(job, HttpStatus.OK);
+    	if(job != null) {
+    		log.debug("The job " + jobId + " was successfully requested.");
+    		return new ResponseEntity<Job>(job, HttpStatus.OK);
+    	}else {
+    		Error error = new Error();
+    		error.setCode("400");
+    		error.setMessage("The requested job " + jobId + " could not be found.");
+    		return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+    	}
     }
 
 
