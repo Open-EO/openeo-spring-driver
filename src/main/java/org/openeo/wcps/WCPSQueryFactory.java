@@ -45,7 +45,7 @@ public class WCPSQueryFactory {
 	private Vector<Aggregate> aggregates;
 	private String outputFormat = "json";
 	private JSONObject processGraph;
-	private boolean withUDF = false;
+	private boolean withUDF = false;	
 
 	Logger log = LogManager.getLogger();
 
@@ -95,6 +95,13 @@ public class WCPSQueryFactory {
 	private void build() {
 		StringBuilder wcpsPayLoad = new StringBuilder("");
 		StringBuilder varPayLoad = new StringBuilder("");
+		String wcps_endpoint = null;
+		try {
+			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		//String collectionVar = "$c";
 		JSONArray nodesArray = new JSONArray();
 		JSONArray nodesSortedArray = new JSONArray();
@@ -187,7 +194,7 @@ public class WCPSQueryFactory {
 				String collectionID = currentProcessArguments.getString("id");				
 				JSONObject jsonresp = null;
 				try {
-					jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+					jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
 				} catch (JSONException e) {
 					log.error("An error occured: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -298,7 +305,7 @@ public class WCPSQueryFactory {
 				JSONObject collectionSTACMetdataCube2 = null;
 				try {
 					collectionSTACMetdataCube1 = readJsonFromUrl(
-							ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + cube1);
+							wcps_endpoint + "/collections/" + cube1);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -317,7 +324,7 @@ public class WCPSQueryFactory {
 				
 				try {
 					collectionSTACMetdataCube2 = readJsonFromUrl(
-							ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + cube2);
+							wcps_endpoint + "/collections/" + cube2);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -804,7 +811,7 @@ public class WCPSQueryFactory {
 				JSONObject collectionSTACMetdataCube2 = null;
 				try {
 					collectionSTACMetdataCube1 = readJsonFromUrl(
-							ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + cube1);
+							wcps_endpoint + "/collections/" + cube1);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -822,7 +829,7 @@ public class WCPSQueryFactory {
 				}
 				try {
 					collectionSTACMetdataCube2 = readJsonFromUrl(
-							ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + cube2);
+							wcps_endpoint + "/collections/" + cube2);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -1083,7 +1090,7 @@ public class WCPSQueryFactory {
 				JSONObject collectionSTACMetdata = null;
 				try {
 					collectionSTACMetdata = readJsonFromUrl(
-							ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+							wcps_endpoint + "/collections/" + collectionID);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -1104,7 +1111,7 @@ public class WCPSQueryFactory {
 				JSONObject targetCollectionSTACMetdata = null;
 				try {
 					targetCollectionSTACMetdata = readJsonFromUrl(
-							ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + targetCollectionID);
+							wcps_endpoint + "/collections/" + targetCollectionID);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -1200,7 +1207,7 @@ public class WCPSQueryFactory {
 				JSONObject collectionSTACMetdata = null;
 				try {
 					collectionSTACMetdata = readJsonFromUrl(
-							ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+							wcps_endpoint + "/collections/" + collectionID);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -1224,7 +1231,7 @@ public class WCPSQueryFactory {
 				JSONObject targetCollectionSTACMetdata = null;
 				try {
 					targetCollectionSTACMetdata = readJsonFromUrl(
-							ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + targetCollectionID);
+							wcps_endpoint + "/collections/" + targetCollectionID);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -1418,7 +1425,7 @@ public class WCPSQueryFactory {
 				JSONObject collectionSTACMetdata = null;
 				try {
 					collectionSTACMetdata = readJsonFromUrl(
-							ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+							wcps_endpoint + "/collections/" + collectionID);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -3971,13 +3978,20 @@ public class WCPSQueryFactory {
 		String fromNodeOfReduce = processGraph.getJSONObject(reduceNodeKey).getJSONObject("arguments").getJSONObject("data").getString("from_node");
 		fromNodeOfReduce = getFilterCollectionNode(fromNodeOfReduce);
 		JSONObject fromProcess = processGraph.getJSONObject(fromNodeOfReduce);
+		String wcps_endpoint = null;
+		try {
+			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		if (fromProcess.getString("process_id").equals("load_collection")) {
 			String bandfromIndex = fromProcess.getJSONObject("arguments").getJSONArray("bands").getString(arrayIndex);
 			String bandName = null;
 			JSONObject collectionSTACMetdata = null;
 			try {
 				collectionSTACMetdata = readJsonFromUrl(
-						ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+						wcps_endpoint + "/collections/" + collectionID);
 				log.debug(collectionVar);
 			} catch (JSONException e) {
 				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
@@ -4085,9 +4099,16 @@ public class WCPSQueryFactory {
 	private String createMeanWCPSString(String reduceNodeKey, String payLoad, JSONObject reduceProcesses, String dimension, String collectionVar, String collectionID) {
 		String stretchString = null;
 		StringBuilder stretchBuilder = new StringBuilder("");
+		String wcps_endpoint = null;
+		try {
+			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		JSONObject jsonresp = null;
 		try {
-			jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+			jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
 		} catch (JSONException e) {
 			log.error("An error occured: " + e.getMessage());
 			StringBuilder builder = new StringBuilder();
@@ -4148,9 +4169,16 @@ public class WCPSQueryFactory {
 	private String createMaxWCPSString(String reduceNodeKey, String payLoad, JSONObject reduceProcesses, String dimension, String collectionVar, String collectionID) {
 		String stretchString = null;
 		StringBuilder stretchBuilder = new StringBuilder("");
+		String wcps_endpoint = null;
+		try {
+			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		JSONObject jsonresp = null;
 		try {
-			jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+			jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
 		} catch (JSONException e) {
 			log.error("An error occured: " + e.getMessage());
 			StringBuilder builder = new StringBuilder();
@@ -4211,10 +4239,17 @@ public class WCPSQueryFactory {
 
 	private String createMinWCPSString(String reduceNodeKey, String payLoad, JSONObject reduceProcesses, String dimension, String collectionVar, String collectionID) {
 		String stretchString = null;
-		StringBuilder stretchBuilder = new StringBuilder("");		
+		StringBuilder stretchBuilder = new StringBuilder("");
+		String wcps_endpoint = null;
+		try {
+			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		JSONObject jsonresp = null;
 		try {
-			jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+			jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
 		} catch (JSONException e) {
 			log.error("An error occured: " + e.getMessage());
 			StringBuilder builder = new StringBuilder();
@@ -4313,6 +4348,13 @@ public class WCPSQueryFactory {
 	//TODO extend this to the full functionality of the openEO process
 	private String createResampleSpatialWCPSString(String resampleNodeKey, String payload, String xAxis, String yAxis) {
 		int projectionEPSGCode = 0;
+		String wcps_endpoint = null;
+		try {
+			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		try {
 			projectionEPSGCode = processGraph.getJSONObject(resampleNodeKey).getJSONObject("arguments").getInt("projection");
 		}catch(JSONException e) {
@@ -4325,8 +4367,8 @@ public class WCPSQueryFactory {
 		//TODO read the name of the spatial coordinate axis from describeCoverage or filter elements in order to correctly apply (E,N), (lat,lon) or X,Y depending on coordinate system
 		resampleBuilder.append(payload);
 		resampleBuilder.append(" ,{"
-				+ xAxis +":\"http://10.8.244.147:8080/def/crs/EPSG/0/" + projectionEPSGCode + "\","
-				+ yAxis +":\"http://10.8.244.147:8080/def/crs/EPSG/0/" + projectionEPSGCode + "\""
+				+ xAxis +":\"" + wcps_endpoint + "/def/crs/EPSG/0/" + projectionEPSGCode + "\","
+				+ yAxis +":\"" + wcps_endpoint + "/def/crs/EPSG/0/" + projectionEPSGCode + "\""
 				+ "}, {})");
 		return resampleBuilder.toString();
 	}
@@ -4398,8 +4440,8 @@ public class WCPSQueryFactory {
 					+ yAxis + "(" + yLow + ":" + yHigh + ")" + ""
 					+ "})");
 //			resampleBuilder.append(" ,{"
-//			+ xAxis + ":" +"\"CRS:http://10.8.244.147:8080/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + xLow + ":" + xScale + ")" + ","
-//			+ yAxis + ":" +"\"CRS:http://10.8.244.147:8080/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + yLow + ":" + yScale + ")" + ""
+//			+ xAxis + ":" +"\"CRS:" + wcps_endpoint + "/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + xLow + ":" + xScale + ")" + ","
+//			+ yAxis + ":" +"\"CRS:" + wcps_endpoint + "/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + yLow + ":" + yScale + ")" + ""
 //			+ "})");
 		}
 		else if (payload.contains("scale")) {
@@ -4450,8 +4492,8 @@ public class WCPSQueryFactory {
 				+ yAxis + "(" + yLow + ":" + yScale + ")" + ""
 				+ "})");
 //		resampleBuilder.append(" ,{"
-//				+ xAxis + ":" +"\"CRS:http://10.8.244.147:8080/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + xLow + ":" + xScale + ")" + ","
-//				+ yAxis + ":" +"\"CRS:http://10.8.244.147:8080/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + yLow + ":" + yScale + ")" + ""
+//				+ xAxis + ":" +"\"CRS:" + wcps_endpoint + "/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + xLow + ":" + xScale + ")" + ","
+//				+ yAxis + ":" +"\"CRS:" + wcps_endpoint + "/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + yLow + ":" + yScale + ")" + ""
 //				+ "})");
 		}
 		else if (!temporalStartCube1.equals(temporalEndCube1)) {
@@ -4469,8 +4511,8 @@ public class WCPSQueryFactory {
 					+ yAxis + "(" + yLow + ":" + yScale + ")" + ""
 					+ "})");			
 //			resampleBuilder.append(" ,{"
-//			+ xAxis + ":" +"\"CRS:http://10.8.244.147:8080/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + xLow + ":" + xScale + ")" + ","
-//			+ yAxis + ":" +"\"CRS:http://10.8.244.147:8080/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + yLow + ":" + yScale + ")" + ""
+//			+ xAxis + ":" +"\"CRS:" + wcps_endpoint + "/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + xLow + ":" + xScale + ")" + ","
+//			+ yAxis + ":" +"\"CRS:" + wcps_endpoint + "/def/crs/EPSG/0/" + projectionEPSGCode + "\"" + "(" + yLow + ":" + yScale + ")" + ""
 //			+ "})");			
 			
 		}
@@ -4488,8 +4530,8 @@ public class WCPSQueryFactory {
 	//		String currentPayload = currentWCPSQuery.substring(beginIndex, endIndex);		
 	//		//TODO read the name of the spatial coordinate axis from describeCoverage or filter elements in order to correctly apply (E,N), (lat,lon) or X,Y depending on coordinate system
 	//		resampleBuilder.append("crsTransform(" + currentPayload + ",{"
-	//				+ "E:\"http://10.8.244.147:8080/def/crs/EPSG/0/" + projectionEPSGCode + "\","
-	//				+ "N:\"http://10.8.244.147:8080/def/crs/EPSG/0/" + projectionEPSGCode + "\""
+	//				+ "E:\" + wcps_endpoint + "/def/crs/EPSG/0/" + projectionEPSGCode + "\","
+	//				+ "N:\" + wcps_endpoint + "/def/crs/EPSG/0/" + projectionEPSGCode + "\""
 	//				+ "}, {})");
 	//		resampleBuilder.append(currentWCPSQuery.substring(endIndex));
 	//		log.debug("current payload: " + currentPayload);
@@ -4774,6 +4816,13 @@ public class WCPSQueryFactory {
 	}
 	
 	private void createPolygonFilter(JSONObject argsObject, int srs, String coll) {
+		String wcps_endpoint = null;
+		try {
+			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		double polygonArrayLong = 0;
 		double polygonArrayLat = 0;
 
@@ -4788,7 +4837,7 @@ public class WCPSQueryFactory {
 						JSONObject extent;
 						JSONObject jsonresp = null;
 						try {
-							jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + coll);
+							jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + coll);
 						} catch (JSONException e) {
 							log.error("An error occured: " + e.getMessage());
 							StringBuilder builder = new StringBuilder();
@@ -5357,6 +5406,13 @@ public class WCPSQueryFactory {
 
 	private void executeProcesses(String processID, String processNodeKey) {
 		JSONObject processNode = processGraph.getJSONObject(processNodeKey);
+		String wcps_endpoint = null;
+		try {
+			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		if (processID.equals("load_collection")) {
 			String collection = null;
 			JSONObject loadCollectionNode = processGraph.getJSONObject(processNodeKey);
@@ -5368,7 +5424,7 @@ public class WCPSQueryFactory {
 			JSONObject collectionSTACMetdata = null;
 			try {
 				collectionSTACMetdata = readJsonFromUrl(
-						ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collection);
+						wcps_endpoint + "/collections/" + collection);
 			} catch (JSONException e) {
 				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 				StringBuilder builder = new StringBuilder();
@@ -5425,7 +5481,7 @@ public class WCPSQueryFactory {
 			String collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
 			JSONObject jsonresp = null;
 			try {
-				jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+				jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
 			} catch (JSONException e) {
 				log.error("An error occured: " + e.getMessage());
 				StringBuilder builder = new StringBuilder();
@@ -5488,7 +5544,7 @@ public class WCPSQueryFactory {
 			int srs = 0;
 			JSONObject jsonresp = null;
 			try {
-				jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + coll);
+				jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + coll);
 			} catch (JSONException e) {
 				log.error("An error occured: " + e.getMessage());
 				StringBuilder builder = new StringBuilder();
@@ -5522,7 +5578,7 @@ public class WCPSQueryFactory {
 			int srs = 0;
 			JSONObject jsonresp = null;
 			try {
-				jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + coll);
+				jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + coll);
 			} catch (JSONException e) {
 				log.error("An error occured: " + e.getMessage());
 				StringBuilder builder = new StringBuilder();
@@ -5596,11 +5652,18 @@ public class WCPSQueryFactory {
 		String fromDate = null;
 		String toDate = null;
 		JSONObject extent;
+		String wcps_endpoint = null;
+		try {
+			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		
 		if (tempNull) {
 			JSONObject jsonresp = null;
 			try {
-				jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+				jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
 			} catch (JSONException e) {
 				log.error("An error occured: " + e.getMessage());
 				StringBuilder builder = new StringBuilder();
@@ -5662,7 +5725,7 @@ public class WCPSQueryFactory {
 			String extentupper = extentArray.get(1).toString();
 			JSONObject jsonresp = null;
 			try {
-				jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+				jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
 			} catch (JSONException e) {
 				log.error("An error occured: " + e.getMessage());
 				StringBuilder builder = new StringBuilder();
@@ -5764,10 +5827,17 @@ public class WCPSQueryFactory {
 		String top = null;
 		String bottom = null;
 		double resSource = 0;
+		String wcps_endpoint = null;
+		try {
+			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		JSONObject collectionSTACMetdata = null;
 		try {
 			collectionSTACMetdata = readJsonFromUrl(
-					ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+					wcps_endpoint + "/collections/" + collectionID);
 		} catch (JSONException e) {
 			log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 			StringBuilder builder = new StringBuilder();
@@ -5796,7 +5866,7 @@ public class WCPSQueryFactory {
 			JSONObject extent;
 			JSONObject jsonresp = null;
 			try {
-				jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+				jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
 			} catch (JSONException e) {
 				log.error("An error occured: " + e.getMessage());
 				StringBuilder builder = new StringBuilder();
@@ -5888,7 +5958,7 @@ public class WCPSQueryFactory {
 						JSONObject extent;
 						
 						try {
-							jsonresp = readJsonFromUrl(ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+							jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
 						} catch (JSONException e) {
 							log.error("An error occured: " + e.getMessage());
 							StringBuilder builder = new StringBuilder();
@@ -6133,10 +6203,17 @@ public class WCPSQueryFactory {
 	private void createNDVIAggregateFromProcess(JSONObject argsObject, String collectionID) {
 		String red = null;
 		String nir = null;
+		String wcps_endpoint = null;
+		try {
+			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		JSONObject collectionSTACMetdata = null;
 		try {
 			collectionSTACMetdata = readJsonFromUrl(
-					ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionID);
+					wcps_endpoint + "/collections/" + collectionID);
 		} catch (JSONException e) {
 			log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 			StringBuilder builder = new StringBuilder();
