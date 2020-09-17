@@ -10,6 +10,7 @@ import javax.validation.constraints.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hibernate.SessionFactory;
 import org.json.JSONObject;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.BatchJobEstimate;
@@ -17,12 +18,13 @@ import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobs;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
-import org.openeo.spring.model.Job.JobStates;
+import org.openeo.spring.model.JobStates;
 import org.openeo.spring.model.LogEntries;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.hibernate5.SessionFactoryUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +32,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.openeo.wcps.WCPSQueryFactory;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,6 +48,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 public class JobsApiController implements JobsApi {
 
     private final NativeWebRequest request;
+    
+    @Autowired
+	private SessionFactory sessionFactory;
     
     private final Logger log = LogManager.getLogger(JobsApiController.class);
     
@@ -80,20 +89,34 @@ public class JobsApiController implements JobsApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.POST)
-    public ResponseEntity<Job> createJob(@Parameter(description = "" ,required=true )  @Valid @RequestBody Job storeBatchJobRequest) {
-    	UUID jobID = UUID.randomUUID();
-		storeBatchJobRequest.setId(jobID.toString());
-		storeBatchJobRequest.setStatus(JobStates.CREATED);
-		storeBatchJobRequest.setCreated(OffsetDateTime.now());
-		log.debug("received jobs POST request for new job with ID + " + jobID);
-		JSONObject processGraph = (JSONObject) storeBatchJobRequest.getProcess().getProcessGraph();
+    public ResponseEntity createJob(@Parameter(description = "" ,required=true )  @Valid @RequestBody Job job) {
+//    	UUID jobID = UUID.randomUUID();
+//    	job.setId(jobID);
+    	job.setStatus(JobStates.CREATED);
+    	job.setCreated(OffsetDateTime.now());
+		log.debug("received jobs POST request for new job with ID + " + job.getId());
+		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
 		log.debug("Process Graph attached: " + processGraph.toString(4));
-		log.info("Graph of job successfully parsed and job created with ID: " + jobID);
-		jobDAO.save(storeBatchJobRequest);
-		log.info("job saved to database: " + storeBatchJobRequest.getId());
-//		WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
-//		;
-        return new ResponseEntity<Job>(storeBatchJobRequest, HttpStatus.OK);
+		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
+		jobDAO.save(job);
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			log.info("job saved to database: " + mapper.writeValueAsString(job));
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Job verifiedSave = jobDAO.findOne(job.getId());
+		if(verifiedSave != null) {
+//			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
+			log.debug("verified retrieved job: " + verifiedSave.toString());
+			return new ResponseEntity<Job>(job, HttpStatus.OK);
+		}else {
+			Error error = new Error();
+    		error.setCode("500");
+    		error.setMessage("The submitted job " + job.toString() + " was not saved persistently");
+    		return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
     }
 
 
@@ -149,7 +172,7 @@ public class JobsApiController implements JobsApi {
         produces = { "application/json" }, 
         method = RequestMethod.DELETE)
     public ResponseEntity deleteJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId) {
-    	Job job = jobDAO.findOne(jobId);
+    	Job job = jobDAO.findOne(UUID.fromString(jobId));
     	if(job != null) {
     		jobDAO.delete(job);
     		log.debug("The job " + jobId + " was successfully deleted.");
@@ -182,7 +205,7 @@ public class JobsApiController implements JobsApi {
         produces = { "application/json" }, 
         method = RequestMethod.GET)
     public ResponseEntity describeJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId) {
-    	Job job = jobDAO.findOne(jobId);
+    	Job job = jobDAO.findOne(UUID.fromString(jobId));
     	if(job != null) {
     		log.debug("The job " + jobId + " was successfully requested.");
     		return new ResponseEntity<Job>(job, HttpStatus.OK);
@@ -244,7 +267,7 @@ public class JobsApiController implements JobsApi {
     @RequestMapping(value = "/jobs",
         produces = { "application/json" }, 
         method = RequestMethod.GET)
-    public ResponseEntity<BatchJobs> listJobs(@Min(1)@Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
+    public ResponseEntity listJobs(@Min(1)@Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
@@ -254,8 +277,20 @@ public class JobsApiController implements JobsApi {
                 }
             }
         });
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-
+        BatchJobs batchJobs = new BatchJobs();
+        for(Job job: jobDAO.findAll()) {
+        	batchJobs.addJobsItem(job);
+        	//TODO add link to each job item
+        	//batchJobs.addLink(...);
+        }
+        if(!batchJobs.getJobs().isEmpty()) {
+        	return new ResponseEntity<BatchJobs>(batchJobs, HttpStatus.OK);
+        }else {
+        	Error error = new Error();
+    		error.setCode("400");
+    		error.setMessage("No jobs are available at the moment!");
+    		return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+        }
     }
 
 

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 public class JobDAO extends AbstractDAO<Job> {
 	
 	public JobDAO() {
-		setClazz(Job.class);
+		setEntityClass(Job.class);
 	}
 
 }

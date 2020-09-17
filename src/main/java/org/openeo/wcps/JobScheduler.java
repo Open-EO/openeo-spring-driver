@@ -29,7 +29,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.Job;
-import org.openeo.spring.model.Job.JobStates;
+import org.openeo.spring.model.JobStates;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
 import org.openeo.wcps.events.UDFEvent;
@@ -121,7 +121,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 				JSONObject loadUDFCube = new JSONObject();
 				JSONObject loadUDFCubearguments = new JSONObject();
 
-				loadUDFCubearguments.put("id", udfCubeCoverageID + job.getId().replace('-', '_'));
+				loadUDFCubearguments.put("id", udfCubeCoverageID + job.getId().toString().replace('-', '_'));
 				udfCubeCoverageID = loadUDFCubearguments.getString("id");
 				loadUDFCubearguments.put("spatial_extent", JSONObject.NULL);
 				loadUDFCubearguments.put("temporal_extent", JSONObject.NULL);

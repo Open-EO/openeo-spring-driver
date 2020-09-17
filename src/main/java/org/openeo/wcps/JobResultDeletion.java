@@ -6,12 +6,13 @@ import java.nio.file.Files;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.Job;
-import org.openeo.spring.model.Job.JobStates;
+import org.openeo.spring.model.JobStates;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class JobResultDeletion implements Runnable {
@@ -51,7 +52,7 @@ public class JobResultDeletion implements Runnable {
 				if(currentFile.isFile() && !Files.isSymbolicLink(currentFile.toPath())) {
 					if(differenceTimeMinutes(currentFile.lastModified()) > Integer.parseInt(ConvenienceHelper.readProperties("temp-file-expiry"))) {
 						currentFile.delete();
-						String jobId = currentFile.getName().substring(0, currentFile.getName().indexOf("."));
+						UUID jobId = UUID.fromString(currentFile.getName().substring(0, currentFile.getName().indexOf(".")));
 						log.debug("The current file " + currentFile.getName() + " is expired.\nIt will be deleted and the its job's status will be set to SUBMITTED.");
 						job = jobDAO.findOne(jobId);
 						if (job == null) {
