@@ -13,6 +13,42 @@ The underlying library integrating OpenAPI to SpringBoot is [springfox](https://
 Start your server as a simple java application
 
 You can view the api documentation in swagger-ui by pointing to  
-http://localhost:8080/
+https://localhost:8443/
 
-Change default port value in application.properties
+## Configuration setup hints
+This back-end is only functional if an application.properties file is added to ```/src/main/resources```.
+This file should contain at least the following:
+
+springfox.documentation.swagger.v2.path=/api-docs
+spring.jackson.date-format=org.openeo.spring.RFC3339DateFormat
+spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS=false
+spring.h2.console.enabled=true
+
+server.port=8443
+server.ssl.key-store-type=PKCS12
+server.ssl.key-store=classpath:my_keystore.p12
+server.ssl.key-store-password=my_keystore_password
+server.ssl.key-alias=my_alias
+
+security.require-ssl=true
+
+org.openeo.wcps.endpoint=http://my_wcps_server:8080
+org.openeo.wcps.provider.name=My Company
+org.openeo.wcps.provider.url=http://www.my-company.url
+org.openeo.wcps.tmp.dir=/tmp/openeo/
+org.openeo.wcps.tmp.file.expiry=60
+org.openeo.wcps.file.expiry=1
+
+org.openeo.odc.endpoint=http://my_open_data_cube_endpoint
+org.openeo.odc.provider.name=open data cube provider name
+org.openeo.odc.provider.url=http://www.open_data_cube_provider.url
+
+org.openeo.endpoint=https://my_openeo.url
+org.openeo.udf.python.endpoint=http://my_openeo_python_udf_service.url
+org.openeo.udf.r.endpoint=http://my_openeo_R_udf_service.url
+
+## Logging
+All logging can be controlled through log4j2.
+For tweaking of log level and file output modify
+log4j2.xml in ```/src/main/resources```
+
