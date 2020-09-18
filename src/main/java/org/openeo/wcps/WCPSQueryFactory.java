@@ -51,8 +51,8 @@ public class WCPSQueryFactory {
 	@Value("${org.openeo.wcps.endpoint}")
 	private String wcpsEndpoint;
 	
-	@Value("${openapi.openEO.base-path:}")
-	private String openEOEndpoint;
+//	@Value("${openapi.openEO.base-path:}")
+	private String openEOEndpoint = "http://localhost:8181";
 
 	Logger log = LogManager.getLogger();
 
@@ -213,7 +213,7 @@ public class WCPSQueryFactory {
 				}
 
 				JSONObject extent = jsonresp.getJSONObject("extent");
-				JSONArray temporal = extent.getJSONArray("temporal");
+				JSONArray temporal = extent.getJSONObject("temporal").getJSONArray("interval").getJSONArray(0);;
 				String templower = null;
 				
 				try {
@@ -342,12 +342,12 @@ public class WCPSQueryFactory {
 					log.error(builder.toString());
 				}
 				
-				JSONObject dimsCube1 = (JSONObject) (((JSONObject) collectionSTACMetdataCube1.get("properties")).get("cube:dimensions"));		
+				JSONObject dimsCube1 = (JSONObject) (((JSONObject) collectionSTACMetdataCube1).get("cube:dimensions"));		
 				for (String dimsCube1Keys : dimsCube1.keySet()) {
 					noOfDimsCube1 = noOfDimsCube1+1;
 				}
 				
-				JSONObject dimsCube2 = (JSONObject) (((JSONObject) collectionSTACMetdataCube2.get("properties")).get("cube:dimensions"));		
+				JSONObject dimsCube2 = (JSONObject) (((JSONObject) collectionSTACMetdataCube2).get("cube:dimensions"));		
 				for (String dimsCube2Keys : dimsCube2.keySet()) {
 					noOfDimsCube2 = noOfDimsCube2+1;
 				}
@@ -847,12 +847,12 @@ public class WCPSQueryFactory {
 					log.error(builder.toString());
 				}
 				
-				JSONObject dimsCube1 = (JSONObject) (((JSONObject) collectionSTACMetdataCube1.get("properties")).get("cube:dimensions"));		
+				JSONObject dimsCube1 = (JSONObject) (((JSONObject) collectionSTACMetdataCube1).get("cube:dimensions"));		
 				for (String dimsCube1Keys : dimsCube1.keySet()) {
 					noOfDimsCube1 = noOfDimsCube1+1;
 				}
 				
-				JSONObject dimsCube2 = (JSONObject) (((JSONObject) collectionSTACMetdataCube2.get("properties")).get("cube:dimensions"));		
+				JSONObject dimsCube2 = (JSONObject) (((JSONObject) collectionSTACMetdataCube2).get("cube:dimensions"));		
 				for (String dimsCube2Keys : dimsCube2.keySet()) {
 					noOfDimsCube2 = noOfDimsCube2+1;
 				}
@@ -1107,7 +1107,7 @@ public class WCPSQueryFactory {
 					}
 					log.error(builder.toString());
 				}
-				String resSource = ((JSONObject) collectionSTACMetdata.get("properties")).getJSONObject("cube:dimensions").getJSONObject(tempAxis).getString("step");
+				String resSource = ((JSONObject) collectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).getString("step");
 				
 				JSONObject targetCollectionSTACMetdata = null;
 				try {
@@ -1128,7 +1128,7 @@ public class WCPSQueryFactory {
 					}
 					log.error(builder.toString());
 				}
-				String resTarget = ((JSONObject) targetCollectionSTACMetdata.get("properties")).getJSONObject("cube:dimensions").getJSONObject(tempAxis).getString("step");
+				String resTarget = ((JSONObject) targetCollectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).getString("step");
 				
 				wcpsResamplepayLoad.append(createResampleTemporalCubeWCPSString(nodeKeyOfCurrentProcess, payLoad, resSource, resTarget, xAxis, xLow, xHigh, yAxis, yLow, yHigh, tempAxis, tempLow, tempHigh, temporalStartCube1, temporalEndCube1));
 				wcpsPayLoad=wcpsResamplepayLoad;
@@ -3979,13 +3979,8 @@ public class WCPSQueryFactory {
 		String fromNodeOfReduce = processGraph.getJSONObject(reduceNodeKey).getJSONObject("arguments").getJSONObject("data").getString("from_node");
 		fromNodeOfReduce = getFilterCollectionNode(fromNodeOfReduce);
 		JSONObject fromProcess = processGraph.getJSONObject(fromNodeOfReduce);
-		String wcps_endpoint = null;
-		try {
-			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		String wcps_endpoint = openEOEndpoint;
+		
 		if (fromProcess.getString("process_id").equals("load_collection")) {
 			String bandfromIndex = fromProcess.getJSONObject("arguments").getJSONArray("bands").getString(arrayIndex);
 			String bandName = null;
@@ -4100,13 +4095,8 @@ public class WCPSQueryFactory {
 	private String createMeanWCPSString(String reduceNodeKey, String payLoad, JSONObject reduceProcesses, String dimension, String collectionVar, String collectionID) {
 		String stretchString = null;
 		StringBuilder stretchBuilder = new StringBuilder("");
-		String wcps_endpoint = null;
-		try {
-			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		String wcps_endpoint = openEOEndpoint;
+		
 		JSONObject jsonresp = null;
 		try {
 			jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
@@ -4127,10 +4117,10 @@ public class WCPSQueryFactory {
 		}
 		
 		String temporalAxis = null;
-		for (String tempAxis1 : jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").keySet()) {
+		for (String tempAxis1 : jsonresp.getJSONObject("cube:dimensions").keySet()) {
 			String tempAxis1UpperCase = tempAxis1.toUpperCase();
 			if (tempAxis1UpperCase.contentEquals("DATE") || tempAxis1UpperCase.contentEquals("TIME") || tempAxis1UpperCase.contentEquals("ANSI") || tempAxis1UpperCase.contentEquals("UNIX")) {
-				temporalAxis = jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").getJSONObject(tempAxis1).getString("axis");
+				temporalAxis = tempAxis1;
 			}
 		}
 		
@@ -4170,13 +4160,8 @@ public class WCPSQueryFactory {
 	private String createMaxWCPSString(String reduceNodeKey, String payLoad, JSONObject reduceProcesses, String dimension, String collectionVar, String collectionID) {
 		String stretchString = null;
 		StringBuilder stretchBuilder = new StringBuilder("");
-		String wcps_endpoint = null;
-		try {
-			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		String wcps_endpoint = openEOEndpoint;
+		
 		JSONObject jsonresp = null;
 		try {
 			jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
@@ -4197,10 +4182,10 @@ public class WCPSQueryFactory {
 		}
 		
 		String temporalAxis = null;
-		for (String tempAxis1 : jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").keySet()) {
+		for (String tempAxis1 : jsonresp.getJSONObject("cube:dimensions").keySet()) {
 			String tempAxis1UpperCase = tempAxis1.toUpperCase();
 			if (tempAxis1UpperCase.contentEquals("DATE") || tempAxis1UpperCase.contentEquals("TIME") || tempAxis1UpperCase.contentEquals("ANSI") || tempAxis1UpperCase.contentEquals("UNIX")) {
-				temporalAxis = jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").getJSONObject(tempAxis1).getString("axis");
+				temporalAxis = tempAxis1;
 			}
 		}
 		
@@ -4241,13 +4226,8 @@ public class WCPSQueryFactory {
 	private String createMinWCPSString(String reduceNodeKey, String payLoad, JSONObject reduceProcesses, String dimension, String collectionVar, String collectionID) {
 		String stretchString = null;
 		StringBuilder stretchBuilder = new StringBuilder("");
-		String wcps_endpoint = null;
-		try {
-			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		String wcps_endpoint = openEOEndpoint;
+		
 		JSONObject jsonresp = null;
 		try {
 			jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
@@ -4268,10 +4248,10 @@ public class WCPSQueryFactory {
 		}
 		
 		String temporalAxis = null;
-		for (String tempAxis1 : jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").keySet()) {
+		for (String tempAxis1 : jsonresp.getJSONObject("cube:dimensions").keySet()) {
 			String tempAxis1UpperCase = tempAxis1.toUpperCase();
 			if (tempAxis1UpperCase.contentEquals("DATE") || tempAxis1UpperCase.contentEquals("TIME") || tempAxis1UpperCase.contentEquals("ANSI") || tempAxis1UpperCase.contentEquals("UNIX")) {
-				temporalAxis = jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").getJSONObject(tempAxis1).getString("axis");
+				temporalAxis = tempAxis1;
 			}
 		}
 		
@@ -4349,13 +4329,8 @@ public class WCPSQueryFactory {
 	//TODO extend this to the full functionality of the openEO process
 	private String createResampleSpatialWCPSString(String resampleNodeKey, String payload, String xAxis, String yAxis) {
 		int projectionEPSGCode = 0;
-		String wcps_endpoint = null;
-		try {
-			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		String wcps_endpoint = openEOEndpoint;
+		
 		try {
 			projectionEPSGCode = processGraph.getJSONObject(resampleNodeKey).getJSONObject("arguments").getInt("projection");
 		}catch(JSONException e) {
@@ -4817,13 +4792,8 @@ public class WCPSQueryFactory {
 	}
 	
 	private void createPolygonFilter(JSONObject argsObject, int srs, String coll) {
-		String wcps_endpoint = null;
-		try {
-			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		String wcps_endpoint = openEOEndpoint;
+		
 		double polygonArrayLong = 0;
 		double polygonArrayLat = 0;
 
@@ -4856,7 +4826,7 @@ public class WCPSQueryFactory {
 						}
 
 						extent = jsonresp.getJSONObject("extent");
-						JSONArray spatial = extent.getJSONArray("spatial");
+						JSONArray spatial = extent.getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0);
 						double westlower = spatial.getDouble(0);
 						double eastupper = spatial.getDouble(2);
 						double southlower = spatial.getDouble(1);
@@ -4919,7 +4889,7 @@ public class WCPSQueryFactory {
 			if (processID.equals("save_result")) {				
 				log.debug("Save Result Process Node key found is: " + processNodeKey);
 				String format = getFormatFromSaveResultNode(processNode);
-				try {					
+				try {
 					//this.outputFormat = ConvenienceHelper.getMimeTypeFromOutput(format);
 					this.outputFormat = ConvenienceHelper.getRasTypeFromOutput(format);
 				} catch (JSONException | IOException e) {
@@ -5498,10 +5468,10 @@ public class WCPSQueryFactory {
 				log.error(builder.toString());
 			}			
 			String temporalAxis = null;
-			for (String tempAxis1 : jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").keySet()) {
+			for (String tempAxis1 : jsonresp.getJSONObject("cube:dimensions").keySet()) {
 				String tempAxis1UpperCase = tempAxis1.toUpperCase();
 				if (tempAxis1UpperCase.contentEquals("DATE") || tempAxis1UpperCase.contentEquals("TIME") || tempAxis1UpperCase.contentEquals("ANSI") || tempAxis1UpperCase.contentEquals("UNIX")) {
-					temporalAxis = jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").getJSONObject(tempAxis1).getString("axis");
+					temporalAxis = tempAxis1;
 				}
 			}
 			if (dimension.equals("temporal")) {
@@ -5560,7 +5530,11 @@ public class WCPSQueryFactory {
 				}
 				log.error(builder.toString());
 			}
-			srs = ((JSONObject) jsonresp.get("properties")).getInt("eo:epsg");
+			for (String dimX : jsonresp.getJSONObject("cube:dimensions").keySet()) {
+				if (dimX.contentEquals("X") || dimX.contentEquals("E") || dimX.contentEquals("Lon") || dimX.contentEquals("Long")) {
+					srs = ((JSONObject) jsonresp.getJSONObject("cube:dimensions")).getJSONObject(dimX).getInt("reference_system");
+				}
+			}
 			log.debug("srs is: " + srs);
 			if (srs > 0) {
 				createBoundingBoxFilterFromArgs(processFilterArguments, srs, coll, false);
@@ -5594,7 +5568,11 @@ public class WCPSQueryFactory {
 				}
 				log.error(builder.toString());
 			}
-			srs = ((JSONObject) jsonresp.get("properties")).getInt("eo:epsg");			
+			for (String dimX : jsonresp.getJSONObject("cube:dimensions").keySet()) {
+				if (dimX.contentEquals("X") || dimX.contentEquals("E") || dimX.contentEquals("Lon") || dimX.contentEquals("Long")) {
+					srs = ((JSONObject) jsonresp.getJSONObject("cube:dimensions")).getJSONObject(dimX).getInt("reference_system");
+				}
+			}			
 			if (srs > 0) {
 				log.debug("Polygon Extent is : " + processFilterArguments.getJSONArray("coordinates"));
 				createPolygonFilter(processFilterArguments, srs, coll);
@@ -5652,14 +5630,8 @@ public class WCPSQueryFactory {
 		String fromDate = null;
 		String toDate = null;
 		JSONObject extent;
-		String wcps_endpoint = null;
-		try {
-			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
+		String wcps_endpoint = openEOEndpoint;
+				
 		if (tempNull) {
 			JSONObject jsonresp = null;
 			try {
@@ -5681,7 +5653,7 @@ public class WCPSQueryFactory {
 			}
 
 			extent = jsonresp.getJSONObject("extent");
-			JSONArray temporal = extent.getJSONArray("temporal");
+			JSONArray temporal = extent.getJSONObject("temporal").getJSONArray("interval").getJSONArray(0);
 			String templower = null;
 			String tempupper = null;			
 			try {
@@ -5710,10 +5682,10 @@ public class WCPSQueryFactory {
 				}
 				this.filters.remove(dateFilter);
 				String tempAxis = null;
-				for (String tempAxis1 : jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").keySet()) {
+				for (String tempAxis1 : jsonresp.getJSONObject("cube:dimensions").keySet()) {
 					String tempAxis1UpperCase = tempAxis1.toUpperCase();
 					if (tempAxis1UpperCase.contentEquals("DATE") || tempAxis1UpperCase.contentEquals("TIME") || tempAxis1UpperCase.contentEquals("ANSI") || tempAxis1UpperCase.contentEquals("UNIX")) {
-						tempAxis = jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").getJSONObject(tempAxis1).getString("axis");
+						tempAxis = tempAxis1;
 					}
 				}
 				this.filters.add(new Filter(tempAxis+"_"+collectionID, templower, tempupper));				
@@ -5742,7 +5714,7 @@ public class WCPSQueryFactory {
 				log.error(builder.toString());
 			}
 			extent = jsonresp.getJSONObject("extent");
-			JSONArray temporal = extent.getJSONArray("temporal");
+			JSONArray temporal = extent.getJSONObject("temporal").getJSONArray("interval").getJSONArray(0);
 			String templower = temporal.get(0).toString();
 			String tempupper = temporal.get(1).toString();
 			log.debug("Temporal Extent is: ");
@@ -5785,10 +5757,10 @@ public class WCPSQueryFactory {
 				}
 				this.filters.remove(dateFilter);
 				String tempAxis = null;
-				for (String tempAxis1 : jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").keySet()) {
+				for (String tempAxis1 : jsonresp.getJSONObject("cube:dimensions").keySet()) {
 					String tempAxis1UpperCase = tempAxis1.toUpperCase();
 					if (tempAxis1UpperCase.contentEquals("DATE") || tempAxis1UpperCase.contentEquals("TIME") || tempAxis1UpperCase.contentEquals("ANSI") || tempAxis1UpperCase.contentEquals("UNIX")) {
-						tempAxis = jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").getJSONObject(tempAxis1).getString("axis");
+						tempAxis = tempAxis1;
 					}
 				}
 				log.debug("To Date  "+toDate);
@@ -5827,13 +5799,8 @@ public class WCPSQueryFactory {
 		String top = null;
 		String bottom = null;
 		double resSource = 0;
-		String wcps_endpoint = null;
-		try {
-			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		String wcps_endpoint = openEOEndpoint;
+		
 		JSONObject collectionSTACMetdata = null;
 		try {
 			collectionSTACMetdata = readJsonFromUrl(
@@ -5884,7 +5851,7 @@ public class WCPSQueryFactory {
 			}
 			
 			extent = jsonresp.getJSONObject("extent");
-			JSONArray spatial = extent.getJSONArray("spatial");
+			JSONArray spatial = extent.getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0);
 			double westlower = spatial.getDouble(0)+0.00001;
 			double eastupper = spatial.getDouble(2)-0.00001;
 			double southlower = spatial.getDouble(1)+0.00001;
@@ -5930,13 +5897,13 @@ public class WCPSQueryFactory {
 				}
 				this.filters.remove(eastFilter);
 				this.filters.remove(westFilter);
-				for (String spatAxis : jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").keySet()) {	
+				for (String spatAxis : jsonresp.getJSONObject("cube:dimensions").keySet()) {	
 					String spatAxisUpperCase = spatAxis.toUpperCase();
 					if (spatAxisUpperCase.contentEquals("E") || spatAxisUpperCase.contentEquals("LONG") || spatAxisUpperCase.equals("LON") || spatAxisUpperCase.equals("LONGITUDE") || spatAxisUpperCase.contentEquals("X")) {
-						spatAxisX = jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").getJSONObject(spatAxis).getString("axis");
+						spatAxisX = spatAxis;
 					}
 					else if (spatAxisUpperCase.contentEquals("N") || spatAxisUpperCase.contentEquals("LAT") || spatAxisUpperCase.equals("LATITUDE") || spatAxisUpperCase.contentEquals("Y")) {
-						spatAxisY = jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").getJSONObject(spatAxis).getString("axis");
+						spatAxisY = spatAxis;
 					}
 				}
 				this.filters.add(new Filter(spatAxisX+"_"+collectionID, left, right));
@@ -5975,7 +5942,7 @@ public class WCPSQueryFactory {
 							log.error(builder.toString());
 						}
 						extent = jsonresp.getJSONObject("extent");
-						JSONArray spatial = extent.getJSONArray("spatial");
+						JSONArray spatial = extent.getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0);
 						
 						double westlower = spatial.getDouble(0);
 						double eastupper = spatial.getDouble(2);
@@ -6043,7 +6010,7 @@ public class WCPSQueryFactory {
 			if (resSource!=0) {
 				URL url;
 				try {
-					url = new URL(ConvenienceHelper.readProperties("wcps-endpoint")
+					url = new URL(wcpsEndpoint
 							+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionID);
 
 					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -6134,13 +6101,13 @@ public class WCPSQueryFactory {
 				}
 				this.filters.remove(eastFilter);
 				this.filters.remove(westFilter);
-				for (String spatAxis : jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").keySet()) {	
+				for (String spatAxis : jsonresp.getJSONObject("cube:dimensions").keySet()) {	
 					String spatAxisUpperCase = spatAxis.toUpperCase();
 					if (spatAxisUpperCase.contentEquals("E") || spatAxisUpperCase.contentEquals("LONG") || spatAxisUpperCase.equals("LON") || spatAxisUpperCase.equals("LONGITUDE") || spatAxisUpperCase.contentEquals("X")) {
-						spatAxisX = jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").getJSONObject(spatAxis).getString("axis");
+						spatAxisX = spatAxis;
 					}
 					else if (spatAxisUpperCase.contentEquals("N") || spatAxisUpperCase.contentEquals("LAT") || spatAxisUpperCase.equals("LATITUDE") || spatAxisUpperCase.contentEquals("Y")) {
-						spatAxisY = jsonresp.getJSONObject("properties").getJSONObject("cube:dimensions").getJSONObject(spatAxis).getString("axis");
+						spatAxisY = spatAxis;
 					}
 				}
 				this.filters.add(new Filter(spatAxisX+"_"+collectionID, left, right));
@@ -6203,13 +6170,8 @@ public class WCPSQueryFactory {
 	private void createNDVIAggregateFromProcess(JSONObject argsObject, String collectionID) {
 		String red = null;
 		String nir = null;
-		String wcps_endpoint = null;
-		try {
-			wcps_endpoint = ConvenienceHelper.readProperties("openeo-endpoint");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		String wcps_endpoint = openEOEndpoint;
+		
 		JSONObject collectionSTACMetdata = null;
 		try {
 			collectionSTACMetdata = readJsonFromUrl(
