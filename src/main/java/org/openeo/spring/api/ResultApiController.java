@@ -1,11 +1,14 @@
 package org.openeo.spring.api;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.Optional;
 
@@ -29,6 +32,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -45,6 +51,9 @@ public class ResultApiController implements ResultApi {
 
 	@Value("${org.openeo.wcps.endpoint}")
 	private String wcpsEndpoint;
+	
+	@Value("${org.openeo.odc.endpoint}")
+	private String odcEndpoint;
 
 	@org.springframework.beans.factory.annotation.Autowired
 	public ResultApiController(NativeWebRequest request) {
@@ -65,33 +74,74 @@ public class ResultApiController implements ResultApi {
 	@RequestMapping(value = "/result", produces = { "*" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
-		WCPSQueryFactory wcpsFactory = null;
+		String backend = job.getProcess().getDescription();
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
-		wcpsFactory = new WCPSQueryFactory(processGraphJSON);
-		URL url;
-		try {
-			url = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages" + "&QUERY="
-					+ URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestMethod("GET");
-			byte[] response = IOUtils.toByteArray(conn.getInputStream());
-			log.info("Job successfully executed: " + job.toString());
-			return ResponseEntity.ok()
-					.contentType(new MediaType(ConvenienceHelper.getMimeTypeFromRasName(wcpsFactory.getOutputFormat())))
-					.body(response);
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ProtocolException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if(backend.contains("ODC")) {
+			JSONObject process = new JSONObject();
+			process.put("id", "ODC-graph");
+			process.put("process_graph", processGraphJSON);
+			URL url;
+			try {
+				url = new URL(odcEndpoint + "/graph/" + "test");
+				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+				conn.setRequestMethod("POST");
+				conn.setRequestProperty("Content-Type", "application/json; utf-8");
+				conn.setDoOutput(true);
+				log.debug("graph object send to ODC server: " + process.toString());
+				try(OutputStream os = conn.getOutputStream()) {
+				    byte[] requestBody = process.toString().getBytes("utf-8");
+				    os.write(requestBody, 0, requestBody.length);			
+				}
+				InputStream is = conn.getInputStream();
+				String mime =  URLConnection.guessContentTypeFromStream(is);
+				log.debug("Mime type on ODC response guessed to be: " + mime);
+				byte[] response = IOUtils.toByteArray(is);
+				log.info("Job successfully executed: " + job.toString());
+				return ResponseEntity.ok()
+						.contentType(new MediaType(mime))
+						.body(response);
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+	
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}else {
+			WCPSQueryFactory wcpsFactory = null;			
+			wcpsFactory = new WCPSQueryFactory(processGraphJSON);
+			URL url;
+			try {
+				url = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages" + "&QUERY="
+						+ URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
+				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+				conn.setRequestMethod("GET");
+				byte[] response = IOUtils.toByteArray(conn.getInputStream());
+				log.info("Job successfully executed: " + job.toString());
+				return ResponseEntity.ok()
+						.contentType(new MediaType(ConvenienceHelper.getMimeTypeFromRasName(wcpsFactory.getOutputFormat())))
+						.body(response);
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+	
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		Error error = new Error();
 		error.setCode("500");
