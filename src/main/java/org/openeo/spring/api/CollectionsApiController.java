@@ -18,6 +18,7 @@ import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
+import org.openapitools.jackson.nullable.JsonNullable;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,6 +29,7 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
+import org.json.JSONObject;
 import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.CollectionExtent;
 import org.openeo.spring.model.CollectionSpatialExtent;
@@ -153,7 +155,7 @@ public class CollectionsApiController implements CollectionsApi {
 				metadataElement = rootNode.getChild("CoverageDescription", defaultNS).getChild("metadata", gmlNS).getChild("Extension", gmlNS).getChild("covMetadata", gmlNS);
 			    }catch(Exception e) {
 //				log.warn("Error in parsing bands :" + e.getMessage());
-			    }		
+			    }
 				
 //				metadataObj = new JSONObject(metadataString1);
 //				String metadataString2 = metadataString1.replaceAll("\\n","");
@@ -297,7 +299,15 @@ public class CollectionsApiController implements CollectionsApi {
 						startTime = minValues[a].replaceAll("\"", "");
 						endTime = maxValues[a].replaceAll("\"", "");
 						dimensionTemporal.setExtent(temporalExtent);
-						dimensionTemporal.setStep(null);
+						String[] taxis = null;
+						try {
+							List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+							taxis = tList.get(a).getValue().split(" ");
+							dimensionTemporal.setStep(JsonNullable.of(taxis[0]));
+					    }catch(Exception e) {
+					    	log.warn("Irregular Axis :" + e.getMessage());
+					    	dimensionTemporal.setStep(JsonNullable.of(null));
+					    }
 						cubeColonDimensions.put(axis[a], dimensionTemporal);
 					}
 				}		    
@@ -455,7 +465,15 @@ public class CollectionsApiController implements CollectionsApi {
 							startTime = minValues[a].replaceAll("\"", "");
 							endTime = maxValues[a].replaceAll("\"", "");
 							dimensionTemporal.setExtent(temporalExtent);
-							dimensionTemporal.setStep(null);
+							String[] taxis = null;
+							try {
+								List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+								taxis = tList.get(a).getValue().split(" ");
+								dimensionTemporal.setStep(JsonNullable.of(taxis[0]));
+						    }catch(Exception e) {
+						    	log.warn("Irregular Axis :" + e.getMessage());
+						    	dimensionTemporal.setStep(JsonNullable.of(null));
+						    }
 							cubeColonDimensions.put(axis[a], dimensionTemporal);
 						}
 					}
@@ -811,7 +829,15 @@ public class CollectionsApiController implements CollectionsApi {
 					startTime = minValues[a].replaceAll("\"", "");
 					endTime = maxValues[a].replaceAll("\"", "");
 					dimensionTemporal.setExtent(temporalExtent);
-					dimensionTemporal.setStep(null);
+					String[] taxis = null;
+					try {
+						List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+						taxis = tList.get(a).getValue().split(" ");
+						dimensionTemporal.setStep(JsonNullable.of(taxis[0]));
+				    }catch(Exception e) {
+				    	log.warn("Irregular Axis :" + e.getMessage());
+				    	dimensionTemporal.setStep(JsonNullable.of(null));
+				    }
 					cubeColonDimensions.put(axis[a], dimensionTemporal);
 				}
 		    }
@@ -967,7 +993,15 @@ public class CollectionsApiController implements CollectionsApi {
 						startTime = minValues[a].replaceAll("\"", "");
 						endTime = maxValues[a].replaceAll("\"", "");
 						dimensionTemporal.setExtent(temporalExtent);
-						dimensionTemporal.setStep(null);
+						String[] taxis = null;
+						try {
+							List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+							taxis = tList.get(a).getValue().split(" ");
+							dimensionTemporal.setStep(JsonNullable.of(taxis[0]));
+					    }catch(Exception e) {
+					    	log.warn("Irregular Axis :" + e.getMessage());
+					    	dimensionTemporal.setStep(JsonNullable.of(null));
+					    }						
 						cubeColonDimensions.put(axis[a], dimensionTemporal);
 					}
 			    }
