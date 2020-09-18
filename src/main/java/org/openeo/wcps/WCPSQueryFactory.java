@@ -48,11 +48,8 @@ public class WCPSQueryFactory {
 	private JSONObject processGraph;
 	private boolean withUDF = false;
 	
-	@Value("${org.openeo.wcps.endpoint}")
+	private String openEOEndpoint;
 	private String wcpsEndpoint;
-	
-//	@Value("${openapi.openEO.base-path:}")
-	private String openEOEndpoint = "http://localhost:8181";
 
 	Logger log = LogManager.getLogger();
 
@@ -61,13 +58,14 @@ public class WCPSQueryFactory {
 	 * 
 	 * @param openEOGraph
 	 */
-	public WCPSQueryFactory(JSONObject openEOGraph) {
+	public WCPSQueryFactory(JSONObject openEOGraph, String openEOEndpoint, String wcpsEndpoint) {
 		collectionIDs = new Vector<Collection>();
 		aggregates = new Vector<Aggregate>();
 		filters = new Vector<Filter>();
 		filtersPolygon = new Vector<Filter>();
 		wcpsStringBuilder = new StringBuilder("");
 		this.processGraph = openEOGraph;
+		this.openEOEndpoint = openEOEndpoint;
 		this.build();
 	}
 
@@ -5552,7 +5550,7 @@ public class WCPSQueryFactory {
 			int srs = 0;
 			JSONObject jsonresp = null;
 			try {
-				jsonresp = readJsonFromUrl(wcpsEndpoint + "/collections/" + coll);
+				jsonresp = readJsonFromUrl(openEOEndpoint + "/collections/" + coll);
 			} catch (JSONException e) {
 				log.error("An error occured: " + e.getMessage());
 				StringBuilder builder = new StringBuilder();

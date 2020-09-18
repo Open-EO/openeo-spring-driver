@@ -5,16 +5,17 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.fasterxml.jackson.databind.Module;
 
 import org.openeo.spring.api.ApiFilter;
 
+//@SpringBootApplication(exclude= {UserDetailsServiceAutoConfiguration.class})
 @SpringBootApplication
 @ComponentScan(basePackages = {"org.openeo.spring", "org.openeo.spring.api" , "org.openapitools.configuration"})
 public class OpenAPI2SpringBoot implements CommandLineRunner {
