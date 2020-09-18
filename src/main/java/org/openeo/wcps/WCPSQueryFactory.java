@@ -14,7 +14,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -32,6 +34,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.lang.Math;
 
+import org.openeo.spring.model.CollectionSummaryStats;
 import org.openeo.wcps.domain.Aggregate;
 import org.openeo.wcps.domain.Collection;
 import org.openeo.wcps.domain.Filter;
@@ -1223,37 +1226,154 @@ public class WCPSQueryFactory {
 					}
 					log.error(builder.toString());
 				}
-				JSONArray bandsArray = ((JSONObject) collectionSTACMetdata.get("properties")).getJSONArray("eo:bands");		
+				
 				String resSource = null;
-				for(int c = 0; c < bandsArray.length(); c++) {
-					resSource = bandsArray.getJSONObject(c).getString("gsd");
-				}
-				JSONObject targetCollectionSTACMetdata = null;
+				URL url;
 				try {
-					targetCollectionSTACMetdata = readJsonFromUrl(
-							openEOEndpoint + "/collections/" + targetCollectionID);
-				} catch (JSONException e) {
-					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-					StringBuilder builder = new StringBuilder();
-					for( StackTraceElement element: e.getStackTrace()) {
-						builder.append(element.toString()+"\n");
+					url = new URL(wcpsEndpoint
+							+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionID);
+					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+					conn.setRequestMethod("GET");
+					SAXBuilder builder = new SAXBuilder();
+					Document capabilititesDoc = builder.build(conn.getInputStream());
+					List<Namespace> namespaces = capabilititesDoc.getNamespacesIntroduced();
+					Element rootNode = capabilititesDoc.getRootElement();
+					Namespace defaultNS = rootNode.getNamespace();
+					Namespace gmlNS = null;
+					Namespace sweNS = null;
+					Namespace gmlCovNS =  null;
+					Namespace gmlrgridNS = null;
+					for (int n = 0; n < namespaces.size(); n++) {
+						Namespace current = namespaces.get(n);
+						if(current.getPrefix().equals("swe")) {
+							sweNS = current;
+						}
+						if(current.getPrefix().equals("gmlcov")) {
+							gmlCovNS = current;
+						}
+						if(current.getPrefix().equals("gml")) {
+							gmlNS = current;
+						}
+						if(current.getPrefix().equals("gmlrgrid")) {
+							gmlrgridNS = current;
+						}
+					}					
+					log.debug("root node info: " + rootNode.getName());
+
+					Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
+					Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
+					Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
+					Boolean bandsMeta = false;
+					Element metadataElement = null;
+					try {
+						metadataElement = rootNode.getChild("CoverageDescription", defaultNS).getChild("metadata", gmlNS).getChild("Extension", gmlNS).getChild("covMetadata", gmlNS);
+					}catch(Exception e) {
 					}
-					log.error(builder.toString());
+					List<Element> bandsList = null;
+					List<Element> bandsListSwe = null;
+					try {
+						bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
+						bandsMeta = true;
+					}catch(Exception e) {
+					}
+					try {
+						bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
+					}catch(Exception e) {
+					}
+					if (bandsMeta) {
+						try {
+							for(int c = 0; c < bandsList.size(); c++) {						
+								Element band = bandsList.get(c);					
+								try {
+									resSource = band.getChildText("gsd");
+								}catch(Exception e) {
+								}
+							}
+						}catch(Exception e) {
+						}
+					}
+				}
+				catch (MalformedURLException e) {
+					log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
 				} catch (IOException e) {
-					log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-					StringBuilder builder = new StringBuilder();
-					for( StackTraceElement element: e.getStackTrace()) {
-						builder.append(element.toString()+"\n");
+					log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
+				} catch (JDOMException e) {
+					log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());		
+				}				
+				
+				String resTarget = null;								
+				try {
+					url = new URL(wcpsEndpoint
+							+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + targetCollectionID);
+					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+					conn.setRequestMethod("GET");
+					SAXBuilder builder = new SAXBuilder();
+					Document capabilititesDoc = builder.build(conn.getInputStream());
+					List<Namespace> namespaces = capabilititesDoc.getNamespacesIntroduced();
+					Element rootNode = capabilititesDoc.getRootElement();
+					Namespace defaultNS = rootNode.getNamespace();
+					Namespace gmlNS = null;
+					Namespace sweNS = null;
+					Namespace gmlCovNS =  null;
+					Namespace gmlrgridNS = null;
+					for (int n = 0; n < namespaces.size(); n++) {
+						Namespace current = namespaces.get(n);
+						if(current.getPrefix().equals("swe")) {
+							sweNS = current;
+						}
+						if(current.getPrefix().equals("gmlcov")) {
+							gmlCovNS = current;
+						}
+						if(current.getPrefix().equals("gml")) {
+							gmlNS = current;
+						}
+						if(current.getPrefix().equals("gmlrgrid")) {
+							gmlrgridNS = current;
+						}
+					}					
+					log.debug("root node info: " + rootNode.getName());
+
+					Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
+					Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
+					Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
+					Boolean bandsMeta = false;
+					Element metadataElement = null;
+					try {
+						metadataElement = rootNode.getChild("CoverageDescription", defaultNS).getChild("metadata", gmlNS).getChild("Extension", gmlNS).getChild("covMetadata", gmlNS);
+					}catch(Exception e) {
 					}
-					log.error(builder.toString());
+					List<Element> bandsList = null;
+					List<Element> bandsListSwe = null;
+					try {
+						bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
+						bandsMeta = true;
+					}catch(Exception e) {
+					}
+					try {
+						bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
+					}catch(Exception e) {
+					}
+					if (bandsMeta) {
+						try {
+							for(int c = 0; c < bandsList.size(); c++) {						
+								Element band = bandsList.get(c);					
+								try {
+									resTarget = band.getChildText("gsd");
+								}catch(Exception e) {
+								}
+							}
+						}catch(Exception e) {
+						}
+					}
 				}
-				JSONArray targetBandsArray = ((JSONObject) targetCollectionSTACMetdata.get("properties")).getJSONArray("eo:bands");		
-				String resTarget = null;
-				for(int c = 0; c < targetBandsArray.length(); c++) {
-					resTarget = targetBandsArray.getJSONObject(c).getString("gsd");
+				catch (MalformedURLException e) {
+					log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
+				} catch (IOException e) {
+					log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
+				} catch (JDOMException e) {
+					log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());		
 				}
-//				String resTargetTemporal = null;
-//				resTargetTemporal = ((JSONObject) targetCollectionSTACMetdata.getJSONObject("properties")).getJSONObject("cube:dimensions").getJSONObject(tempAxis).getString("step");
+				
 				wcpsResamplepayLoad.append(createResampleSpatialCubeWCPSString(nodeKeyOfCurrentProcess, payLoad, resSource, resTarget, xAxis, xLow, xHigh, yAxis, yLow, yHigh, tempAxis, temporalStartCube1, temporalEndCube1));
 				wcpsPayLoad=wcpsResamplepayLoad;
 				wcpsStringBuilder = wcpsStringBuilderResample.append(wcpsResamplepayLoad.toString());
@@ -5798,6 +5918,7 @@ public class WCPSQueryFactory {
 		String top = null;
 		String bottom = null;
 		double resSource = 0;
+		URL url;
 		String wcps_endpoint = openEOEndpoint;
 		
 		JSONObject collectionSTACMetdata = null;
@@ -5818,15 +5939,79 @@ public class WCPSQueryFactory {
 				builder.append(element.toString()+"\n");
 			}
 			log.error(builder.toString());
-		}
-		JSONArray bandsArray = ((JSONObject) collectionSTACMetdata.get("properties")).getJSONArray("eo:bands");		
+		}		
+		
 		try {
-			for(int c = 0; c < bandsArray.length(); c++) {
-				resSource = Double.parseDouble(bandsArray.getJSONObject(c).getString("gsd"));
+			url = new URL(wcpsEndpoint
+					+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionID);
+
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			SAXBuilder builder = new SAXBuilder();
+			Document capabilititesDoc = builder.build(conn.getInputStream());
+			List<Namespace> namespaces = capabilititesDoc.getNamespacesIntroduced();
+			Element rootNode = capabilititesDoc.getRootElement();
+			Namespace defaultNS = rootNode.getNamespace();
+			Namespace gmlNS = null;
+			Namespace sweNS = null;
+			Namespace gmlCovNS =  null;
+			Namespace gmlrgridNS = null;
+			for (int n = 0; n < namespaces.size(); n++) {
+				Namespace current = namespaces.get(n);
+				if(current.getPrefix().equals("swe")) {
+					sweNS = current;
+				}
+				if(current.getPrefix().equals("gmlcov")) {
+					gmlCovNS = current;
+				}
+				if(current.getPrefix().equals("gml")) {
+					gmlNS = current;
+				}
+				if(current.getPrefix().equals("gmlrgrid")) {
+					gmlrgridNS = current;
+				}
+			}					
+			log.debug("root node info: " + rootNode.getName());
+
+			Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
+			Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
+			Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
+			Boolean bandsMeta = false;
+			Element metadataElement = null;
+			try {
+				metadataElement = rootNode.getChild("CoverageDescription", defaultNS).getChild("metadata", gmlNS).getChild("Extension", gmlNS).getChild("covMetadata", gmlNS);
+			}catch(Exception e) {
+			}
+			List<Element> bandsList = null;
+			List<Element> bandsListSwe = null;
+			try {
+				bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
+				bandsMeta = true;
+			}catch(Exception e) {
+			}
+			try {
+				bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
+			}catch(Exception e) {
+			}
+			if (bandsMeta) {
+				try {
+					for(int c = 0; c < bandsList.size(); c++) {						
+						Element band = bandsList.get(c);					
+						try {
+							resSource = Double.parseDouble(band.getChildText("gsd"));
+						}catch(Exception e) {
+						}
+					}
+				}catch(Exception e) {
+				}
 			}
 		}
-		catch (JSONException e) {
-
+		catch (MalformedURLException e) {
+			log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
+		} catch (IOException e) {
+			log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
+		} catch (JDOMException e) {
+			log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());		
 		}
 		if (spatNull) {
 			JSONObject extent;
@@ -6007,11 +6192,9 @@ public class WCPSQueryFactory {
 				}
 			}
 			if (resSource!=0) {
-				URL url;
 				try {
 					url = new URL(wcpsEndpoint
 							+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionID);
-
 					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 					conn.setRequestMethod("GET");
 					SAXBuilder builder = new SAXBuilder();
