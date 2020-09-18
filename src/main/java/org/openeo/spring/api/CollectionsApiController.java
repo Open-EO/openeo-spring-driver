@@ -677,12 +677,7 @@ public class CollectionsApiController implements CollectionsApi {
 			}catch(StringIndexOutOfBoundsException e) {
 				srsDescription = srsDescription.substring(srsDescription.indexOf("EPSG")).replace("/0/", ":");
 				srsDescription = srsDescription.replaceAll("EPSG:","");							
-			}
-			Map<String, CollectionSummaryStats[]> summaries = new HashMap<String, CollectionSummaryStats[]>();
-			CollectionSummaryStats[] value = null;
-			
-			summaries.put("proj:epsg", value);
-			currentCollection.setSummaries(summaries);
+			}			
 			
 			SpatialReference src = new SpatialReference();
 			src.ImportFromEPSG(Integer.parseInt(srsDescription));
@@ -748,6 +743,12 @@ public class CollectionsApiController implements CollectionsApi {
 						}catch(Exception e) {
 //							log.warn("Error in parsing band gsd:" + e.getMessage());
 						}
+						Map<String,CollectionSummaryStats[]> summaries = new HashMap<String,CollectionSummaryStats[]>();
+						CollectionSummaryStats gsd = new CollectionSummaryStats();
+						CollectionSummaryStats[] eoGsd = {gsd};
+						summaries.put("eo:bands", eoGsd);
+						currentCollection.setSummaries(summaries);
+						currentCollection.putSummariesItem("eo:gsd", eoGsd);
 					}
 				}catch(Exception e) {
 //					log.warn("Error in parsing bands :" + e.getMessage());
@@ -1036,14 +1037,9 @@ public class CollectionsApiController implements CollectionsApi {
             }catch(Exception e) {
 //            	log.warn("Error in parsing Title :" + e.getMessage());
 	        }
-		    
-		    Map<String, CollectionSummaryStats[]> summaries = new HashMap<String, CollectionSummaryStats[]>();
-			CollectionSummaryStats instrument = new CollectionSummaryStats();
-						
-			currentCollection.setSummaries(summaries);	
+		       
 			
-//			JSONArray links = new JSONArray();
-//			
+//			JSONArray links = new JSONArray();			
 //			JSONObject linkSelf = new JSONObject();
 //			linkSelf.put("href", ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionId);
 //			linkSelf.put("rel", "self");
