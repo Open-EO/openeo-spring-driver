@@ -76,7 +76,7 @@ public class ResultApiController implements ResultApi {
 	public ResponseEntity computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
 		String backend = job.getProcess().getDescription();
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
-		if(backend.contains("ODC")) {
+		if(backend != null && backend.contains("ODC")) {
 			JSONObject process = new JSONObject();
 			process.put("id", "ODC-graph");
 			process.put("process_graph", processGraphJSON);
