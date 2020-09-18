@@ -33,9 +33,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -53,10 +50,10 @@ public class ResultApiController implements ResultApi {
 
 	@Value("${org.openeo.wcps.endpoint}")
 	private String wcpsEndpoint;
-	
+
 	@Value("${org.openeo.endpoint}")
 	private String openEOEndpoint;
-	
+
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
 
@@ -81,7 +78,7 @@ public class ResultApiController implements ResultApi {
 	public ResponseEntity computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
 		String backend = job.getProcess().getDescription();
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
-		if(backend != null && backend.contains("ODC")) {
+		if (backend != null && backend.contains("ODC")) {
 			JSONObject process = new JSONObject();
 			process.put("id", "ODC-graph");
 			process.put("process_graph", processGraphJSON);
@@ -93,22 +90,20 @@ public class ResultApiController implements ResultApi {
 				conn.setRequestProperty("Content-Type", "application/json; utf-8");
 				conn.setDoOutput(true);
 				log.debug("graph object send to ODC server: " + process.toString());
-				try(OutputStream os = conn.getOutputStream()) {
-				    byte[] requestBody = process.toString().getBytes("utf-8");
-				    os.write(requestBody, 0, requestBody.length);			
+				try (OutputStream os = conn.getOutputStream()) {
+					byte[] requestBody = process.toString().getBytes("utf-8");
+					os.write(requestBody, 0, requestBody.length);
 				}
 				InputStream is = conn.getInputStream();
-				String mime =  URLConnection.guessContentTypeFromStream(is);
+				String mime = URLConnection.guessContentTypeFromStream(is);
 				log.debug("Mime type on ODC response guessed to be: " + mime);
 				byte[] response = IOUtils.toByteArray(is);
 				log.info("Job successfully executed: " + job.toString());
-				return ResponseEntity.ok()
-						.contentType(new MediaType(mime))
-						.body(response);
+				return ResponseEntity.ok().contentType(new MediaType(mime)).body(response);
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-	
+
 			} catch (UnsupportedEncodingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -119,8 +114,8 @@ public class ResultApiController implements ResultApi {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}else {
-			WCPSQueryFactory wcpsFactory = null;			
+		} else {
+			WCPSQueryFactory wcpsFactory = null;
 			wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint);
 			URL url;
 			try {
@@ -131,12 +126,13 @@ public class ResultApiController implements ResultApi {
 				byte[] response = IOUtils.toByteArray(conn.getInputStream());
 				log.info("Job successfully executed: " + job.toString());
 				return ResponseEntity.ok()
-						.contentType(new MediaType(ConvenienceHelper.getMimeTypeFromRasName(wcpsFactory.getOutputFormat())))
+						.contentType(
+								new MediaType(ConvenienceHelper.getMimeTypeFromRasName(wcpsFactory.getOutputFormat())))
 						.body(response);
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-	
+
 			} catch (UnsupportedEncodingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
