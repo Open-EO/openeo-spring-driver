@@ -1,1 +1,6 @@
 /application.properties
+/keystore.p12
+/keystore.jks
+/openssl.cnf
+/private.key
+/selfsigned.crt
