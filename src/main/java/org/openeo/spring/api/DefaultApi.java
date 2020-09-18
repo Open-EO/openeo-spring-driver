@@ -8,7 +8,6 @@ package org.openeo.spring.api;
 import java.util.Optional;
 
 import org.openeo.spring.model.Capabilities;
-import org.openeo.spring.model.Error;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,47 +16,63 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.NativeWebRequest;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Validated
-@Api(value = "default", description = "the default API")
 public interface DefaultApi {
 
-    default Optional<NativeWebRequest> getRequest() {
-        return Optional.empty();
-    }
+	default Optional<NativeWebRequest> getRequest() {
+		return Optional.empty();
+	}
 
-    /**
-     * GET / : Information about the back-end
-     * Returns general information about the back-end, including which version and endpoints of the openEO API are supported. May also include billing information.
-     *
-     * @return Information about the API version and supported endpoints / features. (status code 200)
-     *         or The request can&#39;t be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request usually does not respond with HTTP status codes 401 and 403 due to missing authorization. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 400)
-     *         or The request can&#39;t be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 500)
-     */
-    @ApiOperation(value = "Information about the back-end", nickname = "capabilities", notes = "Returns general information about the back-end, including which version and endpoints of the openEO API are supported. May also include billing information.", response = Capabilities.class, tags={ "Capabilities", })
-    @ApiResponses(value = { 
-        @ApiResponse(code = 200, message = "Information about the API version and supported endpoints / features.", response = Capabilities.class),
-        @ApiResponse(code = 400, message = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request usually does not respond with HTTP status codes 401 and 403 due to missing authorization. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)", response = Error.class),
-        @ApiResponse(code = 500, message = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)", response = Error.class) })
-    @RequestMapping(value = "/",
-        produces = { "application/json" }, 
-        method = RequestMethod.GET)
-    default ResponseEntity<Capabilities> capabilities() {
-        getRequest().ifPresent(request -> {
-            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
-                if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-                    String exampleString = "{ \"backend_version\" : \"1.1.2\", \"stac_version\" : \"stac_version\", \"endpoints\" : [ { \"path\" : \"/collections\", \"methods\" : [ \"GET\" ] }, { \"path\" : \"/collections/{collection_id}\", \"methods\" : [ \"GET\" ] }, { \"path\" : \"/processes\", \"methods\" : [ \"GET\" ] }, { \"path\" : \"/jobs\", \"methods\" : [ \"GET\", \"POST\" ] }, { \"path\" : \"/jobs/{job_id}\", \"methods\" : [ \"GET\", \"DELETE\", \"PATCH\" ] } ], \"production\" : false, \"description\" : \"This service is provided to you by [Cool EO Cloud Corp.](http://cool-eo-cloud-corp.com). It implements the full openEO API and allows to process a range of 999 EO data sets, including \n\n* Sentinel 1/2/3 and 5\n* Landsat 7/8\n\nA free plan is available to test the service. For further information please contact our customer service at [support@cool-eo-cloud-corp.com](mailto:support@cool-eo-cloud-corp.com).\", \"links\" : [ { \"href\" : \"http://www.cool-cloud-corp.com\", \"rel\" : \"about\", \"type\" : \"text/html\", \"title\" : \"Homepage of the service provider\" }, { \"href\" : \"https://www.cool-cloud-corp.com/tos\", \"rel\" : \"terms-of-service\", \"type\" : \"text/html\", \"title\" : \"Terms of Service\" }, { \"href\" : \"https://www.cool-cloud-corp.com/privacy\", \"rel\" : \"privacy-policy\", \"type\" : \"text/html\", \"title\" : \"Privacy Policy\" }, { \"href\" : \"http://www.cool-cloud-corp.com/.well-known/openeo\", \"rel\" : \"version-history\", \"type\" : \"application/json\", \"title\" : \"List of supported openEO versions\" }, { \"href\" : \"http://www.cool-cloud-corp.com/api/v1.0/conformance\", \"rel\" : \"conformance\", \"type\" : \"application/json\", \"title\" : \"OGC Conformance Classes\" }, { \"href\" : \"http://www.cool-cloud-corp.com/api/v1.0/collections\", \"rel\" : \"data\", \"type\" : \"application/json\", \"title\" : \"List of Datasets\" } ], \"id\" : \"cool-eo-cloud\", \"api_version\" : \"1.0.1\", \"title\" : \"Cool EO Cloud\", \"billing\" : { \"plans\" : [ { \"name\" : \"free\", \"description\" : \"Free plan. Calculates one tile per second and a maximum amount of 100 tiles per hour.\", \"url\" : \"http://cool-cloud-corp.com/plans/free-plan\", \"paid\" : false }, { \"name\" : \"premium\", \"description\" : \"Premium plan. Calculates unlimited tiles and each calculated tile costs 0.003 USD.\", \"url\" : \"http://cool-cloud-corp.com/plans/premium-plan\", \"paid\" : true } ], \"currency\" : \"USD\", \"default_plan\" : \"free\" } }";
-                    ApiUtil.setExampleResponse(request, "application/json", exampleString);
-                    break;
-                }
-            }
-        });
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+	/**
+	 * GET / : Information about the back-end Returns general information about the
+	 * back-end, including which version and endpoints of the openEO API are
+	 * supported. May also include billing information.
+	 *
+	 * @return Information about the API version and supported endpoints / features.
+	 *         (status code 200) or The request can&#39;t be fulfilled due to an
+	 *         error on client-side, i.e. the request is invalid. The client should
+	 *         not repeat the request without modifications. The response body
+	 *         SHOULD contain a JSON error object. MUST be any HTTP status code
+	 *         specified in [RFC
+	 *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request
+	 *         usually does not respond with HTTP status codes 401 and 403 due to
+	 *         missing authorization. HTTP status code 404 should be used if the
+	 *         value of a path parameter is invalid. See also: * [Error
+	 *         Handling](#section/API-Principles/Error-Handling) in the API in
+	 *         general. * [Common Error Codes](errors.json) (status code 400) or The
+	 *         request can&#39;t be fulfilled due to an error at the back-end. The
+	 *         error is never the client’s fault and therefore it is reasonable for
+	 *         the client to retry the exact same request that triggered this
+	 *         response. The response body SHOULD contain a JSON error object. MUST
+	 *         be any HTTP status code specified in [RFC
+	 *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). See also: *
+	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
+	 *         in general. * [Common Error Codes](errors.json) (status code 500)
+	 */
+	@Operation(summary = "Information about the back-end", operationId = "capabilities", description = "Returns general information about the back-end, including which version and endpoints of the openEO API are supported. May also include billing information.", tags = {
+			"Capabilities", })
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Information about the API version and supported endpoints / features."),
+			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request usually does not respond with HTTP status codes 401 and 403 due to missing authorization. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
+			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
+	@RequestMapping(value = "/", produces = { "application/json" }, method = RequestMethod.GET)
+	default ResponseEntity<Capabilities> capabilities() {
+		getRequest().ifPresent(request -> {
+			for (MediaType mediaType : MediaType.parseMediaTypes(request.getHeader("Accept"))) {
+				if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
+					String exampleString = "{ \"backend_version\" : \"1.1.2\", \"stac_version\" : \"stac_version\", \"endpoints\" : [ { \"path\" : \"/collections\", \"methods\" : [ \"GET\" ] }, { \"path\" : \"/collections/{collection_id}\", \"methods\" : [ \"GET\" ] }, { \"path\" : \"/processes\", \"methods\" : [ \"GET\" ] }, { \"path\" : \"/jobs\", \"methods\" : [ \"GET\", \"POST\" ] }, { \"path\" : \"/jobs/{job_id}\", \"methods\" : [ \"GET\", \"DELETE\", \"PATCH\" ] } ], \"production\" : false, \"description\" : \"This service is provided to you by [Cool EO Cloud Corp.](http://cool-eo-cloud-corp.com). It implements the full openEO API and allows to process a range of 999 EO data sets, including \n\n* Sentinel 1/2/3 and 5\n* Landsat 7/8\n\nA free plan is available to test the service. For further information please contact our customer service at [support@cool-eo-cloud-corp.com](mailto:support@cool-eo-cloud-corp.com).\", \"links\" : [ { \"href\" : \"http://www.cool-cloud-corp.com\", \"rel\" : \"about\", \"type\" : \"text/html\", \"title\" : \"Homepage of the service provider\" }, { \"href\" : \"https://www.cool-cloud-corp.com/tos\", \"rel\" : \"terms-of-service\", \"type\" : \"text/html\", \"title\" : \"Terms of Service\" }, { \"href\" : \"https://www.cool-cloud-corp.com/privacy\", \"rel\" : \"privacy-policy\", \"type\" : \"text/html\", \"title\" : \"Privacy Policy\" }, { \"href\" : \"http://www.cool-cloud-corp.com/.well-known/openeo\", \"rel\" : \"version-history\", \"type\" : \"application/json\", \"title\" : \"List of supported openEO versions\" }, { \"href\" : \"http://www.cool-cloud-corp.com/api/v1.0/conformance\", \"rel\" : \"conformance\", \"type\" : \"application/json\", \"title\" : \"OGC Conformance Classes\" }, { \"href\" : \"http://www.cool-cloud-corp.com/api/v1.0/collections\", \"rel\" : \"data\", \"type\" : \"application/json\", \"title\" : \"List of Datasets\" } ], \"id\" : \"cool-eo-cloud\", \"api_version\" : \"1.0.1\", \"title\" : \"Cool EO Cloud\", \"billing\" : { \"plans\" : [ { \"name\" : \"free\", \"description\" : \"Free plan. Calculates one tile per second and a maximum amount of 100 tiles per hour.\", \"url\" : \"http://cool-cloud-corp.com/plans/free-plan\", \"paid\" : false }, { \"name\" : \"premium\", \"description\" : \"Premium plan. Calculates unlimited tiles and each calculated tile costs 0.003 USD.\", \"url\" : \"http://cool-cloud-corp.com/plans/premium-plan\", \"paid\" : true } ], \"currency\" : \"USD\", \"default_plan\" : \"free\" } }";
+					ApiUtil.setExampleResponse(request, "application/json", exampleString);
+					break;
+				}
+			}
+		});
+		return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
-    }
+	}
 
 }
