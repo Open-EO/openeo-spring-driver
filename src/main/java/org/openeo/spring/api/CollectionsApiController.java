@@ -746,9 +746,9 @@ public class CollectionsApiController implements CollectionsApi {
 						Map<String,CollectionSummaryStats[]> summaries = new HashMap<String,CollectionSummaryStats[]>();
 						CollectionSummaryStats gsd = new CollectionSummaryStats();
 						CollectionSummaryStats[] eoGsd = {gsd};
-						summaries.put("eo:bands", eoGsd);
-						currentCollection.setSummaries(summaries);
-						currentCollection.putSummariesItem("eo:gsd", eoGsd);
+//						summaries.put("eo:bands", eoGsd);
+//						currentCollection.setSummaries(summaries);
+//						currentCollection.putSummariesItem("eo:gsd", eoGsd);
 					}
 				}catch(Exception e) {
 //					log.warn("Error in parsing bands :" + e.getMessage());
