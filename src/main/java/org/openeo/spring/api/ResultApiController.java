@@ -52,6 +52,9 @@ public class ResultApiController implements ResultApi {
 	@Value("${org.openeo.wcps.endpoint}")
 	private String wcpsEndpoint;
 	
+	@Value("${openapi.openEO.base-path:}")
+	private String openEOEndpoint;
+	
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
 
@@ -116,7 +119,7 @@ public class ResultApiController implements ResultApi {
 			}
 		}else {
 			WCPSQueryFactory wcpsFactory = null;			
-			wcpsFactory = new WCPSQueryFactory(processGraphJSON);
+			wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint);
 			URL url;
 			try {
 				url = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages" + "&QUERY="
