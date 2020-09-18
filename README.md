@@ -18,7 +18,7 @@ https://localhost:8443/
 ## Configuration setup hints
 This back-end is only functional if an application.properties file is added to ```/src/main/resources```.
 This file should contain at least the following:
-
+```
 springfox.documentation.swagger.v2.path=/api-docs
 spring.jackson.date-format=org.openeo.spring.RFC3339DateFormat
 spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS=false
@@ -46,7 +46,7 @@ org.openeo.odc.provider.url=http://www.open_data_cube_provider.url
 org.openeo.endpoint=https://my_openeo.url
 org.openeo.udf.python.endpoint=http://my_openeo_python_udf_service.url
 org.openeo.udf.r.endpoint=http://my_openeo_R_udf_service.url
-
+```
 ## Logging
 All logging can be controlled through log4j2.
 For tweaking of log level and file output modify
