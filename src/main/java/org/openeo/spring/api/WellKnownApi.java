@@ -85,7 +85,7 @@ public interface WellKnownApi {
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request usually does not respond with HTTP status codes 401 and 403 due to missing authorization. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/.well-known/openeo", produces = { "application/json" }, method = RequestMethod.GET)
-	default ResponseEntity<WellKnownDiscovery> connect() {
+	default ResponseEntity connect() {
 		getRequest().ifPresent(request -> {
 			for (MediaType mediaType : MediaType.parseMediaTypes(request.getHeader("Accept"))) {
 				if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
