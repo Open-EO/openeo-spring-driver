@@ -608,8 +608,7 @@ public class CollectionsApiController implements CollectionsApi {
     @GetMapping(value = "/collections/{collection_id}", produces = { "application/json" })
     @Override
     public ResponseEntity<Collection> describeCollection(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId, Principal principal) {
-    	
-    	
+    	    	
 //    	log.debug("The following user is authenticated: " + principal.getName());
 //    	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 //    	if (!(authentication instanceof AnonymousAuthenticationToken)) {
@@ -650,8 +649,8 @@ public class CollectionsApiController implements CollectionsApi {
 				if(current.getPrefix().equals("gmlrgrid")) {
 					gmlrgridNS = current;
 				}
-			}			
-//			log.debug("root node info: " + rootNode.getName());		
+			}
+//			log.debug("root node info: " + rootNode.getName());
 					
 			Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
 			Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
@@ -679,6 +678,11 @@ public class CollectionsApiController implements CollectionsApi {
 				srsDescription = srsDescription.substring(srsDescription.indexOf("EPSG")).replace("/0/", ":");
 				srsDescription = srsDescription.replaceAll("EPSG:","");							
 			}
+			Map<String, CollectionSummaryStats[]> summaries = new HashMap<String, CollectionSummaryStats[]>();
+			CollectionSummaryStats[] value = null;
+			
+			summaries.put("proj:epsg", value);
+			currentCollection.setSummaries(summaries);
 			
 			SpatialReference src = new SpatialReference();
 			src.ImportFromEPSG(Integer.parseInt(srsDescription));
