@@ -66,6 +66,7 @@ public class WCPSQueryFactory {
 		wcpsStringBuilder = new StringBuilder("");
 		this.processGraph = openEOGraph;
 		this.openEOEndpoint = openEOEndpoint;
+		this.wcpsEndpoint = wcpsEndpoint;
 		this.build();
 	}
 
