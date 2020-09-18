@@ -195,7 +195,7 @@ public class WCPSQueryFactory {
 				String collectionID = currentProcessArguments.getString("id");				
 				JSONObject jsonresp = null;
 				try {
-					jsonresp = readJsonFromUrl(wcpsEndpoint + "/collections/" + collectionID);
+					jsonresp = readJsonFromUrl(openEOEndpoint + "/collections/" + collectionID);
 				} catch (JSONException e) {
 					log.error("An error occured: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -306,7 +306,7 @@ public class WCPSQueryFactory {
 				JSONObject collectionSTACMetdataCube2 = null;
 				try {
 					collectionSTACMetdataCube1 = readJsonFromUrl(
-							wcpsEndpoint + "/collections/" + cube1);
+							openEOEndpoint + "/collections/" + cube1);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -325,7 +325,7 @@ public class WCPSQueryFactory {
 				
 				try {
 					collectionSTACMetdataCube2 = readJsonFromUrl(
-							wcpsEndpoint + "/collections/" + cube2);
+							openEOEndpoint + "/collections/" + cube2);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -812,7 +812,7 @@ public class WCPSQueryFactory {
 				JSONObject collectionSTACMetdataCube2 = null;
 				try {
 					collectionSTACMetdataCube1 = readJsonFromUrl(
-							wcpsEndpoint + "/collections/" + cube1);
+							openEOEndpoint + "/collections/" + cube1);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -830,7 +830,7 @@ public class WCPSQueryFactory {
 				}
 				try {
 					collectionSTACMetdataCube2 = readJsonFromUrl(
-							wcpsEndpoint + "/collections/" + cube2);
+							openEOEndpoint + "/collections/" + cube2);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -1091,7 +1091,7 @@ public class WCPSQueryFactory {
 				JSONObject collectionSTACMetdata = null;
 				try {
 					collectionSTACMetdata = readJsonFromUrl(
-							wcpsEndpoint + "/collections/" + collectionID);
+							openEOEndpoint + "/collections/" + collectionID);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -1112,7 +1112,7 @@ public class WCPSQueryFactory {
 				JSONObject targetCollectionSTACMetdata = null;
 				try {
 					targetCollectionSTACMetdata = readJsonFromUrl(
-							wcpsEndpoint + "/collections/" + targetCollectionID);
+							openEOEndpoint + "/collections/" + targetCollectionID);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -1208,7 +1208,7 @@ public class WCPSQueryFactory {
 				JSONObject collectionSTACMetdata = null;
 				try {
 					collectionSTACMetdata = readJsonFromUrl(
-							wcpsEndpoint + "/collections/" + collectionID);
+							openEOEndpoint + "/collections/" + collectionID);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -1232,7 +1232,7 @@ public class WCPSQueryFactory {
 				JSONObject targetCollectionSTACMetdata = null;
 				try {
 					targetCollectionSTACMetdata = readJsonFromUrl(
-							wcpsEndpoint + "/collections/" + targetCollectionID);
+							openEOEndpoint + "/collections/" + targetCollectionID);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -1426,7 +1426,7 @@ public class WCPSQueryFactory {
 				JSONObject collectionSTACMetdata = null;
 				try {
 					collectionSTACMetdata = readJsonFromUrl(
-							wcpsEndpoint + "/collections/" + collectionID);
+							openEOEndpoint + "/collections/" + collectionID);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -5415,12 +5415,12 @@ public class WCPSQueryFactory {
 			collectionIDs.add(new Collection(processNodeKey));
 			int srs = 0;
 			log.debug("Found actual dataset: " + collection);
-			log.debug(wcpsEndpoint);
+			log.debug(openEOEndpoint);
 
 			JSONObject collectionSTACMetdata = null;
 			try {
 				collectionSTACMetdata = readJsonFromUrl(
-						wcpsEndpoint + "/collections/" + collection);
+						openEOEndpoint + "/collections/" + collection);
 			} catch (JSONException e) {
 				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 				StringBuilder builder = new StringBuilder();
@@ -5481,7 +5481,7 @@ public class WCPSQueryFactory {
 			String collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
 			JSONObject jsonresp = null;
 			try {
-				jsonresp = readJsonFromUrl(wcpsEndpoint + "/collections/" + collectionID);
+				jsonresp = readJsonFromUrl(openEOEndpoint + "/collections/" + collectionID);
 			} catch (JSONException e) {
 				log.error("An error occured: " + e.getMessage());
 				StringBuilder builder = new StringBuilder();
@@ -5544,7 +5544,7 @@ public class WCPSQueryFactory {
 			int srs = 0;
 			JSONObject jsonresp = null;
 			try {
-				jsonresp = readJsonFromUrl(wcpsEndpoint + "/collections/" + coll);
+				jsonresp = readJsonFromUrl(openEOEndpoint + "/collections/" + coll);
 			} catch (JSONException e) {
 				log.error("An error occured: " + e.getMessage());
 				StringBuilder builder = new StringBuilder();
