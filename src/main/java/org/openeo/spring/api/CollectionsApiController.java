@@ -869,7 +869,7 @@ public class CollectionsApiController implements CollectionsApi {
 //				}
 //			}
 			
-			try {							
+			try {
 				interval1.add(OffsetDateTime.parse(startTime));
 				interval1.add(OffsetDateTime.parse(endTime));
 				interval.add(interval1);
