@@ -1,4 +1,4 @@
-[
+{"processes" : [
 {
     "id": "load_collection",
     "summary": "Load a collection",
@@ -4568,4 +4568,16 @@
         }
     ]
 }
+],
+"links": [ 
+
+{
+    "rel": "alternate",
+    "href": "https://openeo.org/processes",
+    "type": "text/html",
+    "title": "HTML version of the processes"
+
+}
+
 ]
+}

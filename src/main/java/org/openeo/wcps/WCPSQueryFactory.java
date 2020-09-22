@@ -1546,7 +1546,7 @@ public class WCPSQueryFactory {
 				log.debug("Process Stored for Node " + nodeKeyOfCurrentProcess + " : " + storedPayLoads.get(nodeKeyOfCurrentProcess));
 				log.debug("Mask Colored Process PayLoad is : ");
 				log.debug(storedPayLoads.get(nodeKeyOfCurrentProcess));
-			}			
+			}
 			if (currentProcessID.equals("if")) {
 				StringBuilder wcpsIFpayLoad = new StringBuilder("");
 				String payLoad = null;
@@ -1609,7 +1609,7 @@ public class WCPSQueryFactory {
 				log.debug("Process Stored for Node " + nodeKeyOfCurrentProcess + " : " + storedPayLoads.get(nodeKeyOfCurrentProcess));
 				log.debug("IF Process PayLoad is : ");
 				log.debug(storedPayLoads.get(nodeKeyOfCurrentProcess));
-			}						
+			}
 			if (currentProcessID.equals("array_filter")) {
 				StringBuilder wcpsArrayFilterpayLoad = new StringBuilder("");
 				String payLoad = null;
@@ -2436,11 +2436,68 @@ public class WCPSQueryFactory {
 				log.debug("Trigonometric Process PayLoad is : ");
 				log.debug(applyPayLoads.get(nodeKey));
 			}
-			
+			if (name.equals("if")) {
+				StringBuilder wcpsIFpayLoad = new StringBuilder("");				
+				String acceptPayLoad = null;
+				String rejectPayLoad = null;
+				double accept = 0;
+				double reject = 0;
+				JSONObject ifArguments =  applyProcesses.getJSONObject(nodeKey).getJSONObject("arguments");
+				
+				if (ifArguments.get("value") instanceof JSONObject) {
+					for (String fromType : ifArguments.getJSONObject("value").keySet()) {
+						if (fromType.equals("from_node")) {
+							String dataNode = ifArguments.getJSONObject("value").getString("from_node");
+							payLoad = applyPayLoads.getString(dataNode);
+							log.debug("IF Process : ");
+							if (ifArguments.get("accept") instanceof JSONObject) {
+								String acceptDataNode = ifArguments.getJSONObject("accept").getString("from_node");
+								acceptPayLoad = applyPayLoads.getString(acceptDataNode);
+								log.debug("Accept Payload : " + acceptPayLoad);
+							}
+							else {
+								accept = ifArguments.getDouble("accept");
+								log.debug("Accept Payload : " + accept);
+							}
+							if (ifArguments.get("reject") instanceof JSONObject) {
+								String rejectDataNode = ifArguments.getJSONObject("reject").getString("from_node");
+								rejectPayLoad = applyPayLoads.getString(rejectDataNode);
+								log.debug("Reject Payload : " + rejectPayLoad);
+							}
+							else {
+								reject = ifArguments.getDouble("reject");
+								log.debug("Reject Payload : " + reject);
+							}							
+						}
+					}
+				}
+				
+				if (ifArguments.get("accept") instanceof JSONObject) {
+					if (ifArguments.get("reject") instanceof JSONObject) {
+						wcpsIFpayLoad.append("("+payLoad+"*"+acceptPayLoad+"+"+"(not "+payLoad.replaceAll("pm", "pm" + applyNodeKey + nodeKey).replaceAll("merge", "merge" + applyNodeKey + nodeKey).replaceAll("\\$T", "\\$T" + applyNodeKey + nodeKey).replaceAll("\\$Y", "\\$Y" + applyNodeKey + nodeKey).replaceAll("\\$X", "\\$X" + applyNodeKey + nodeKey).replaceAll("\\$N", "\\$N" + applyNodeKey + nodeKey).replaceAll("\\$E", "\\$E" + applyNodeKey + nodeKey)+")*"+rejectPayLoad+")");
+					}
+					else {
+						wcpsIFpayLoad.append("("+payLoad+"*"+acceptPayLoad+"+"+"(not "+payLoad.replaceAll("pm", "pm" + applyNodeKey + nodeKey).replaceAll("\\$T", "\\$T" + applyNodeKey + nodeKey).replaceAll("\\$Y", "\\$Y" + applyNodeKey + nodeKey).replaceAll("\\$X", "\\$X" + applyNodeKey + nodeKey).replaceAll("\\$N", "\\$N" + applyNodeKey + nodeKey).replaceAll("\\$E", "\\$E" + applyNodeKey + nodeKey)+")*"+reject+")");
+					}					
+				}
+				else {
+					if (ifArguments.get("reject") instanceof JSONObject) {
+						wcpsIFpayLoad.append("("+payLoad+"*"+accept+"+"+"(not "+payLoad.replaceAll("pm", "pm" + applyNodeKey + nodeKey).replaceAll("\\$T", "\\$T" + applyNodeKey + nodeKey).replaceAll("\\$Y", "\\$Y" + applyNodeKey + nodeKey).replaceAll("\\$X", "\\$X" + applyNodeKey + nodeKey).replaceAll("\\$N", "\\$N" + applyNodeKey + nodeKey).replaceAll("\\$E", "\\$E" + applyNodeKey + nodeKey)+")*"+rejectPayLoad+")");
+					}
+					else {
+						wcpsIFpayLoad.append("("+payLoad+"*"+accept+"+"+"(not "+payLoad.replaceAll("pm", "pm" + applyNodeKey + nodeKey).replaceAll("\\$T", "\\$T" + applyNodeKey + nodeKey).replaceAll("\\$Y", "\\$Y" + applyNodeKey + nodeKey).replaceAll("\\$X", "\\$X" + applyNodeKey + nodeKey).replaceAll("\\$N", "\\$N" + applyNodeKey + nodeKey).replaceAll("\\$E", "\\$E" + applyNodeKey + nodeKey)+")*"+reject+")");
+					}	
+				}
+				
+				applyBuilderExtend=wcpsIFpayLoad.toString();
+				applyPayLoads.put(nodeKey, applyBuilderExtend);
+				log.debug("Process Stored for Node " + nodeKey + " : " + applyPayLoads.get(nodeKey));
+				log.debug("IF Process PayLoad is : ");
+				log.debug(applyPayLoads.get(nodeKey));
+			}
 			if (name.equals("gte")) {
 				String x = null;
-				String y = null;
-				
+				String y = null;				
 				JSONObject gteArguments =  applyProcesses.getJSONObject(nodeKey).getJSONObject("arguments");
 				if (gteArguments.get("x") instanceof JSONObject) {
 					for (String fromType : gteArguments.getJSONObject("x").keySet()) {
@@ -2466,7 +2523,7 @@ public class WCPSQueryFactory {
 							String dataNodeY = gteArguments.getJSONObject("y").getString("from_node");
 							String gtePayLoadY = applyPayLoads.getString(dataNodeY);
 							y = gtePayLoadY;
-						}						
+						}
 					}
 				}
 				else {
@@ -5377,6 +5434,29 @@ public class WCPSQueryFactory {
 					}
 				}
 				nextNodeName.put(currentNode, fromNodes);
+			}
+			if (argumentsKey.contentEquals("accept")) {
+				if (applyProcessArguments.get("accept") instanceof JSONObject) {
+					for (String fromKey : applyProcessArguments.getJSONObject("accept").keySet()) {
+						if (fromKey.contentEquals("from_node")) {
+							nextFromNode = applyProcessArguments.getJSONObject("accept").getString("from_node");
+							fromNodes.put(nextFromNode);
+						}
+					}
+				}				
+				nextNodeName.put(currentNode, fromNodes);				
+			}
+			
+			if (argumentsKey.contentEquals("reject")) {
+				if (applyProcessArguments.get("reject") instanceof JSONObject) {
+					for (String fromKey : applyProcessArguments.getJSONObject("reject").keySet()) {
+						if (fromKey.contentEquals("from_node")) {
+							nextFromNode = applyProcessArguments.getJSONObject("reject").getString("from_node");
+							fromNodes.put(nextFromNode);
+						}
+					}
+				}				
+				nextNodeName.put(currentNode, fromNodes);				
 			}
 //			if (argumentsKey.contentEquals("value")) {
 //				if (applyProcessArguments.get("value") instanceof JSONObject) {
