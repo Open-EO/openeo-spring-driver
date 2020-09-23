@@ -43,6 +43,7 @@ import org.openeo.spring.model.DimensionSpatial;
 import org.openeo.spring.model.DimensionSpatial.AxisEnum;
 import org.openeo.spring.model.DimensionTemporal;
 import org.openeo.spring.model.Link;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -64,7 +65,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 @RequestMapping("${openapi.openEO.base-path:}")
 public class CollectionsApiController implements CollectionsApi {
     private final NativeWebRequest request;
-    
+    @Value("${org.openeo.wcps.endpoint}")
+    private String wcpsEndpoint;
     private final Logger log = LogManager.getLogger(CollectionsApiController.class);
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -98,7 +100,7 @@ public class CollectionsApiController implements CollectionsApi {
     	
     	try {
 			URL url;
-			url = new URL("http://saocompute.eurac.edu/rasdaman/ows" + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCapabilities");
+			url = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCapabilities");
     	
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
@@ -116,7 +118,7 @@ public class CollectionsApiController implements CollectionsApi {
 				String coverageID = coverage.getChildText("CoverageId", defaultNSCollectionsList);
 				currentCollection.setId(coverageID);				
 				currentCollection.setStacVersion("0.9.0");
-				URL urlCollections = new URL("http://saocompute.eurac.edu/rasdaman/ows"
+				URL urlCollections = new URL(wcpsEndpoint
 						+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + coverageID);
 				HttpURLConnection connCollections = (HttpURLConnection) urlCollections.openConnection();
 				connCollections.setRequestMethod("GET");
@@ -641,7 +643,7 @@ public class CollectionsApiController implements CollectionsApi {
     	try {
     		currentCollection.setId(collectionId);
     		currentCollection.setStacVersion("0.9.0");
-			url = new URL("http://saocompute.eurac.edu/rasdaman/ows" + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionId);
+			url = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionId);
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
 			SAXBuilder builder = new SAXBuilder();
