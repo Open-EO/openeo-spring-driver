@@ -1516,14 +1516,15 @@ public class WCPSQueryFactory {
 								Element band = bandsList.get(c);
 								try {
 									bandCommonName = band.getChildText("common_name");
+									if (bandCommonName.equals(bandfromIndex)) {
+										bandName = band.getChildText("name");
+										break;
+									}
+									else {
+										bandName = bandfromIndex;
+									}
 								}catch(Exception e) {
-								}
-								if (bandCommonName.equals(bandfromIndex)) {
-									bandName = band.getChildText("name");
-									break;
-								}
-								else {
-									bandName = bandfromIndex;
+									bandName = bandfromIndex;									
 								}
 							}
 						}catch(Exception e) {
@@ -4309,14 +4310,15 @@ public class WCPSQueryFactory {
 							Element band = bandsList.get(c);
 							try {
 								bandCommonName = band.getChildText("common_name");
+								if (bandCommonName.equals(bandfromIndex)) {
+									bandName = band.getChildText("name");
+									break;
+								}
+								else {
+									bandName = bandfromIndex;
+								}
 							}catch(Exception e) {
-							}
-							if (bandCommonName.equals(bandfromIndex)) {
-								bandName = band.getChildText("name");
-								break;
-							}
-							else {
-								bandName = bandfromIndex;
+								bandName = bandfromIndex;									
 							}
 						}
 					}catch(Exception e) {
