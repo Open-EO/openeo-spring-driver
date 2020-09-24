@@ -5,6 +5,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -16,7 +17,7 @@ import com.fasterxml.jackson.databind.Module;
 import org.openeo.spring.api.ApiFilter;
 
 //@SpringBootApplication(exclude= {UserDetailsServiceAutoConfiguration.class})
-@SpringBootApplication
+@SpringBootApplication(exclude = {HibernateJpaAutoConfiguration.class})
 @ComponentScan(basePackages = {"org.openeo.spring", "org.openeo.spring.api" , "org.openapitools.configuration"})
 public class OpenAPI2SpringBoot implements CommandLineRunner {
 

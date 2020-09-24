@@ -1,5 +1,15 @@
 package org.openeo.spring.api;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -8,6 +18,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.SessionFactory;
@@ -21,10 +32,10 @@ import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
 import org.openeo.spring.model.LogEntries;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.orm.hibernate5.SessionFactoryUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +48,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
+import org.openeo.wcps.ConvenienceHelper;
 import org.openeo.wcps.WCPSQueryFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -53,6 +65,15 @@ public class JobsApiController implements JobsApi {
 	private SessionFactory sessionFactory;
     
     private final Logger log = LogManager.getLogger(JobsApiController.class);
+    
+    @Value("${org.openeo.wcps.endpoint}")
+	private String wcpsEndpoint;
+
+	@Value("${org.openeo.endpoint}")
+	private String openEOEndpoint;
+
+	@Value("${org.openeo.odc.endpoint}")
+	private String odcEndpoint;
     
     JobDAO jobDAO;
 	
@@ -345,8 +366,88 @@ public class JobsApiController implements JobsApi {
     @RequestMapping(value = "/jobs/{job_id}/results",
         produces = { "application/json" }, 
         method = RequestMethod.POST)
-    public ResponseEntity<Void> startJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    public ResponseEntity startJob(@Pattern(regexp="^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.",required=true) @PathVariable("job_id") String jobId) {
+    	Job job = jobDAO.findOne(UUID.fromString(jobId));
+    	if(job != null) {
+    		log.debug("The job " + jobId + " was successfully requested.");
+    		String backend = job.getProcess().getDescription();
+    		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
+    		if (backend != null && backend.contains("ODC")) {
+    			JSONObject process = new JSONObject();
+    			process.put("id", "ODC-graph");
+    			process.put("process_graph", processGraphJSON);
+    			URL url;
+    			try {
+    				url = new URL(odcEndpoint + "/graph/" + "test");
+    				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    				conn.setRequestMethod("POST");
+    				conn.setRequestProperty("Content-Type", "application/json; utf-8");
+    				conn.setDoOutput(true);
+    				log.debug("graph object send to ODC server: " + process.toString());
+    				try (OutputStream os = conn.getOutputStream()) {
+    					byte[] requestBody = process.toString().getBytes("utf-8");
+    					os.write(requestBody, 0, requestBody.length);
+    				}
+    				InputStream is = conn.getInputStream();
+    				String mime = URLConnection.guessContentTypeFromStream(is);
+    				log.debug("Mime type on ODC response guessed to be: " + mime);
+    				byte[] response = IOUtils.toByteArray(is);
+    				log.info("Job successfully executed: " + job.toString());
+    				return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(response);
+    			} catch (MalformedURLException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+
+    			} catch (UnsupportedEncodingException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			} catch (ProtocolException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			} catch (IOException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			}
+    		} else {
+    			WCPSQueryFactory wcpsFactory = null;
+    			wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint);
+    			URL url;
+    			try {
+    				url = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages" + "&QUERY="
+    						+ URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
+    				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    				conn.setRequestMethod("GET");
+    				byte[] response = IOUtils.toByteArray(conn.getInputStream());
+    				log.info("Job successfully executed: " + job.toString());
+//    				.contentType(new MediaType(ConvenienceHelper.getMimeTypeFromRasName(wcpsFactory.getOutputFormat())))
+    				return ResponseEntity.ok()
+    						.contentType(MediaType.parseMediaType(ConvenienceHelper.getMimeTypeFromRasName(wcpsFactory.getOutputFormat())))
+    						.body(response);
+    			} catch (MalformedURLException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+
+    			} catch (UnsupportedEncodingException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			} catch (ProtocolException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			} catch (IOException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			}
+    		}
+    		Error error = new Error();
+    		error.setCode("500");
+    		error.setMessage("The submitted job " + job.toString() + " was not executed!");
+    		return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    	}else {
+    		Error error = new Error();
+    		error.setCode("400");
+    		error.setMessage("The requested job " + jobId + " could not be found.");
+    		return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+    	}
 
     }
 
