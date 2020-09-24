@@ -1,6 +1,11 @@
 package org.openeo.spring.api;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -10,10 +15,15 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
+import org.openapitools.jackson.nullable.JsonNullable;
+import org.openeo.wcps.ConvenienceHelper;
+import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
+import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.BatchJobEstimate;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobs;
@@ -69,10 +79,13 @@ public class JobsApiController implements JobsApi {
 	private JobScheduler jobScheduler;
 
 	JobDAO jobDAO;
+	
+	BatchJobResultDAO resultDAO;
 
 	@Autowired
-	public void setDao(JobDAO injectedDAO) {
-		jobDAO = injectedDAO;
+	public void setDao(JobDAO injectedJObDAO, BatchJobResultDAO injectResultDao) {
+		jobDAO = injectedJObDAO;
+		resultDAO = injectResultDao;
 	}
 
 	@org.springframework.beans.factory.annotation.Autowired
@@ -521,19 +534,63 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/jobs/{job_id}/results", produces = { "application/json",
 			"application/geo+json" }, method = RequestMethod.GET)
-	public ResponseEntity<BatchJobResult> listResults(
+	public ResponseEntity listResults(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
-		getRequest().ifPresent(request -> {
-			for (MediaType mediaType : MediaType.parseMediaTypes(request.getHeader("Accept"))) {
-				if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-					String exampleString = "{ \"stac_version\" : \"stac_version\", \"assets\" : { \"preview.png\" : { \"href\" : \"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/preview.png\", \"type\" : \"image/png\", \"title\" : \"Thumbnail\", \"roles\" : [ \"thumbnail\" ] }, \"process.json\" : { \"href\" : \"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/process.json\", \"type\" : \"application/json\", \"title\" : \"Original Process\", \"roles\" : [ \"process\", \"reproduction\" ] }, \"1.tif\" : { \"href\" : \"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/1.tif\", \"type\" : \"image/tiff; application=geotiff\", \"title\" : \"Band 1\", \"roles\" : [ \"data\" ] }, \"2.tif\" : { \"href\" : \"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/2.tif\", \"type\" : \"image/tiff; application=geotiff\", \"title\" : \"Band 2\", \"roles\" : [ \"data\" ] }, \"inspire.xml\" : { \"href\" : \"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/inspire.xml\", \"type\" : \"application/xml\", \"title\" : \"INSPIRE metadata\", \"description\" : \"INSPIRE compliant XML metadata\", \"roles\" : [ \"metadata\" ] } }, \"bbox\" : [ -180, -90, 180, 90 ], \"geometry\" : { \"type\" : \"Polygon\", \"coordinates\" : [ [ [ -180, -90 ], [ 180, -90 ], [ 180, 90 ], [ -180, 90 ], [ -180, -90 ] ] ] }, \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ], \"id\" : \"a3cca2b2aa1e3b5b\", \"type\" : \"Feature\", \"stac_extensions\" : [ \"\", \"\" ], \"properties\" : { \"key\" : \"{}\" } }";
-					ApiUtil.setExampleResponse(request, "application/json", exampleString);
-					break;
-				}
-			}
-		});
-		return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+		BatchJobResult result = resultDAO.findOne(UUID.fromString(jobId));
+		if (result != null) {
+			log.debug(result.toString());
+			return new ResponseEntity<BatchJobResult>(result, HttpStatus.OK);
+		} else {
+			Error error = new Error();
+			error.setCode("400");
+			error.setMessage("The requested job " + jobId + " could not be found.");
+			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+		}
 
+	}
+	
+	@Operation(summary = "Download data for given file", operationId = "downloadAsset", description = "Download asset as a result from a successfully executed process graph.", tags = {
+			"Data Access", })
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Result data in the requested output format"),
+			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
+			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
+	@RequestMapping(value = "/download/{file_name}", produces = { "*" }, consumes = {
+			"application/json" }, method = RequestMethod.GET)
+	public ResponseEntity downloadResult(@Parameter(description = "", required = true) @PathVariable("file_name") String fileName) {
+		byte[] response = null;
+		try {
+			String mime = ConvenienceHelper.getMimeTypeFromRasName(fileName.substring(fileName.indexOf(".") +1));
+			log.debug("File download was requested:" + fileName + " of mime type: " + mime);	
+			String path = ConvenienceHelper.readProperties("temp-dir");			
+			File userFile = new File(path + fileName);			
+			response = IOUtils.toByteArray(new FileInputStream(userFile));
+			log.debug("File found and converted in bytes for download");
+			return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(response);
+		} catch (FileNotFoundException e) {
+			log.error("File not found:" + fileName);
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+			Error error = new Error();
+			error.setCode("400");
+			error.setMessage("The requested file " + fileName + " could not be found.");
+			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			log.error("IOEXception error");
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("IOEXception error " + builder.toString());
+			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	/**

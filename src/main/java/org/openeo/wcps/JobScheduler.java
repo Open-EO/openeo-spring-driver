@@ -18,16 +18,23 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
+import org.openeo.spring.model.Asset;
+import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
+import org.openeo.spring.model.AssetType;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
 import org.openeo.wcps.events.UDFEvent;
@@ -43,9 +50,12 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 	
 	JobDAO jobDAO;
 	
+	BatchJobResultDAO resultDAO;
+
 	@Autowired
-	public void setDao(JobDAO injectedDAO) {
-		jobDAO = injectedDAO;
+	public void setDao(JobDAO injectedJObDAO, BatchJobResultDAO injectResultDao) {
+		jobDAO = injectedJObDAO;
+		resultDAO = injectResultDao;
 	}
 	
 	@Value("${org.openeo.wcps.endpoint}")
@@ -381,6 +391,26 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 			log.debug("File saved correctly");
 			in.close();
 			fileOutputStream.close();
+			
+			BatchJobResult result = new BatchJobResult();
+			result.setId(job.getId());
+			result.bbox(null);
+			result.setStacVersion("1.0.0");
+			result.setGeometry(null);
+			LinkedHashMap<String, Asset> assetMap = new LinkedHashMap<String, Asset>();
+			Asset asset = new Asset();
+			asset.setHref(openEOEndpoint + "/download/" + fileName);
+			String mime = ConvenienceHelper.getMimeTypeFromRasName(fileName.substring(fileName.indexOf(".") +1));
+			log.debug("Mime type is: " + mime);
+			asset.setType(mime);
+			List<String> roles = new ArrayList<String>();
+			roles.add("data");
+			asset.setRoles(roles);
+			assetMap.put("result", asset);
+			result.setAssets(assetMap);
+			log.debug(result.toString());
+			resultDAO.save(result);
+			log.debug("Result Stored in DB");
 		} catch (IOException e) {
 			log.error("An error occured when downloading the file of the current job: " + e.getMessage());
 			StringBuilder builder = new StringBuilder();
