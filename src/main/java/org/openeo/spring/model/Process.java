@@ -6,19 +6,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.hibernate.annotations.GenericGenerator;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -35,16 +38,17 @@ public class Process implements Serializable{
 	 * 
 	 */
 	private static final long serialVersionUID = -6102545771306725349L;
-
-	@Transient
-	private final Logger log = LogManager.getLogger(Process.class);
 	
 	@Id
-	@JsonProperty("id")
+	@JsonProperty("process_id")
+	@Column(name = "process_id")
+	@GenericGenerator(name = "uuid", strategy = "uuid2")
+	@GeneratedValue(generator = "uuid")
 	private String id;
 	
-//	@OneToOne(mappedBy = "process", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
-//	private Job job;
+	@JsonIgnore
+	@OneToOne( cascade = {CascadeType.ALL}, mappedBy = "process")
+	private Job job;
 
 	@JsonProperty("summary")
 	private String summary;
@@ -111,13 +115,21 @@ public class Process implements Serializable{
 	 */
 	@ApiModelProperty(example = "ndvi", value = "Unique identifier for the process.  MUST be unique across all predefined and user-defined processes available for the authenticated user. If a back-end adds a process with the name of a user-defined process, the user-defined process takes preference over predefined processes in execution to not break existing process graphs.  Back-ends may choose to enforce a prefix for user-defined processes while storing the process, e.g. `user_ndvi` with `user_` being the prefix. Prefixes must still follow the pattern.")
 
-	@Pattern(regexp = "^\\w+$")
+//	@Pattern(regexp = "^\\w+$")
 	public String getId() {
 		return id;
 	}
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public Job getJob() {
+		return job;
+	}
+
+	public void setJob(Job job) {
+		this.job = job;
 	}
 
 	public Process summary(String summary) {

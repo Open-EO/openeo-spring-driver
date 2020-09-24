@@ -3,30 +3,26 @@ package org.openeo.spring.model;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import javax.validation.Valid;
 import javax.validation.constraints.DecimalMax;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotNull;
 
-import org.json.JSONObject;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -57,15 +53,10 @@ public class Job implements Serializable {
 	@Column(name = "job_description")
 	private String description = null;
 	
-//	@OneToOne(targetEntity = Process.class)
-//	@JoinColumn(name = "process_id")
-	@Transient
+	@OneToOne(targetEntity = Process.class, cascade = {CascadeType.MERGE, CascadeType.REFRESH}, fetch = FetchType.EAGER, optional = false)
+	@JoinColumn(name = "process_id")
 	@JsonProperty("process")
 	private Process process;
-	
-	@Valid
-	@Embedded
-	private Object processGraph = null;
 
 	@JsonProperty("status")
 	@Enumerated
@@ -158,10 +149,10 @@ public class Job implements Serializable {
 		return this;
 	}
 	
-	public Process processGraph(Object processGraph) {
-		this.setProcessGraph(processGraph);		
-		return this.process;
-	}
+//	public Process processGraph(Object processGraph) {
+//		this.setProcessGraph(processGraph);		
+//		return this.process;
+//	}
 
 	/**
 	 * Get process
@@ -177,17 +168,18 @@ public class Job implements Serializable {
 	}
 
 	public void setProcess(Process process) {
+		process.setJob(this);
 		this.process = process;
 	}
 	
-	public Object getProcessGraph() {
-		return this.process.getProcessGraph();
-	}
-	
-	public void setProcessGraph(Object processGraph) {
-		this.processGraph = processGraph;
-		this.process.setProcessGraph(processGraph);
-	}
+//	public Object getProcessGraph() {
+//		return this.process.getProcessGraph();
+//	}
+//	
+//	public void setProcessGraph(Object processGraph) {
+//		this.processGraph = processGraph;
+//		this.process.setProcessGraph(processGraph);
+//	}
 
 	public Job status(JobStates status) {
 		this.status = status;
