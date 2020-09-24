@@ -1,6 +1,7 @@
 package org.openeo.spring;
 
 import org.openapitools.jackson.nullable.JsonNullableModule;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
@@ -15,11 +16,21 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import com.fasterxml.jackson.databind.Module;
 
 import org.openeo.spring.api.ApiFilter;
+import org.openeo.wcps.JobScheduler;
 
 //@SpringBootApplication(exclude= {UserDetailsServiceAutoConfiguration.class})
 @SpringBootApplication(exclude = {HibernateJpaAutoConfiguration.class})
-@ComponentScan(basePackages = {"org.openeo.spring", "org.openeo.spring.api" , "org.openapitools.configuration"})
+@ComponentScan(basePackages = {"org.openeo.spring" , "org.openapitools.configuration", "org.openeo.wcps", "org.openeo.spring.api"})
 public class OpenAPI2SpringBoot implements CommandLineRunner {
+	
+	@Value("${org.openeo.wcps.endpoint}")
+	private String wcpsEndpoint;
+
+	@Value("${org.openeo.endpoint}")
+	private String openEOEndpoint;
+
+	@Value("${org.openeo.odc.endpoint}")
+	private String odcEndpoint;
 
     @Override
     public void run(String... arg0) throws Exception {
@@ -56,6 +67,11 @@ public class OpenAPI2SpringBoot implements CommandLineRunner {
             }*/
         };
     }
+    
+//    @Bean
+//    public JobScheduler jobScheduler() {
+//    	return new JobScheduler(wcpsEndpoint, openEOEndpoint);
+//    }
     
     @Bean
     public FilterRegistrationBean<ApiFilter> apifilter()

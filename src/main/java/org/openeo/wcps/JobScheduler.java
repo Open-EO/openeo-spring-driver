@@ -17,9 +17,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 import java.time.OffsetDateTime;
-import java.util.Date;
 import java.util.Iterator;
 
 import org.apache.logging.log4j.LogManager;
@@ -35,10 +33,13 @@ import org.openeo.wcps.events.JobEventListener;
 import org.openeo.wcps.events.UDFEvent;
 import org.openeo.wcps.events.UDFEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class JobScheduler implements JobEventListener, UDFEventListener{
 	
-	Logger log = LogManager.getLogger();
+	Logger log = LogManager.getLogger(JobScheduler.class);
 	
 	JobDAO jobDAO;
 	
@@ -47,13 +48,22 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 		jobDAO = injectedDAO;
 	}
 	
-	private String wcpsEndpoint = null;
-	private String openEOEndpoint = null;
+	@Value("${org.openeo.wcps.endpoint}")
+	private String wcpsEndpoint;
+
+	@Value("${org.openeo.endpoint}")
+	private String openEOEndpoint;
+
+	@Value("${org.openeo.odc.endpoint}")
+	private String odcEndpoint;
+	
+//	private String wcpsEndpoint = null;
+//	private String openEOEndpoint = null;
 	private JSONObject processGraphJSON = new JSONObject();
 	private JSONObject processGraphAfterUDF = null;
 	
-	public JobScheduler(String wcpsEndpoint, String openEOEndpoint) {
-		this.wcpsEndpoint = wcpsEndpoint;
+	public JobScheduler() {
+		log.debug("Job Scheduler has been initialized successfully!");
 //		try {
 ////			String dbURL = "jdbc:sqlite:" + ConvenienceHelper.readProperties("job-database");
 ////			wcpsEndpoint = ConvenienceHelper.readProperties("wcps-endpoint");

@@ -50,7 +50,7 @@ public class HibernateConf {
 //		hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "create-drop");
 		hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "update");
 		hibernateProperties.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
-		hibernateProperties.setProperty("hibernate.show_sql", "true");
+//		hibernateProperties.setProperty("hibernate.show_sql", "true");
 		hibernateProperties.setProperty("hibernate.use_sql_comments", "true");
 		hibernateProperties.setProperty("hibernate.format_sql", "true");
 
