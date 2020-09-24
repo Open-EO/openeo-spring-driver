@@ -14,7 +14,6 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.Valid;
@@ -149,11 +148,6 @@ public class Job implements Serializable {
 		return this;
 	}
 	
-//	public Process processGraph(Object processGraph) {
-//		this.setProcessGraph(processGraph);		
-//		return this.process;
-//	}
-
 	/**
 	 * Get process
 	 * 
@@ -172,14 +166,6 @@ public class Job implements Serializable {
 		this.process = process;
 	}
 	
-//	public Object getProcessGraph() {
-//		return this.process.getProcessGraph();
-//	}
-//	
-//	public void setProcessGraph(Object processGraph) {
-//		this.processGraph = processGraph;
-//		this.process.setProcessGraph(processGraph);
-//	}
 
 	public Job status(JobStates status) {
 		this.status = status;
