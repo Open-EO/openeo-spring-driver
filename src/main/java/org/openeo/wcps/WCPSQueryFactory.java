@@ -780,12 +780,12 @@ public class WCPSQueryFactory {
 				
 				if (processArguments.get("data") instanceof JSONObject) {
 					for (String fromType : processArguments.getJSONObject("data").keySet()) {
-						if (fromType.equals("from_parameter") && processArguments.getJSONObject("data").getString("from_parameter").equals("data")) {
+						if (fromType.equals("from_argument") && processArguments.getJSONObject("data").getString("from_argument").equals("data")) {
 							payLoad1 = wcpsPayLoad.toString();
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = processArguments.getJSONObject("data").getString("from_node");							
-							nodeKeyofCube1 = processArguments.getJSONObject("cube1").getString("from_node");
+							nodeKeyofCube1 = processArguments.getJSONObject("data").getString("from_node");
 							temporalStartCube1 = processGraph.getJSONObject(getFilterCollectionNode(dataNode)).getJSONObject("arguments").getJSONArray("temporal_extent").getString(0);
 							temporalEndCube1 = processGraph.getJSONObject(getFilterCollectionNode(dataNode)).getJSONObject("arguments").getJSONArray("temporal_extent").getString(1);
 							cube1 = processGraph.getJSONObject(getFilterCollectionNode(dataNode)).getJSONObject("arguments").getString("id");
@@ -794,10 +794,10 @@ public class WCPSQueryFactory {
 							log.debug(payLoad1);
 						}
 					}
-				}				
+				}
 				if (processArguments.get("mask") instanceof JSONObject) {
 					for (String fromType : processArguments.getJSONObject("mask").keySet()) {
-						if (fromType.equals("from_parameter") && processArguments.getJSONObject("mask").getString("from_parameter").equals("data")) {
+						if (fromType.equals("from_argument") && processArguments.getJSONObject("mask").getString("from_argument").equals("data")) {
 							payLoad2 = wcpsPayLoad.toString();							
 						}
 						else if (fromType.equals("from_node")) {
@@ -815,8 +815,7 @@ public class WCPSQueryFactory {
 				JSONObject collectionSTACMetdataCube1 = null;
 				JSONObject collectionSTACMetdataCube2 = null;
 				try {
-					collectionSTACMetdataCube1 = readJsonFromUrl(
-							openEOEndpoint + "/collections/" + cube1);
+					collectionSTACMetdataCube1 = readJsonFromUrl(openEOEndpoint + "/collections/" + cube1);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -833,8 +832,7 @@ public class WCPSQueryFactory {
 					log.error(builder.toString());
 				}
 				try {
-					collectionSTACMetdataCube2 = readJsonFromUrl(
-							openEOEndpoint + "/collections/" + cube2);
+					collectionSTACMetdataCube2 = readJsonFromUrl(openEOEndpoint + "/collections/" + cube2);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -851,12 +849,12 @@ public class WCPSQueryFactory {
 					log.error(builder.toString());
 				}
 				
-				JSONObject dimsCube1 = (JSONObject) (((JSONObject) collectionSTACMetdataCube1).get("cube:dimensions"));		
+				JSONObject dimsCube1 = (JSONObject) (((JSONObject) collectionSTACMetdataCube1.get("properties")).get("cube:dimensions"));		
 				for (String dimsCube1Keys : dimsCube1.keySet()) {
 					noOfDimsCube1 = noOfDimsCube1+1;
 				}
 				
-				JSONObject dimsCube2 = (JSONObject) (((JSONObject) collectionSTACMetdataCube2).get("cube:dimensions"));		
+				JSONObject dimsCube2 = (JSONObject) (((JSONObject) collectionSTACMetdataCube2.get("properties")).get("cube:dimensions"));		
 				for (String dimsCube2Keys : dimsCube2.keySet()) {
 					noOfDimsCube2 = noOfDimsCube2+1;
 				}
@@ -894,8 +892,37 @@ public class WCPSQueryFactory {
 					log.debug("Process Stored for Node " + nodeKeyOfCurrentProcess + " : " + storedPayLoads.get(nodeKeyOfCurrentProcess));
 					log.debug("Mask Process PayLoad is : ");
 				}
-				
-				else if (noOfDimsCube1==noOfDimsCube2 && !temporalStartCube1.equals(temporalEndCube1) && temporalStartCube2.equals(temporalEndCube2) && !payLoad2.contains("condense") && payLoad1.contains("coverage") && payLoad1.contains("condense")) {
+				else if (noOfDimsCube1==noOfDimsCube2 && !temporalStartCube1.equals(temporalEndCube1) && !temporalStartCube2.equals(temporalEndCube2) && !payLoad2.contains("condense") && payLoad1.contains("coverage") && payLoad1.contains("condense")) {
+					try {
+						replacement = processArguments.getDouble("replacement");
+						wcpsMaskpayLoad.append("(" + payLoad1 + "*" + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2.replaceAll("\\$pm", "\\$qm")+")"+"*"+replacement+"))");
+						wcpsPayLoad=wcpsMaskpayLoad;
+					}catch(Exception e) {
+						wcpsMaskpayLoad.append("(" + payLoad1 + "*" + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")");
+						wcpsPayLoad=wcpsMaskpayLoad;
+					}
+					
+					wcpsStringBuilder=wcpsStringBuilderMaskThresPayload.append(wcpsMaskpayLoad.toString());
+					storedPayLoads.put(nodeKeyOfCurrentProcess, wcpsMaskpayLoad.toString());
+					log.debug("Process Stored for Node " + nodeKeyOfCurrentProcess + " : " + storedPayLoads.get(nodeKeyOfCurrentProcess));
+					log.debug("Mask Process PayLoad is : ");
+				}
+				else if (noOfDimsCube1==noOfDimsCube2 && !temporalStartCube1.equals(temporalEndCube1) && !temporalStartCube2.equals(temporalEndCube2) && !payLoad2.contains("condense") && payLoad1.contains("coverage") && !payLoad1.contains("condense")) {
+					try {
+						replacement = processArguments.getDouble("replacement");
+						wcpsMaskpayLoad.append("(" + payLoad1 + "*(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2.replaceAll("\\$pm", "\\$qm")+")"+"*"+replacement+"))");
+						wcpsPayLoad=wcpsMaskpayLoad;
+					}catch(Exception e) {
+						wcpsMaskpayLoad.append("(" + payLoad1 + "*(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")");
+						wcpsPayLoad=wcpsMaskpayLoad;
+					}
+					
+					wcpsStringBuilder=wcpsStringBuilderMaskThresPayload.append(wcpsMaskpayLoad.toString());
+					storedPayLoads.put(nodeKeyOfCurrentProcess, wcpsMaskpayLoad.toString());
+					log.debug("Process Stored for Node " + nodeKeyOfCurrentProcess + " : " + storedPayLoads.get(nodeKeyOfCurrentProcess));
+					log.debug("Mask Process PayLoad is : ");
+				}
+				else if (noOfDimsCube1==noOfDimsCube2 && !temporalStartCube1.equals(temporalEndCube1) && temporalStartCube2.equals(temporalEndCube2) && payLoad2.contains("condense") && !payLoad2.contains("coverage") && payLoad1.contains("coverage") && payLoad1.contains("condense")) {
 //					String timeImageCrsDomain = Pattern.compile(" X"+"\\(.*?\\)").matcher(payLoadCRS).replaceAll("");
 //					timeImageCrsDomain = Pattern.compile(" Y"+"\\(.*?\\)").matcher(timeImageCrsDomain).replaceAll("");
 //					timeImageCrsDomain = Pattern.compile(" E"+"\\(.*?\\)").matcher(timeImageCrsDomain).replaceAll("");
@@ -934,8 +961,7 @@ public class WCPSQueryFactory {
 					storedPayLoads.put(nodeKeyOfCurrentProcess, wcpsMaskpayLoad.toString());
 					log.debug("Process Stored for Node " + nodeKeyOfCurrentProcess + " : " + storedPayLoads.get(nodeKeyOfCurrentProcess));
 					log.debug("Mask Process PayLoad is : ");
-				}			
-				
+				}				
 			}
 //			if (currentProcessID.equals("mask_custom")) {
 //				StringBuilder wcpsArrayFilterpayLoad = new StringBuilder("");
@@ -1490,14 +1516,15 @@ public class WCPSQueryFactory {
 								Element band = bandsList.get(c);
 								try {
 									bandCommonName = band.getChildText("common_name");
+									if (bandCommonName.equals(bandfromIndex)) {
+										bandName = band.getChildText("name");
+										break;
+									}
+									else {
+										bandName = bandfromIndex;
+									}
 								}catch(Exception e) {
-								}
-								if (bandCommonName.equals(bandfromIndex)) {
-									bandName = band.getChildText("name");
-									break;
-								}
-								else {
-									bandName = bandfromIndex;
+									bandName = bandfromIndex;									
 								}
 							}
 						}catch(Exception e) {
@@ -4283,14 +4310,15 @@ public class WCPSQueryFactory {
 							Element band = bandsList.get(c);
 							try {
 								bandCommonName = band.getChildText("common_name");
+								if (bandCommonName.equals(bandfromIndex)) {
+									bandName = band.getChildText("name");
+									break;
+								}
+								else {
+									bandName = bandfromIndex;
+								}
 							}catch(Exception e) {
-							}
-							if (bandCommonName.equals(bandfromIndex)) {
-								bandName = band.getChildText("name");
-								break;
-							}
-							else {
-								bandName = bandfromIndex;
+								bandName = bandfromIndex;									
 							}
 						}
 					}catch(Exception e) {
