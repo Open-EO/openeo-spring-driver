@@ -57,33 +57,23 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
 	
-//	private String wcpsEndpoint = null;
-//	private String openEOEndpoint = null;
+	@Value("${org.openeo.wcps.tmp.dir}")
+	private String tmpDir;
+	
+	@Value("{org.openeo.udf.python.endpoint}")
+	private String pythonEndpoint;
+	
+	@Value("{org.openeo.udf.candela.endpoint}")
+	private String candelaEndpoint;
+	
+	@Value("{org.openeo.udf.r.endpoint}")
+	private String REndpoint;
+	
 	private JSONObject processGraphJSON = new JSONObject();
 	private JSONObject processGraphAfterUDF = null;
 	
 	public JobScheduler() {
 		log.debug("Job Scheduler has been initialized successfully!");
-//		try {
-////			String dbURL = "jdbc:sqlite:" + ConvenienceHelper.readProperties("job-database");
-////			wcpsEndpoint = ConvenienceHelper.readProperties("wcps-endpoint");
-////			connection =  new JdbcConnectionSource(dbURL);
-////			jobDao = DaoManager.createDao(connection, BatchJobResponse.class);
-////		} catch (SQLException sqle) {
-////			log.error("An error occured while performing an SQL-query: " + sqle.getMessage());
-////			StringBuilder builder = new StringBuilder();
-////			for( StackTraceElement element: sqle.getStackTrace()) {
-////				builder.append(element.toString()+"\n");
-////			}
-////			log.error(builder.toString());
-//		} catch (IOException ioe) {
-//			log.error("An error occured while reading properties file: " + ioe.getMessage());
-//			StringBuilder builder = new StringBuilder();
-//			for( StackTraceElement element: ioe.getStackTrace()) {
-//				builder.append(element.toString()+"\n");
-//			}
-//			log.error(builder.toString());
-//		}
 	}
 
 	@Override
@@ -155,7 +145,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 					InputStream codeStream = null;					
 					if(udfCode.startsWith("http")) {
 						String relativeFileLocation = udfCode.substring(udfCode.indexOf("files")+6);
-						String fileToDownloadPath = ConvenienceHelper.readProperties("temp-dir") + relativeFileLocation;
+						String fileToDownloadPath = tmpDir + relativeFileLocation;
 		    			log.debug("Grepping code from udf object from uploaded file resource: " + fileToDownloadPath);		    			
 		    			codeStream = new FileInputStream(fileToDownloadPath);		    			
 					}else {
@@ -163,10 +153,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 						codeStream = new ByteArrayInputStream(udfCode.getBytes(StandardCharsets.UTF_8));
 					}
 					//Get data block for UDF
-					WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphJSON, wcpsEndpoint, openEOEndpoint);
+					WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint);
 					wcpsFactory.setOutputFormat("gml");
 					
-					URL url = new URL(ConvenienceHelper.readProperties("wcps-endpoint") + "?SERVICE=WCS" + "&VERSION=2.0.1"
+					URL url = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1"
 							+ "&REQUEST=ProcessCoverages" + "&QUERY="
 							+ URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -188,15 +178,15 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 				// Select correct parameters for execution environment of UDF
 				if(runtime.toLowerCase().equals("python")&&version.toLowerCase().equals("openeo")) {
 					runtime = "python";
-					service_url = ConvenienceHelper.readProperties("python-udf-endpoint");
+					service_url = pythonEndpoint;
 				}
 				else if(runtime.toLowerCase().equals("python")&&version.toLowerCase().equals("candela")) {
 					runtime = "python";
-					service_url = ConvenienceHelper.readProperties("candela-python-udf-endpoint");
+					service_url = candelaEndpoint;
 				}
 				else if(runtime.toLowerCase().equals("r")) {
 					runtime = "r";
-					service_url = ConvenienceHelper.readProperties("r-udf-endpoint");
+					service_url = REndpoint;
 				}else {
 					log.error("The requested runtime is not available!");
 				}
@@ -232,7 +222,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 					log.error(builder.toString());
 				}
 				
-				String inputHyperCubeDebugPath = ConvenienceHelper.readProperties("temp-dir")+"udf_result/input_" + job.getId() + ".json";
+				String inputHyperCubeDebugPath = tmpDir + "udf_result/input_" + job.getId() + ".json";
 				saveHyperCubeToDisk(udfDescriptor, inputHyperCubeDebugPath);
 				
 				// stream UDF in form of json hypercube object to udf endpoint via http post method 
@@ -266,10 +256,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 
 					JSONObject firstHyperCube = hyperCubes.getJSONObject(0);
 
-					String outputHyperCubeDebugPath = ConvenienceHelper.readProperties("temp-dir")+"udf_result/output_" + job.getId() + ".json";
+					String outputHyperCubeDebugPath = tmpDir + "udf_result/output_" + job.getId() + ".json";
 					saveHyperCubeToDisk(firstHyperCube, outputHyperCubeDebugPath);
 					// convert hypercube json object into netcdf file and save to tempory disk
-					String netCDFPath = ConvenienceHelper.readProperties("temp-dir")+"udf_result/" + job.getId() + ".nc";
+					String netCDFPath = tmpDir + "udf_result/" + job.getId() + ".nc";
 					new HyperCubeFactory().writeHyperCubeToNetCDFBandAsVariable(firstHyperCube, udfResponse.getString("proj"), netCDFPath);
 					JSONArray dimensionsArray = firstHyperCube.getJSONArray("dimensions");
 					Iterator iterator = dimensionsArray.iterator();
@@ -326,7 +316,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 					}
 					// continue processing of process_graph after the UDF
 					log.debug(processGraphAfterUDF);
-					WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphAfterUDF, wcpsEndpoint, openEOEndpoint);
+					WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphAfterUDF, openEOEndpoint, wcpsEndpoint);
 					URL urlUDF = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages" + "&QUERY="
 							+ URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 					executeWCPS(urlUDF, job, wcpsFactory);
@@ -350,7 +340,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 			}
 			
 			else {
-				WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphJSON, wcpsEndpoint, openEOEndpoint);
+				WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint);
 				URL url = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages" + "&QUERY="
 						+ URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 				executeWCPS(url, job, wcpsFactory);
@@ -378,22 +368,11 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 		linkProcessGraph.put("job_id", job.getId());
 		linkProcessGraph.put("updated", job.getUpdated());
 
-		String filePath = null;
-		try {
-			filePath = ConvenienceHelper.readProperties("temp-dir");
-		} catch (IOException e) {
-			log.error("An error occured when reading properties file " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for (StackTraceElement element : e.getStackTrace()) {
-				builder.append(element.toString() + "\n");
-			}
-			log.error(builder.toString());
-		}
 		String fileName = job.getId() + "." + wcpsQuery.getOutputFormat();
-		log.debug("The output file will be saved here: \n" + (filePath + fileName).toString());
+		log.debug("The output file will be saved here: \n" + (tmpDir + fileName).toString());
 
 		try (BufferedInputStream in = new BufferedInputStream(url.openStream());
-				FileOutputStream fileOutputStream = new FileOutputStream(filePath + fileName)) {
+				FileOutputStream fileOutputStream = new FileOutputStream(tmpDir + fileName)) {
 			byte dataBuffer[] = new byte[1024];
 			int bytesRead;
 			while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
@@ -559,7 +538,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener{
 			//TODO receive resulting json object from UDF container
 			//TODO import resulting UDF object into rasdaman
 			
-			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphAfterUDF, wcpsEndpoint, openEOEndpoint);
+			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphAfterUDF, openEOEndpoint, wcpsEndpoint);
 			URL urlUDF = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages" + "&QUERY="
 					+ URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 			executeWCPS(urlUDF, job, wcpsFactory);

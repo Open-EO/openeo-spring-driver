@@ -62,6 +62,8 @@ public class WCPSQueryFactory {
 	 * @param openEOGraph
 	 */
 	public WCPSQueryFactory(JSONObject openEOGraph, String openEOEndpoint, String wcpsEndpoint) {
+		log.debug("openEO endpoint: " + openEOEndpoint);
+		log.debug("wcps endpoint: " + wcpsEndpoint);
 		collectionIDs = new Vector<Collection>();
 		aggregates = new Vector<Aggregate>();
 		filters = new Vector<Filter>();
