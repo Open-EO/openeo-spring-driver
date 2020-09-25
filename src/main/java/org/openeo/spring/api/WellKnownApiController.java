@@ -53,7 +53,7 @@ public class WellKnownApiController implements WellKnownApi {
 		apiInstance.apiVersion("1.0.0");
 		apiInstance.setProduction(false);
 		try {
-			apiInstance.setUrl(new URI(openEOEndpoint));
+			apiInstance.setUrl(new URI("https://10.8.244.194:8443"));
 		} catch (URISyntaxException e) {
 			Error error = new Error();
 			error.setCode("500");

@@ -4,6 +4,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 
+import org.openeo.spring.model.Billing;
+import org.openeo.spring.model.BillingPlan;
 import org.openeo.spring.model.Capabilities;
 import org.openeo.spring.model.Endpoint;
 import org.openeo.spring.model.Endpoint.MethodsEnum;
@@ -125,6 +127,19 @@ public class DefaultApiController implements DefaultApi {
 		operatorUrl.setType("text/html");
 		operatorUrl.setRel("Eurac Research");
 		capabilities.addLinksItem(operatorUrl);
+		Billing billing = new Billing();
+		billing.setDefaultPlan("free");
+		billing.setCurrency(null);
+		BillingPlan billingPlan = new BillingPlan();
+		billingPlan.setName("free");
+		billingPlan.setDescription("free use of service for research purposes and testing");
+		billingPlan.setPaid(false);
+		try {
+			billingPlan.setUrl(new URI(openEOEndpoint));
+		} catch (URISyntaxException e1) {
+		}
+		billing.addPlansItem(billingPlan);
+		capabilities.setBilling(billing);
 
 		Link openEOUrl = new Link();
 		try {
