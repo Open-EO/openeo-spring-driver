@@ -26,11 +26,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.annotations.GenericGenerator;
 import org.json.JSONObject;
+import org.openeo.spring.json.ProcessSerializer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.swagger.annotations.ApiModelProperty;
 
@@ -40,6 +40,7 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Entity
 @Table(name = "process")
+@JsonSerialize(using = ProcessSerializer.class)
 public class Process implements Serializable{
 	
 	/**
@@ -51,7 +52,7 @@ public class Process implements Serializable{
 	private final Logger log = LogManager.getLogger(Process.class);
 	
 	@Id
-	@JsonProperty("process_id")
+	@JsonProperty("id")
 	@Column(name = "process_id")
 	@GenericGenerator(name = "uuid", strategy = "uuid2")
 	@GeneratedValue(generator = "uuid")
