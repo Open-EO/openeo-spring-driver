@@ -75,15 +75,15 @@ public class JobsApiController implements JobsApi {
 
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
-	
+
 	@Value("${org.openeo.wcps.tmp.dir}")
 	private String tmpDir;
-	
+
 	@Autowired
 	private JobScheduler jobScheduler;
 
 	JobDAO jobDAO;
-	
+
 	BatchJobResultDAO resultDAO;
 
 	@Autowired
@@ -95,13 +95,13 @@ public class JobsApiController implements JobsApi {
 	@org.springframework.beans.factory.annotation.Autowired
 	public JobsApiController(NativeWebRequest request) {
 		this.request = request;
-		
+
 	}
-	
+
 	@PostConstruct
-    public void init() {
+	public void init() {
 		this.addJobListener(jobScheduler);
-    }
+	}
 
 	@Override
 	public Optional<NativeWebRequest> getRequest() {
@@ -457,18 +457,9 @@ public class JobsApiController implements JobsApi {
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Array of job descriptions"),
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
-	@RequestMapping(value = "/jobs", produces = { "application/json" }, method = RequestMethod.GET)
+	@GetMapping(value = "/jobs", produces = { "application/json" })
 	public ResponseEntity listJobs(
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
-		getRequest().ifPresent(request -> {
-			for (MediaType mediaType : MediaType.parseMediaTypes(request.getHeader("Accept"))) {
-				if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-					String exampleString = "{ \"jobs\" : [ { \"costs\" : 12.98, \"process\" : { \"id\" : \"\" }, \"created\" : \"2017-01-01T09:32:12Z\", \"description\" : \"Deriving minimum NDVI measurements over pixel time series of Sentinel 2\", \"progress\" : 75.5, \"id\" : \"a3cca2b2aa1e3b5b\", \"title\" : \"NDVI based on Sentinel 2\", \"updated\" : \"2017-01-01T09:36:18Z\", \"plan\" : \"free\", \"status\" : \"running\", \"budget\" : 100 }, { \"costs\" : 12.98, \"process\" : { \"id\" : \"\" }, \"created\" : \"2017-01-01T09:32:12Z\", \"description\" : \"Deriving minimum NDVI measurements over pixel time series of Sentinel 2\", \"progress\" : 75.5, \"id\" : \"a3cca2b2aa1e3b5b\", \"title\" : \"NDVI based on Sentinel 2\", \"updated\" : \"2017-01-01T09:36:18Z\", \"plan\" : \"free\", \"status\" : \"running\", \"budget\" : 100 } ], \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ] }";
-					ApiUtil.setExampleResponse(request, "application/json", exampleString);
-					break;
-				}
-			}
-		});
 		BatchJobs batchJobs = new BatchJobs();
 		for (Job job : jobDAO.findAll()) {
 			batchJobs.addJobsItem(job);
@@ -552,7 +543,7 @@ public class JobsApiController implements JobsApi {
 		}
 
 	}
-	
+
 	@Operation(summary = "Download data for given file", operationId = "downloadAsset", description = "Download asset as a result from a successfully executed process graph.", tags = {
 			"Data Access", })
 	@ApiResponses(value = {
@@ -560,13 +551,15 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@GetMapping(value = "/download/{job_id}/{file_name}", produces = { "*" })
-	public ResponseEntity<?> downloadResult(@Parameter(description = "Id of job that has created the result", required = true) @PathVariable("job_id") String jobID, @Parameter(description = "name of file of result", required = true) @PathVariable("file_name") String fileName) {
+	public ResponseEntity<?> downloadResult(
+			@Parameter(description = "Id of job that has created the result", required = true) @PathVariable("job_id") String jobID,
+			@Parameter(description = "name of file of result", required = true) @PathVariable("file_name") String fileName) {
 		byte[] response = null;
 		log.debug("job-id: " + jobID);
 		log.debug("file-name: " + fileName);
 		try {
-			String mime = ConvenienceHelper.getMimeTypeFromRasName(fileName.substring(fileName.indexOf(".") +1));
-			log.debug("File download was requested:" + fileName + " of mime type: " + mime);				
+			String mime = ConvenienceHelper.getMimeTypeFromRasName(fileName.substring(fileName.indexOf(".") + 1));
+			log.debug("File download was requested:" + fileName + " of mime type: " + mime);
 			File userFile = new File(tmpDir + jobID + "/" + fileName);
 			log.debug(userFile.getAbsolutePath());
 			response = IOUtils.toByteArray(new FileInputStream(userFile));
