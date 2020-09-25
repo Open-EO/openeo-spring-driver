@@ -73,7 +73,7 @@ public class BatchJobResult implements Serializable {
 	private Map<String, Object> properties = new HashMap<>();
 
 	@JsonProperty("assets")
-	@OneToMany(cascade = {CascadeType.MERGE, CascadeType.REFRESH}, fetch = FetchType.EAGER)
+	@OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.EAGER)
     @JoinTable(name = "result_asset_mapping", 
       joinColumns = {@JoinColumn(name = "result_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "asset_id", referencedColumnName = "href")})

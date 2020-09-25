@@ -393,6 +393,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		linkProcessGraph.put("job_id", job.getId());
 		linkProcessGraph.put("updated", job.getUpdated());
 		String jobResultPath = tmpDir + job.getId() + "/";
+		File jobResultDirectory = new File(jobResultPath);
+		if(!jobResultDirectory.exists()) {
+			jobResultDirectory.mkdir();
+		}
 		String dataFileName = "data." + wcpsQuery.getOutputFormat();
 		log.debug("The output file will be saved here: \n" + (tmpDir + dataFileName).toString());
 
