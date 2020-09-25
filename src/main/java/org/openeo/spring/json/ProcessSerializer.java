@@ -6,9 +6,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.openeo.spring.model.Process;
-import org.openeo.spring.model.ProcessParameter;
 
 public class ProcessSerializer extends StdSerializer<Process>{
 	
@@ -32,12 +32,9 @@ public class ProcessSerializer extends StdSerializer<Process>{
 		if(value.getDescription() != null) {
 			gen.writeStringField("description", value.getDescription());
 		}
-		if(value.getParameters() != null && !value.getParameters().isEmpty()) {
-			gen.writeStartArray();
-			for(ProcessParameter parameter: value.getParameters()) {
-				gen.writeEmbeddedObject(parameter);
-			}
-			gen.writeEndArray();
+		JSONArray parameters = (JSONArray) value.getParameters();		
+		if(parameters != null) {
+			gen.writeObjectField("parameters", parameters.toList());
 		}
 		JSONObject processGraph = (JSONObject) value.getProcessGraph();		
 		if(processGraph != null) {

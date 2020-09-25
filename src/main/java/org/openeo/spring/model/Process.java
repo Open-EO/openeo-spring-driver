@@ -25,6 +25,7 @@ import javax.validation.Valid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.annotations.GenericGenerator;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.openeo.spring.json.ProcessSerializer;
 
@@ -76,10 +77,12 @@ public class Process implements Serializable{
 
 	@JsonProperty("parameters")
 	@Valid
-	@Embedded
-	private List<ProcessParameter> parameters = null;
+	@Lob
+	private byte[] parameters = null;
 
-	@JsonProperty("returns")
+	//TODO fix the parsing of this from a json perspective of deserialization 
+//	@JsonProperty("returns")
+	@JsonIgnore
 	@Embedded
 	private ProcessReturnValue returns;
 
@@ -96,8 +99,8 @@ public class Process implements Serializable{
 
 	@JsonProperty("examples")
 	@Valid
-	@Embedded
-	private List<ProcessExample> examples = null;
+	@Lob
+	private byte[] examples = null;
 
 	@JsonProperty("links")
 	@Valid
@@ -216,18 +219,31 @@ public class Process implements Serializable{
 		this.categories = categories;
 	}
 
-	public Process parameters(List<ProcessParameter> parameters) {
-		this.parameters = parameters;
+	public Process parameters(Object parameters) {
+		log.debug("Called: processGraph(Object processGraph)");
+		try {
+			 ByteArrayOutputStream out = new ByteArrayOutputStream();
+		    ObjectOutputStream os = new ObjectOutputStream(out);
+		    os.writeObject(parameters);
+		    this.parameters = out.toByteArray();
+		} catch (Exception e) {
+			log.error("processGraph(Object processGraph): An error occured while deserializing process graph from byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 		return this;
 	}
 
-	public Process addParametersItem(ProcessParameter parametersItem) {
-		if (this.parameters == null) {
-			this.parameters = new ArrayList<>();
-		}
-		this.parameters.add(parametersItem);
-		return this;
-	}
+//	public Process addParametersItem(ProcessParameter parametersItem) {
+//		if (this.parameters == null) {
+//			this.parameters = new ArrayList<>();
+//		}
+//		this.parameters.add(parametersItem);
+//		return this;
+//	}
 
 	/**
 	 * A list of parameters. The order in the array corresponds to the parameter
@@ -244,12 +260,40 @@ public class Process implements Serializable{
 
 	@Valid
 
-	public List<ProcessParameter> getParameters() {
+	public Object getParameters() {
+		log.debug("Called: getParameters(Object parameters)");
+		if(this.parameters == null) return null;
+		ByteArrayInputStream in = new ByteArrayInputStream(this.parameters);
+		JSONArray parameters = null;
+		try {
+		    ObjectInputStream is = new ObjectInputStream(in);
+		    parameters = new JSONArray((List<Object>) is.readObject());
+		}catch (Exception e) {
+			log.error("getParameters(): An error occured while deserializing parameters from byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 		return parameters;
 	}
 
-	public void setParameters(List<ProcessParameter> parameters) {
-		this.parameters = parameters;
+	public void setParameters(Object parameters) {
+		log.debug("Called: setParameters(Object parameters)");
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+		    ObjectOutputStream os = new ObjectOutputStream(out);
+		    os.writeObject(parameters);
+		    this.parameters = out.toByteArray();
+		} catch (Exception e) {
+			log.error("setParameters(Object processGraph): An error occured while serializing parameters to byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 	}
 
 	public Process returns(ProcessReturnValue returns) {
@@ -348,17 +392,23 @@ public class Process implements Serializable{
 	}
 
 	public Process examples(List<ProcessExample> examples) {
-		this.examples = examples;
+		log.debug("Called: examples(Object examples)");
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+		    ObjectOutputStream os = new ObjectOutputStream(out);
+		    os.writeObject(examples);
+		    this.examples = out.toByteArray();
+		} catch (Exception e) {
+			log.error("examples(Object examples): An error occured while deserializing examples from byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 		return this;
 	}
 
-	public Process addExamplesItem(ProcessExample examplesItem) {
-		if (this.examples == null) {
-			this.examples = new ArrayList<>();
-		}
-		this.examples.add(examplesItem);
-		return this;
-	}
 
 	/**
 	 * Examples, may be used for unit tests.
@@ -369,12 +419,40 @@ public class Process implements Serializable{
 
 	@Valid
 
-	public List<ProcessExample> getExamples() {
+	public Object getExamples() {
+		log.debug("Called: getExamples(Object examples)");
+		if(this.examples == null) return null;
+		ByteArrayInputStream in = new ByteArrayInputStream(this.examples);
+		JSONArray examples = null;
+		try {
+		    ObjectInputStream is = new ObjectInputStream(in);
+		    examples = new JSONArray((List<Object>) is.readObject());
+		}catch (Exception e) {
+			log.error("getExamples(): An error occured while deserializing examples from byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 		return examples;
 	}
 
-	public void setExamples(List<ProcessExample> examples) {
-		this.examples = examples;
+	public void setExamples(Object examples) {
+		log.debug("Called: setExamples(Object parameters)");
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+		    ObjectOutputStream os = new ObjectOutputStream(out);
+		    os.writeObject(examples);
+		    this.examples = out.toByteArray();
+		} catch (Exception e) {
+			log.error("setExamples(Object examples): An error occured while serializing examples to byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 	}
 
 	public Process links(List<Link> links) {
