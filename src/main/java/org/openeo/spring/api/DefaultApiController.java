@@ -90,6 +90,31 @@ public class DefaultApiController implements DefaultApi {
 		processesEndpoint.setPath("/processes");
 		processesEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(processesEndpoint);
+		
+		Endpoint jobsEndpoint = new Endpoint();
+		jobsEndpoint.setPath("/jobs");
+		jobsEndpoint.addMethodsItem(MethodsEnum.GET);
+		jobsEndpoint.addMethodsItem(MethodsEnum.POST);
+		capabilities.addEndpointsItem(jobsEndpoint);
+		
+		Endpoint jobEndpoint = new Endpoint();
+		jobEndpoint.setPath("/jobs/{job-id}");
+		jobEndpoint.addMethodsItem(MethodsEnum.GET);
+		jobEndpoint.addMethodsItem(MethodsEnum.PATCH);
+		jobEndpoint.addMethodsItem(MethodsEnum.DELETE);
+		capabilities.addEndpointsItem(jobEndpoint);
+		
+		Endpoint jobResultEndpoint = new Endpoint();
+		jobResultEndpoint.setPath("/jobResults/{jobResult-id}/results");
+		jobResultEndpoint.addMethodsItem(MethodsEnum.GET);
+		jobResultEndpoint.addMethodsItem(MethodsEnum.POST);
+		jobResultEndpoint.addMethodsItem(MethodsEnum.DELETE);
+		capabilities.addEndpointsItem(jobResultEndpoint);
+		
+		Endpoint downloadEndpoint = new Endpoint();
+		downloadEndpoint.setPath("/download/{file_name}");
+		downloadEndpoint.addMethodsItem(MethodsEnum.GET);
+		capabilities.addEndpointsItem(downloadEndpoint);
 
 		Link operatorUrl = new Link();
 		try {
