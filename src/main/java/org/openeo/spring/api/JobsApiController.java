@@ -39,6 +39,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -74,6 +75,9 @@ public class JobsApiController implements JobsApi {
 
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
+	
+	@Value("${org.openeo.wcps.tmp.dir}")
+	private String tmpDir;
 	
 	@Autowired
 	private JobScheduler jobScheduler;
@@ -555,15 +559,16 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "200", description = "Result data in the requested output format"),
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
-	@RequestMapping(value = "/download/{file_name}", produces = { "*" }, consumes = {
-			"application/json" }, method = RequestMethod.GET)
-	public ResponseEntity downloadResult(@Parameter(description = "", required = true) @PathVariable("file_name") String fileName) {
+	@GetMapping(value = "/download/{job_id}/{file_name}", produces = { "*" })
+	public ResponseEntity<?> downloadResult(@Parameter(description = "Id of job that has created the result", required = true) @PathVariable("job_id") String jobID, @Parameter(description = "name of file of result", required = true) @PathVariable("file_name") String fileName) {
 		byte[] response = null;
+		log.debug("job-id: " + jobID);
+		log.debug("file-name: " + fileName);
 		try {
 			String mime = ConvenienceHelper.getMimeTypeFromRasName(fileName.substring(fileName.indexOf(".") +1));
-			log.debug("File download was requested:" + fileName + " of mime type: " + mime);	
-			String path = ConvenienceHelper.readProperties("temp-dir");			
-			File userFile = new File(path + fileName);			
+			log.debug("File download was requested:" + fileName + " of mime type: " + mime);				
+			File userFile = new File(tmpDir + jobID + "/" + fileName);
+			log.debug(userFile.getAbsolutePath());
 			response = IOUtils.toByteArray(new FileInputStream(userFile));
 			log.debug("File found and converted in bytes for download");
 			return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(response);

@@ -16,6 +16,7 @@ import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKey;
@@ -72,7 +73,7 @@ public class BatchJobResult implements Serializable {
 	private Map<String, Object> properties = new HashMap<>();
 
 	@JsonProperty("assets")
-	@OneToMany(cascade = CascadeType.ALL)
+	@OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.EAGER)
     @JoinTable(name = "result_asset_mapping", 
       joinColumns = {@JoinColumn(name = "result_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "asset_id", referencedColumnName = "href")})
