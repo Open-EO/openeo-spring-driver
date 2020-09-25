@@ -62,7 +62,7 @@ public class Job implements Serializable {
 	private JobStates status = JobStates.CREATED;
 
 	@JsonProperty("progress")
-	private BigDecimal progress;
+	private BigDecimal progress = new BigDecimal(0);
 
 	@JsonProperty("created")
 	@org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)

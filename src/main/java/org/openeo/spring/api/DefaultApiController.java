@@ -107,7 +107,7 @@ public class DefaultApiController implements DefaultApi {
 		capabilities.addEndpointsItem(jobEndpoint);
 		
 		Endpoint jobResultEndpoint = new Endpoint();
-		jobResultEndpoint.setPath("/jobResults/{jobResult-id}/results");
+		jobResultEndpoint.setPath("/jobs/{job-id}/results");
 		jobResultEndpoint.addMethodsItem(MethodsEnum.GET);
 		jobResultEndpoint.addMethodsItem(MethodsEnum.POST);
 		jobResultEndpoint.addMethodsItem(MethodsEnum.DELETE);

@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.Optional;
 import java.util.UUID;
@@ -149,6 +150,7 @@ public class JobsApiController implements JobsApi {
 //    	job.setId(jobID);
 		job.setStatus(JobStates.CREATED);
 		job.setCreated(OffsetDateTime.now());
+		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
 		log.debug("Process Graph attached: " + processGraph.toString(4));
@@ -165,7 +167,8 @@ public class JobsApiController implements JobsApi {
 		if (verifiedSave != null) {
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 			log.debug("verified retrieved job: " + verifiedSave.toString());
-			return new ResponseEntity<Job>(job, HttpStatus.OK);
+			//return new ResponseEntity<Job>(job, HttpStatus.OK);
+			return ResponseEntity.ok().header("OpenEO-Identifier", job.getId().toString()).body(job);
 		} else {
 			Error error = new Error();
 			error.setCode("500");
