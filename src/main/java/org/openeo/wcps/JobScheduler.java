@@ -45,6 +45,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Component
 public class JobScheduler implements JobEventListener, UDFEventListener {
 
@@ -457,6 +461,32 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		// Process Asset
 		Asset processAsset = new Asset();
 		String processFileName = "process.json";
+		String processFilePath = tmpDir + job.getId() + "/" + processFileName;
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			mapper.writeValue(new File(processFilePath), job.getProcess());
+		} catch (JsonGenerationException e) {
+			log.error("An error occured when generating json of process: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		} catch (JsonMappingException e) {
+			log.error("An error occured when mapping process.class to json: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		} catch (IOException e) {
+			log.error("An error occured when writing process to file: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 		processAsset.setHref(openEOEndpoint + "/download/" + job.getId() + "/" + processFileName);
 		String processMimeType = "application/json";
 		log.debug("Mime type is: " + processMimeType);
