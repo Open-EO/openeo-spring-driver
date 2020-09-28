@@ -515,8 +515,8 @@ public class CollectionsApiController implements CollectionsApi {
 						extent.setTemporal(temporalExtent);
 					}catch(Exception e) {
 					}
-					currentCollection.setExtent(extent);
-					}
+					currentCollection.setExtent(extent);				
+				}
 
 				Link link1 = new Link();
 				List<Link> links = new ArrayList<Link>();
@@ -545,6 +545,9 @@ public class CollectionsApiController implements CollectionsApi {
 				}catch(Exception e) {
 //		            	log.warn("Error in parsing Title :" + e.getMessage());
 				}
+				
+				Object provider = null;				
+				currentCollection.addProvidersItem(provider);
 
 			collectionsList.addCollectionsItem(currentCollection);
 			}
@@ -1035,7 +1038,7 @@ public class CollectionsApiController implements CollectionsApi {
 //					}
 //				}
 				
-				try {							
+				try {
 					interval1.add(OffsetDateTime.parse(startTime));
 					interval1.add(OffsetDateTime.parse(endTime));
 					interval.add(interval1);
@@ -1044,7 +1047,7 @@ public class CollectionsApiController implements CollectionsApi {
 				}catch(Exception e) {
 				}
 				currentCollection.setExtent(extent);
-			}			
+			}
 			
 			Link link1 = new Link();
 			List<Link> links = new ArrayList<Link>();
@@ -1062,17 +1065,51 @@ public class CollectionsApiController implements CollectionsApi {
 			String title = null;
 			String description = null;
 			try {
-			title = metadataElement.getChildText("Title", gmlNS);
-			currentCollection.setTitle(title);
-		    }catch(Exception e) {
-//		    	log.warn("Error in parsing Project Name :" + e.getMessage());
-		    }
-		    try {
-			description = metadataElement.getChildText("Description", gmlNS);
-			currentCollection.setDescription(description);
-            }catch(Exception e) {
-//            	log.warn("Error in parsing Title :" + e.getMessage());
-	        }
+				title = metadataElement.getChildText("Title", gmlNS);
+				currentCollection.setTitle(title);
+			}catch(Exception e) {
+				//		    	log.warn("Error in parsing Project Name :" + e.getMessage());
+			}
+			try {
+				description = metadataElement.getChildText("Description", gmlNS);
+				currentCollection.setDescription(description);
+			}catch(Exception e) {
+				//            	log.warn("Error in parsing Title :" + e.getMessage());
+			}
+			String platform = null;
+			String citation = null;
+			String constellation = null;
+			String intruments = null;
+			try {
+				platform = metadataElement.getChildText("Platform", gmlNS);
+			}catch(Exception e) {
+			    	log.warn("Error in parsing Platform Name :" + e.getMessage());
+			    }
+			try {
+				citation = metadataElement.getChildText("Citation", gmlNS);
+			}catch(Exception e) {
+				log.warn("Error in parsing Constellation:" + e.getMessage());
+			}
+
+			try {
+				constellation = metadataElement.getChildText("Constellation", gmlNS);
+			}catch(Exception e) {
+				log.warn("Error in parsing Constellation:" + e.getMessage());
+			}				
+
+			try {				
+				intruments = metadataElement.getChildText("Instrument", gmlNS);
+			}catch(Exception e) {
+				log.warn("Error in parsing Instrument:" + e.getMessage());
+			}
+			
+			Object provider = null;			
+			currentCollection.addProvidersItem(provider);
+			
+//			List<Object> providers = new ArrayList<Object>();
+//			Object element = null;			
+//			providers.add(0, element);
+//			currentCollection.setProviders(providers);
 		       
 			
 //			JSONArray links = new JSONArray();			
@@ -1102,8 +1139,13 @@ public class CollectionsApiController implements CollectionsApi {
 			
 			//String providerName = metadataObj.getString("Creator");		
 			
-			//String role1 = metadataObj.getString("Roles");
-			
+//			JSONArray roles1 = new JSONArray();
+//			roles1.put("Distributor");
+//			try {
+//				roles1.put(metadataElement.getChildText("Role", gmlNS));
+//			}catch(Exception e) {
+//				log.warn("Error in parsing Role :" + e.getMessage());
+//			}
 			
 //			JSONArray provider1 = new JSONArray();
 //			JSONObject provider1Info = new JSONObject();
@@ -1122,6 +1164,11 @@ public class CollectionsApiController implements CollectionsApi {
 //			epsgvalues.put("values", epsg_values);
 //			
 //			JSONArray platform_values = new JSONArray();
+//		    try {
+//				platform = metadataElement.getChildText("Platform", gmlNS);
+//			}catch(Exception e) {
+//			    	log.warn("Error in parsing Project Name :" + e.getMessage());
+//			    }
 //			platform_values.put("Sentinel-2A");
 //			platform_values.put("Sentinel-2B");
 //			pltfrmvalues.put("values", platform_values);			
@@ -1152,19 +1199,19 @@ public class CollectionsApiController implements CollectionsApi {
 //		    	log.warn("Error in parsing metadata slice :" + e.getMessage());
 //		    }
 //			try {
-//				properties.put("sci:citation", props.getChildText("CITATION"));
+//				properties.put("sci:citation", metadataElement.getChildText("Citation", gmlNS));
 //			}catch(Exception e) {
 //				log.warn("Error in parsing Constellation:" + e.getMessage());
 //			}
 //
 //			try {
-//				properties.put("eo:constellation", props.getChildText("CONSTELLATON"));
+//				properties.put("eo:constellation", metadataElement.getChildText("Constellation", gmlNS));
 //			}catch(Exception e) {
 //				log.warn("Error in parsing Constellation:" + e.getMessage());
 //			}				
 //
 //			try {				
-//				properties.put("eo:instrument", props.getChildText("INSTRUMENT"));
+//				properties.put("eo:instrument", metadataElement.getChildText("Instrument", gmlNS));
 //			}catch(Exception e) {
 //				log.warn("Error in parsing Instrument:" + e.getMessage());
 //			}
