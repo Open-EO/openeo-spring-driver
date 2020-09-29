@@ -1140,7 +1140,7 @@ public class CollectionsApiController implements CollectionsApi {
 			//String providerName = metadataObj.getString("Creator");		
 			
 //			JSONArray roles1 = new JSONArray();
-//			roles1.put("Distributor");
+//			roles1.put("host");
 //			try {
 //				roles1.put(metadataElement.getChildText("Role", gmlNS));
 //			}catch(Exception e) {
