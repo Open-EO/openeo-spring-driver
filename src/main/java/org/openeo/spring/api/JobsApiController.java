@@ -4,8 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,6 +34,7 @@ import org.openeo.spring.model.BatchJobs;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
+import org.openeo.spring.model.Link;
 import org.openeo.spring.model.LogEntries;
 import org.openeo.wcps.JobScheduler;
 import org.openeo.wcps.events.JobEvent;
@@ -73,6 +77,9 @@ public class JobsApiController implements JobsApi {
 
 	@Value("${org.openeo.endpoint}")
 	private String openEOEndpoint;
+	
+	@Value("${org.openeo.public.endpoint}")
+	private String openEOPublicEndpoint;
 
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
@@ -149,7 +156,7 @@ public class JobsApiController implements JobsApi {
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
 		job.setStatus(JobStates.CREATED);
-		job.setCreated(OffsetDateTime.now());
+		job.setCreated(OffsetDateTime.now().atZoneSameInstant(ZoneOffset.UTC));
 		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
@@ -466,9 +473,15 @@ public class JobsApiController implements JobsApi {
 		BatchJobs batchJobs = new BatchJobs();
 		for (Job job : jobDAO.findAll()) {
 			batchJobs.addJobsItem(job);
-			// TODO add link to each job item
-			// batchJobs.addLink(...);
+			
 		}
+		Link linkToJob = new Link();
+		linkToJob.setTitle("next");
+		linkToJob.setRel("next");
+		try {
+			linkToJob.setHref(new URI(openEOPublicEndpoint + "/jobs"));
+		} catch (URISyntaxException e) {}
+		batchJobs.addLinksItem(linkToJob);
 		if (!batchJobs.getJobs().isEmpty()) {
 			return new ResponseEntity<BatchJobs>(batchJobs, HttpStatus.OK);
 		} else {

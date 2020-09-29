@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.transaction.Transactional;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,8 +51,26 @@ public class AbstractDAO<T extends Serializable> {
 	}
 	
 	@Transactional
+	public List<T> findPaginated(int offset, int pageSize) {
+		CriteriaBuilder criteria = getCurrentSession().getCriteriaBuilder();
+		CriteriaQuery<T> query = criteria.createQuery(entityClass);
+		Root<T> from = query.from(entityClass);
+		CriteriaQuery<T> select = query.select(from);
+		TypedQuery<T> typedQuery = getCurrentSession().createQuery(select);
+		typedQuery.setFirstResult(offset);
+		typedQuery.setMaxResults(pageSize);
+		return typedQuery.getResultList();
+	}
+	
+	@Transactional
 	public List<T> findAll() {
-		return getCurrentSession().createQuery("from " + entityClass.getName()).list();
+		CriteriaBuilder criteria = getCurrentSession().getCriteriaBuilder();
+		CriteriaQuery<T> query = criteria.createQuery(entityClass);
+		Root<T> from = query.from(entityClass);
+		CriteriaQuery<T> select = query.select(from);
+		TypedQuery<T> typedQuery = getCurrentSession().createQuery(select);
+		return typedQuery.getResultList();
+//		return getCurrentSession().createQuery("from " + entityClass.getName()).list();
 	}
 	
 	@Transactional
