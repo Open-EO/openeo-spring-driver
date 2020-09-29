@@ -69,6 +69,9 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 	@Value("${org.openeo.endpoint}")
 	private String openEOEndpoint;
+	
+	@Value("${org.openeo.public.endpoint}")
+	private String openEOPublicEndpoint;
 
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
@@ -431,7 +434,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 		// Data Asset
 		Asset dataAsset = new Asset();
-		dataAsset.setHref(openEOEndpoint + "/download/" + job.getId() + "/" + dataFileName);
+		dataAsset.setHref(openEOPublicEndpoint + "/download/" + job.getId() + "/" + dataFileName);
 		String dataMimeType = "";
 		try {
 			dataMimeType = ConvenienceHelper.getMimeTypeFromRasName(wcpsQuery.getOutputFormat());
@@ -487,7 +490,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			}
 			log.error(builder.toString());
 		}
-		processAsset.setHref(openEOEndpoint + "/download/" + job.getId() + "/" + processFileName);
+		processAsset.setHref(openEOPublicEndpoint + "/download/" + job.getId() + "/" + processFileName);
 		String processMimeType = "application/json";
 		log.debug("Mime type is: " + processMimeType);
 		processAsset.setType(processMimeType);
