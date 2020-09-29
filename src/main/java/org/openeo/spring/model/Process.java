@@ -41,7 +41,6 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Entity
 @Table(name = "process")
-@JsonSerialize(using = ProcessSerializer.class)
 public class Process implements Serializable{
 	
 	/**
