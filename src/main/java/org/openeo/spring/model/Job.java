@@ -3,6 +3,7 @@ package org.openeo.spring.model;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -21,7 +22,12 @@ import javax.validation.constraints.DecimalMax;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotNull;
 
+import org.openeo.spring.json.ProcessSerializer;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -40,7 +46,11 @@ public class Job implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 7246407729624717591L;
-
+	
+	@Column(name = "owner")
+	@JsonIgnore
+	private String ownerPrincipal;
+	
 	@Id
 	@GeneratedValue
 	private UUID id;
@@ -55,6 +65,7 @@ public class Job implements Serializable {
 	@OneToOne(targetEntity = Process.class, cascade = {CascadeType.MERGE, CascadeType.REFRESH}, fetch = FetchType.EAGER, optional = false)
 	@JoinColumn(name = "process_id")
 	@JsonProperty("process")
+	@JsonSerialize(using = ProcessSerializer.class)
 	private Process process;
 
 	@JsonProperty("status")
@@ -66,7 +77,7 @@ public class Job implements Serializable {
 
 	@JsonProperty("created")
 	@org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
-	private OffsetDateTime created;
+	private ZonedDateTime created;
 
 	@JsonProperty("updated")
 	@org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
@@ -99,6 +110,14 @@ public class Job implements Serializable {
 
 	public void setId(UUID id) {
 		this.id = id;
+	}
+
+	public String getOwnerPrincipal() {
+		return ownerPrincipal;
+	}
+
+	public void setOwnerPrincipal(String ownerPrincipal) {
+		this.ownerPrincipal = ownerPrincipal;
 	}
 
 	public Job title(String title) {
@@ -224,7 +243,7 @@ public class Job implements Serializable {
 		this.progress = progress;
 	}
 
-	public Job created(OffsetDateTime created) {
+	public Job created(ZonedDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -240,11 +259,11 @@ public class Job implements Serializable {
 
 	@Valid
 
-	public OffsetDateTime getCreated() {
+	public ZonedDateTime getCreated() {
 		return created;
 	}
 
-	public void setCreated(OffsetDateTime created) {
+	public void setCreated(ZonedDateTime created) {
 		this.created = created;
 	}
 
