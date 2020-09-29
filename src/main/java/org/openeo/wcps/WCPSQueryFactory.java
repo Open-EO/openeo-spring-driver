@@ -1811,46 +1811,46 @@ public class WCPSQueryFactory {
 					log.debug(storedPayLoads.get(nodeKeyOfCurrentProcess));
 				}				
 			}
-			if (currentProcessID.equals("filter_polygon")) {
-				StringBuilder wcpsFilterPolygonpayLoad = new StringBuilder("clip(");
-				StringBuilder wcpsStringBuilderFilterPolygonPayload = basicWCPSStringBuilder(varPayLoad.toString());
-				String payLoad = null;
-				JSONObject processArguments =  processGraph.getJSONObject(nodeKeyOfCurrentProcess).getJSONObject("arguments");
-				if (processArguments.get("data") instanceof JSONObject) {
-					for (String fromType : processArguments.getJSONObject("data").keySet()) {
-						if (fromType.equals("from_parameter") && processArguments.getJSONObject("data").getString("from_parameter").equals("data")) {
-							payLoad = wcpsPayLoad.toString();
-						}
-						else if (fromType.equals("from_node")) {
-							String dataNode = processArguments.getJSONObject("data").getString("from_node");
-							payLoad = storedPayLoads.getString(dataNode);
-						}
-					}
-				}
-				StringBuilder stringBuilderPoly = new StringBuilder();
-				stringBuilderPoly.append("POLYGON((");
-				for (int f = 0; f < filtersPolygon.size(); f++) {
-					Filter filter = filtersPolygon.get(f);					
-					String low = filter.getLowerBound();
-					String high = filter.getUpperBound();					
-					stringBuilderPoly.append(low);					
-					if (high != null && !(high.equals(low))) {
-						stringBuilderPoly.append(" ");
-						stringBuilderPoly.append(high);
-					}
-					if (f < filtersPolygon.size() - 1) {
-						stringBuilderPoly.append(",");
-					}
-				}
-				stringBuilderPoly.append("))");
-				wcpsFilterPolygonpayLoad.append(payLoad + "," + stringBuilderPoly.toString() + ")");
-				wcpsPayLoad=wcpsFilterPolygonpayLoad;
-				wcpsStringBuilder=wcpsStringBuilderFilterPolygonPayload.append(wcpsFilterPolygonpayLoad.toString());
-				storedPayLoads.put(nodeKeyOfCurrentProcess, wcpsFilterPolygonpayLoad.toString());
-				log.debug("Process Stored for Node " + nodeKeyOfCurrentProcess + " : " + storedPayLoads.get(nodeKeyOfCurrentProcess));
-				log.debug("Filter Polygon Process PayLoad is : ");
-				log.debug(storedPayLoads.get(nodeKeyOfCurrentProcess));
-			}
+//			if (currentProcessID.equals("filter_polygon")) {
+//				StringBuilder wcpsFilterPolygonpayLoad = new StringBuilder("clip(");
+//				StringBuilder wcpsStringBuilderFilterPolygonPayload = basicWCPSStringBuilder(varPayLoad.toString());
+//				String payLoad = null;
+//				JSONObject processArguments =  processGraph.getJSONObject(nodeKeyOfCurrentProcess).getJSONObject("arguments");
+//				if (processArguments.get("data") instanceof JSONObject) {
+//					for (String fromType : processArguments.getJSONObject("data").keySet()) {
+//						if (fromType.equals("from_parameter") && processArguments.getJSONObject("data").getString("from_parameter").equals("data")) {
+//							payLoad = wcpsPayLoad.toString();
+//						}
+//						else if (fromType.equals("from_node")) {
+//							String dataNode = processArguments.getJSONObject("data").getString("from_node");
+//							payLoad = storedPayLoads.getString(dataNode);
+//						}
+//					}
+//				}
+//				StringBuilder stringBuilderPoly = new StringBuilder();
+//				stringBuilderPoly.append("POLYGON((");
+//				for (int f = 0; f < filtersPolygon.size(); f++) {
+//					Filter filter = filtersPolygon.get(f);					
+//					String low = filter.getLowerBound();
+//					String high = filter.getUpperBound();					
+//					stringBuilderPoly.append(low);					
+//					if (high != null && !(high.equals(low))) {
+//						stringBuilderPoly.append(" ");
+//						stringBuilderPoly.append(high);
+//					}
+//					if (f < filtersPolygon.size() - 1) {
+//						stringBuilderPoly.append(",");
+//					}
+//				}
+//				stringBuilderPoly.append("))");
+//				wcpsFilterPolygonpayLoad.append(payLoad + "," + stringBuilderPoly.toString() + ")");
+//				wcpsPayLoad=wcpsFilterPolygonpayLoad;
+//				wcpsStringBuilder=wcpsStringBuilderFilterPolygonPayload.append(wcpsFilterPolygonpayLoad.toString());
+//				storedPayLoads.put(nodeKeyOfCurrentProcess, wcpsFilterPolygonpayLoad.toString());
+//				log.debug("Process Stored for Node " + nodeKeyOfCurrentProcess + " : " + storedPayLoads.get(nodeKeyOfCurrentProcess));
+//				log.debug("Filter Polygon Process PayLoad is : ");
+//				log.debug(storedPayLoads.get(nodeKeyOfCurrentProcess));
+//			}
 			if (currentProcessID.contains("_time")) {
 				containsTempAggProcess = true;
 				StringBuilder wcpsTempAggpayLoad = new StringBuilder("");
@@ -5928,46 +5928,46 @@ public class WCPSQueryFactory {
 				createBoundingBoxFilterFromArgs(processFilterArguments, srs, coll, false);
 			}
 		}		
-		else if (processID.equals("filter_polygon")) {
-			String filterCollectionNodeKey = null;
-			String filterPolygonNodeKey = processNodeKey;
-			String filterPolygonfromNode = processNode.getJSONObject("arguments").getJSONObject("data").getString("from_node");			
-			filterCollectionNodeKey = getFilterCollectionNode(filterPolygonfromNode);
-			JSONObject loadCollectionNode = processGraph.getJSONObject(filterCollectionNodeKey).getJSONObject("arguments");			
-			String coll = (String) loadCollectionNode.get("id");
-			JSONObject processFilter = processGraph.getJSONObject(filterPolygonNodeKey);
-			JSONObject processFilterArguments = processFilter.getJSONObject("arguments").getJSONObject("polygons");
-			int srs = 0;
-			JSONObject jsonresp = null;
-			try {
-				jsonresp = readJsonFromUrl(openEOEndpoint + "/collections/" + coll);
-			} catch (JSONException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			} catch (IOException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			}
-			for (String dimX : jsonresp.getJSONObject("cube:dimensions").keySet()) {
-				if (dimX.contentEquals("X") || dimX.contentEquals("E") || dimX.contentEquals("Lon") || dimX.contentEquals("Long")) {
-					srs = ((JSONObject) jsonresp.getJSONObject("cube:dimensions")).getJSONObject(dimX).getInt("reference_system");
-				}
-			}			
-			if (srs > 0) {
-				log.debug("Polygon Extent is : " + processFilterArguments.getJSONArray("coordinates"));
-				createPolygonFilter(processFilterArguments, srs, coll);
-				log.debug("Polygon Filters are : ");
-				log.debug(filtersPolygon);
-			}
-		}
+//		else if (processID.equals("filter_polygon")) {
+//			String filterCollectionNodeKey = null;
+//			String filterPolygonNodeKey = processNodeKey;
+//			String filterPolygonfromNode = processNode.getJSONObject("arguments").getJSONObject("data").getString("from_node");			
+//			filterCollectionNodeKey = getFilterCollectionNode(filterPolygonfromNode);
+//			JSONObject loadCollectionNode = processGraph.getJSONObject(filterCollectionNodeKey).getJSONObject("arguments");			
+//			String coll = (String) loadCollectionNode.get("id");
+//			JSONObject processFilter = processGraph.getJSONObject(filterPolygonNodeKey);
+//			JSONObject processFilterArguments = processFilter.getJSONObject("arguments").getJSONObject("polygons");
+//			int srs = 0;
+//			JSONObject jsonresp = null;
+//			try {
+//				jsonresp = readJsonFromUrl(openEOEndpoint + "/collections/" + coll);
+//			} catch (JSONException e) {
+//				log.error("An error occured: " + e.getMessage());
+//				StringBuilder builder = new StringBuilder();
+//				for (StackTraceElement element : e.getStackTrace()) {
+//					builder.append(element.toString() + "\n");
+//				}
+//				log.error(builder.toString());
+//			} catch (IOException e) {
+//				log.error("An error occured: " + e.getMessage());
+//				StringBuilder builder = new StringBuilder();
+//				for (StackTraceElement element : e.getStackTrace()) {
+//					builder.append(element.toString() + "\n");
+//				}
+//				log.error(builder.toString());
+//			}
+//			for (String dimX : jsonresp.getJSONObject("cube:dimensions").keySet()) {
+//				if (dimX.contentEquals("X") || dimX.contentEquals("E") || dimX.contentEquals("Lon") || dimX.contentEquals("Long")) {
+//					srs = ((JSONObject) jsonresp.getJSONObject("cube:dimensions")).getJSONObject(dimX).getInt("reference_system");
+//				}
+//			}			
+//			if (srs > 0) {
+//				log.debug("Polygon Extent is : " + processFilterArguments.getJSONArray("coordinates"));
+//				createPolygonFilter(processFilterArguments, srs, coll);
+//				log.debug("Polygon Filters are : ");
+//				log.debug(filtersPolygon);
+//			}
+//		}
 	}
 
 	private String getFilterCollectionNode(String fromNode) {
