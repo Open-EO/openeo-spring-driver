@@ -24,7 +24,6 @@ import javax.validation.constraints.NotNull;
 
 import org.openeo.spring.json.ProcessSerializer;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
