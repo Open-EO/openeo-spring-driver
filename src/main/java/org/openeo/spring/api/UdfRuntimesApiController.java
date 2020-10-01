@@ -3,6 +3,12 @@ package org.openeo.spring.api;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.List;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import org.openeo.spring.model.Link;
 
 import org.openeo.spring.model.UdfRuntime;
 import org.springframework.http.HttpStatus;
@@ -18,7 +24,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @RestController
-@RequestMapping("${openapi.openEO.base-path:/api/v1.0}")
+@RequestMapping("${openapi.openEO.base-path:}")
 public class UdfRuntimesApiController implements UdfRuntimesApi {
 
     private final NativeWebRequest request;
@@ -52,15 +58,32 @@ public class UdfRuntimesApiController implements UdfRuntimesApi {
     	
     	
     	UdfRuntime udfPython = new UdfRuntime();
-    	udfPython.setTitle("Python 3.6.8");
+    	List<Link> linksPython = new ArrayList<Link>();
+    	Link link1 = new Link();
+    	URI url;
+		try {
+			url = new URI("https://github.com/Open-EO/openeo-udf");
+			link1.setHref(url);
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		link1.setRel("about");
+    	udfPython.setTitle("Python UDF Environment");
     	udfPython.setType("docker");
     	udfPython.setDescription("Python programming language");
+    	udfPython.setDefault("3.6.8");
+    	linksPython.add(link1);
+    	udfPython.setLinks(linksPython);
     	udfRuntimes.put("python", udfPython);
     	
+    	
     	UdfRuntime udfR = new UdfRuntime();
-    	udfR.setTitle("R 3.6.1");
+    	udfR.setTitle("R UDF Environment");
     	udfR.setType("docker");
+    	udfR.setDefault("3.6.1");
     	udfR.setDescription("R programming language with `Rcpp` and `rmarkdown` extensions installed.");
+    	
     	udfRuntimes.put("R", udfR);
     	
         return new ResponseEntity<Map<String, UdfRuntime>>(udfRuntimes, HttpStatus.OK);
