@@ -561,7 +561,7 @@ public interface JobsApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/jobs/{job_id}", produces = { "application/json" }, consumes = {
 			"application/json" }, method = RequestMethod.PATCH)
-	default ResponseEntity<Void> updateJob(
+	default ResponseEntity<?> updateJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId,
 			@Parameter(description = "", required = true) @Valid @RequestBody Job updateBatchJobRequest) {
 		return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);

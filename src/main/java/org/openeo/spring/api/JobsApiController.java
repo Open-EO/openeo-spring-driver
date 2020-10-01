@@ -748,10 +748,27 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/jobs/{job_id}", produces = { "application/json" }, consumes = {
 			"application/json" }, method = RequestMethod.PATCH)
-	public ResponseEntity<Void> updateJob(
+	public ResponseEntity<?> updateJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId,
 			@Parameter(description = "", required = true) @Valid @RequestBody Job updateBatchJobRequest) {
-		return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+		
+		Job job = jobDAO.findOne(UUID.fromString(jobId));
+		if (job != null) {
+			job.setProcess(updateBatchJobRequest.getProcess());
+			job.setBudget(updateBatchJobRequest.getBudget());
+			job.setPlan(updateBatchJobRequest.getPlan());
+			job.setDescription(updateBatchJobRequest.getDescription());
+			job.setTitle(updateBatchJobRequest.getTitle());
+			job.setUpdated(OffsetDateTime.now());
+			jobDAO.update(job);
+			this.fireJobQueuedEvent(job.getId());
+			return new ResponseEntity<Job>(HttpStatus.ACCEPTED);
+		} else {
+			Error error = new Error();
+			error.setCode("400");
+			error.setMessage("The requested job " + jobId + " could not be found.");
+			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+		}
 
 	}
 
