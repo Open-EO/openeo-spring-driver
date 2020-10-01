@@ -33,6 +33,7 @@ import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
 import org.json.JSONObject;
 import org.json.JSONArray;
+import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.CollectionExtent;
 import org.openeo.spring.model.CollectionSpatialExtent;
@@ -366,7 +367,7 @@ public class CollectionsApiController implements CollectionsApi {
 				}
 				
 				List<String> keywords = new ArrayList<String>();
-				keywords.add("openEO");
+				keywords.add("");
  				currentCollection.setKeywords(keywords);
  				currentCollection.setLicense("proprietary");
  				
@@ -532,6 +533,8 @@ public class CollectionsApiController implements CollectionsApi {
 //			String metadataString3 = metadataString2.replaceAll("\"\"","\"");
 //			metadataObj = new JSONObject(metadataString3);
 //			JSONArray slices = metadataObj.getJSONArray("slices");
+			Map<String, CollectionSummaryStats[]> summaries = new HashMap<String, CollectionSummaryStats[]>();
+			Map<String, Asset> assets = new HashMap<String, Asset>();
 			
 			String srsDescription = boundingBoxElement.getAttributeValue("srsName");
 			if (srsDescription.contains("EPSG")) {
@@ -608,7 +611,6 @@ public class CollectionsApiController implements CollectionsApi {
 						}catch(Exception e) {
 //							log.warn("Error in parsing band gsd:" + e.getMessage());
 						}
-						Map<String,CollectionSummaryStats[]> summaries = new HashMap<String,CollectionSummaryStats[]>();
 						CollectionSummaryStats gsd = new CollectionSummaryStats();
 						CollectionSummaryStats[] eoGsd = {gsd};
 //						summaries.put("eo:bands", eoGsd);
@@ -754,12 +756,10 @@ public class CollectionsApiController implements CollectionsApi {
 					bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
 					bandsMeta = true;
 				}catch(Exception e) {
-					//			log.warn("Error in parsing bands :" + e.getMessage());
 				}
 				try {
 					bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
 				}catch(Exception e) {
-					//					log.warn("Error in parsing bands List :" + e.getMessage());
 				}
 				if (bandsMeta) {
 					try {
@@ -906,6 +906,9 @@ public class CollectionsApiController implements CollectionsApi {
 			currentCollection.setLinks(links);
 			currentCollection.setVersion("v1");
 			currentCollection.setLicense("proprietary");
+			List<String> keywords = new ArrayList<String>();
+			keywords.add("");
+			currentCollection.setKeywords(keywords);
 			
 			String title = null;
 			String description = null;
@@ -945,7 +948,7 @@ public class CollectionsApiController implements CollectionsApi {
 				constellation = metadataElement.getChildText("Constellation", gmlNS);
 			}catch(Exception e) {
 				log.warn("Error in parsing Constellation:" + e.getMessage());
-			}				
+			}
 
 			try {				
 				intruments = metadataElement.getChildText("Instrument", gmlNS);
@@ -953,11 +956,13 @@ public class CollectionsApiController implements CollectionsApi {
 				log.warn("Error in parsing Instrument:" + e.getMessage());
 			}
 						
-//			List<Object> providers = new ArrayList<Object>();
-//			Object provider1 = new Object();			
+			List<Object> providers = new ArrayList<Object>();
+//			Object provider1 = new Object();
 //			providers.add(0, provider1);
-//			currentCollection.setProviders(providers);
-		       
+			currentCollection.setProviders(providers);	
+			
+			currentCollection.setSummaries(summaries);
+			currentCollection.setAssets(assets);
 			
 //			JSONArray links = new JSONArray();			
 //			JSONObject linkSelf = new JSONObject();
