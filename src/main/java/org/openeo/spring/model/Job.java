@@ -23,6 +23,7 @@ import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotNull;
 
 import org.openeo.spring.json.ProcessSerializer;
+import org.openeo.spring.json.OpenEODateSerializer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -75,10 +76,12 @@ public class Job implements Serializable {
 	private BigDecimal progress = new BigDecimal(0);
 
 	@JsonProperty("created")
+	@JsonSerialize(using = OpenEODateSerializer.class)
 	@org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
-	private ZonedDateTime created;
+	private OffsetDateTime created;
 
 	@JsonProperty("updated")
+	@JsonSerialize(using = OpenEODateSerializer.class)
 	@org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
 	private OffsetDateTime updated;
 
@@ -242,7 +245,7 @@ public class Job implements Serializable {
 		this.progress = progress;
 	}
 
-	public Job created(ZonedDateTime created) {
+	public Job created(OffsetDateTime created) {
 		this.created = created;
 		return this;
 	}
@@ -258,11 +261,11 @@ public class Job implements Serializable {
 
 	@Valid
 
-	public ZonedDateTime getCreated() {
+	public OffsetDateTime getCreated() {
 		return created;
 	}
 
-	public void setCreated(ZonedDateTime created) {
+	public void setCreated(OffsetDateTime created) {
 		this.created = created;
 	}
 
