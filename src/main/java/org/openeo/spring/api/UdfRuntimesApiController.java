@@ -59,31 +59,42 @@ public class UdfRuntimesApiController implements UdfRuntimesApi {
     	
     	UdfRuntime udfPython = new UdfRuntime();
     	List<Link> linksPython = new ArrayList<Link>();
-    	Link link1 = new Link();
-    	URI url;
+    	Link linkPython = new Link();
+    	URI urlPython;
 		try {
-			url = new URI("https://github.com/Open-EO/openeo-udf");
-			link1.setHref(url);
+			urlPython = new URI("https://github.com/Open-EO/openeo-udf");
+			linkPython.setHref(urlPython);
 		} catch (URISyntaxException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		link1.setRel("about");
+		linkPython.setRel("about");
     	udfPython.setTitle("Python UDF Environment");
     	udfPython.setType("docker");
     	udfPython.setDescription("Python programming language");
     	udfPython.setDefault("3.6.8");
-    	linksPython.add(link1);
+    	linksPython.add(linkPython);
     	udfPython.setLinks(linksPython);
     	udfRuntimes.put("python", udfPython);
     	
     	
     	UdfRuntime udfR = new UdfRuntime();
+    	List<Link> linksR = new ArrayList<Link>();
+    	Link linkR = new Link();
+    	URI urlR;
+		try {
+			urlR = new URI("https://github.com/Open-EO/openeo-r-udf");
+			linkR.setHref(urlR);
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		linkR.setRel("about");		
     	udfR.setTitle("R UDF Environment");
     	udfR.setType("docker");
     	udfR.setDefault("3.6.1");
     	udfR.setDescription("R programming language with `Rcpp` and `rmarkdown` extensions installed.");
-    	
+    	linksR.add(linkR);
+    	udfR.setLinks(linksR);
     	udfRuntimes.put("R", udfR);
     	
         return new ResponseEntity<Map<String, UdfRuntime>>(udfRuntimes, HttpStatus.OK);
