@@ -452,34 +452,34 @@ public class WCPSQueryFactory {
 					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
 					if (overlapResolver.equals( "add")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
 						}						
 					}
 					if (overlapResolver.equals( "subtract")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
 						}
 					}
 					if (overlapResolver.equals( "multiply")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
 						}
 					}
 					if (overlapResolver.equals( "divide")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
 						}
 					}
 					wcpsPayLoad=wcpsMergepayLoad;
@@ -518,34 +518,34 @@ public class WCPSQueryFactory {
 					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
 					if (overlapResolver.equals( "add")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
 						}						
 					}
 					if (overlapResolver.equals( "subtract")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
 						}
 					}
 					if (overlapResolver.equals( "multiply")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
 						}
 					}
 					if (overlapResolver.equals( "divide")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
 						}
 					}
 					wcpsPayLoad=wcpsMergepayLoad;
@@ -630,34 +630,34 @@ public class WCPSQueryFactory {
 					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
 					if (overlapResolver.equals( "add")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
 						}						
 					}
 					if (overlapResolver.equals( "subtract")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "-" + "("+payLoad2Merge+"))");
 						}
 					}
 					if (overlapResolver.equals( "multiply")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "*" + "("+payLoad2Merge+"))");
 						}
 					}
 					if (overlapResolver.equals( "divide")) {
 						if (dimsXY) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
 						}
 						else if(dimsEN) {
-							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
+							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + "/" + "("+payLoad2Merge+"))");
 						}
 					}
 					wcpsPayLoad=wcpsMergepayLoad;
@@ -668,27 +668,8 @@ public class WCPSQueryFactory {
 				}
 				
 				else if (noOfDimsCube1==noOfDimsCube2 && !temporalStartCube1.equals(temporalEndCube1) && temporalStartCube2.equals(temporalEndCube2) && !payLoad2.contains("condense") && payLoad1.contains("coverage") && payLoad1.contains("condense")) {
-//					String timeImageCrsDomain = Pattern.compile(" X"+"\\(.*?\\)").matcher(payLoadCRS).replaceAll("");
-//					timeImageCrsDomain = Pattern.compile(" Y"+"\\(.*?\\)").matcher(timeImageCrsDomain).replaceAll("");
-//					timeImageCrsDomain = Pattern.compile(" E"+"\\(.*?\\)").matcher(timeImageCrsDomain).replaceAll("");
-//					timeImageCrsDomain = Pattern.compile(" N"+"\\(.*?\\)").matcher(timeImageCrsDomain).replaceAll("");
-//					timeImageCrsDomain = Pattern.compile(",").matcher(timeImageCrsDomain).replaceAll("");
-//					String XImageCrsDomain = Pattern.compile(" DATE"+"\\(.*?\\)").matcher(payLoadCRS).replaceAll("");
-//					XImageCrsDomain = Pattern.compile(" Y"+"\\(.*?\\)").matcher(XImageCrsDomain).replaceAll("");
-//					XImageCrsDomain = Pattern.compile(" N"+"\\(.*?\\)").matcher(XImageCrsDomain).replaceAll("");
-//					XImageCrsDomain = Pattern.compile(",").matcher(XImageCrsDomain).replaceAll("");
-//					String YImageCrsDomain = Pattern.compile(" DATE"+"\\(.*?\\)").matcher(payLoadCRS).replaceAll("");
-//					YImageCrsDomain = Pattern.compile(" X"+"\\(.*?\\)").matcher(YImageCrsDomain).replaceAll("");
-//					YImageCrsDomain = Pattern.compile(" E"+"\\(.*?\\)").matcher(YImageCrsDomain).replaceAll("");
-//					YImageCrsDomain = Pattern.compile(",").matcher(YImageCrsDomain).replaceAll("");					
-					
-//					String payLoad1Merge = payLoad1.replaceAll("\\sDATE"+"\\(.*?\\)", " DATE\\(\\$T" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sY"+"\\(.*?\\)", " Y\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sX"+"\\(.*?\\)", " X\\(\\$X" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sN"+"\\(.*?\\)", " N\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sE"+"\\(.*?\\)", " E\\(\\$X" + nodeKeyOfCurrentProcess + "\\)");						
 					String payLoad2Merge = payLoad2.replaceAll("\\sY"+"\\(.*?\\)", " Y\\(\\$Y" + nodeKeyofCube1 + "\\)").replaceAll("\\sX"+"\\(.*?\\)", " X\\(\\$X" + nodeKeyofCube1 + "\\)").replaceAll("\\sN"+"\\(.*?\\)", " N\\(\\$Y" + nodeKeyofCube1 + "\\)").replaceAll("\\sE"+"\\(.*?\\)", " E\\(\\$X" + nodeKeyofCube1 + "\\)");
-										
-//					log.debug(timeImageCrsDomain);
-//					log.debug(XImageCrsDomain);
-//					log.debug(YImageCrsDomain);
-//					log.debug(payLoad1Merge);
+					
 					log.debug(payLoad2Merge);
 					log.debug("Cube1 : " + payLoad1);
 					log.debug("Cube2 : " + payLoad2);
@@ -696,42 +677,34 @@ public class WCPSQueryFactory {
 					if (overlapResolver.equals( "add")) {
 						if (dimsXY) {
 							wcpsMergepayLoad.append("" + payLoad1 + "+("+payLoad2Merge+")");
-							//wcpsMergepayLoad.append(" coverage merge over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values " + payLoad1Merge + "+" + "("+payLoad2Merge+")");
-						}
+							}
 						else if(dimsEN) {
 							wcpsMergepayLoad.append("" + payLoad1 + "+("+payLoad2Merge+")");
-							//wcpsMergepayLoad.append(" coverage merge over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values " + payLoad1Merge + "+" + "("+payLoad2Merge+")");
-						}						
+							}						
 					}
 					if (overlapResolver.equals( "subtract")) {
 						if (dimsXY) {
 							wcpsMergepayLoad.append("" + payLoad1 + "-("+payLoad2Merge+")");
-							//wcpsMergepayLoad.append(" coverage merge over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values " + payLoad1Merge + "-" + "("+payLoad2Merge+")");
-						}
+							}
 						else if(dimsEN) {
 							wcpsMergepayLoad.append("" + payLoad1 + "-("+payLoad2Merge+")");
-							//wcpsMergepayLoad.append(" coverage merge over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values " + payLoad1Merge + "-" + "("+payLoad2Merge+")");
-						}
+							}
 					}
 					if (overlapResolver.equals( "multiply")) {
 						if (dimsXY) {
 							wcpsMergepayLoad.append("" + payLoad1 + "*("+payLoad2Merge+")");
-							//wcpsMergepayLoad.append(" coverage merge over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values " + payLoad1Merge + "*" + "("+payLoad2Merge+")");
-						}
+							}
 						else if(dimsEN) {
 							wcpsMergepayLoad.append("" + payLoad1 + "*("+payLoad2Merge+")");
-							//wcpsMergepayLoad.append(" coverage merge over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values " + payLoad1Merge + "*" + "("+payLoad2Merge+")");
-						}
+							}
 					}
 					if (overlapResolver.equals( "divide")) {
 						if (dimsXY) {
 							wcpsMergepayLoad.append("" + payLoad1 + "/("+payLoad2Merge+")");
-							//wcpsMergepayLoad.append(" coverage merge over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values " + payLoad1Merge + "/" + "("+payLoad2Merge+")");
-						}
+							}
 						else if(dimsEN) {
 							wcpsMergepayLoad.append("" + payLoad1 + "/("+payLoad2Merge+")");
-							//wcpsMergepayLoad.append(" coverage merge over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values " + payLoad1Merge + "/" + "("+payLoad2Merge+")");
-						}
+							}
 					}
 					wcpsPayLoad=wcpsMergepayLoad;
 					wcpsStringBuilder = wcpsStringBuilderMerge.append(wcpsMergepayLoad.toString());
@@ -922,10 +895,10 @@ public class WCPSQueryFactory {
 					
 					try {
 						replacement = processArguments.getDouble("replacement");						
-						wcpsMaskpayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", Y)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", X)) values (" + payLoad1Merge + " * " + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+"))" + " + " + "(("+payLoad2Merge.replaceAll("\\$pm", "\\$qm")+")"+" * "+replacement+")");
+						wcpsMaskpayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + " * " + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+"))" + " + " + "(("+payLoad2Merge.replaceAll("\\$pm", "\\$qm")+")"+" * "+replacement+")");
 						wcpsPayLoad=wcpsMaskpayLoad;
 					}catch(Exception e) {
-						wcpsMaskpayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain("+YImageCrsDomain+", N)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain(" +XImageCrsDomain+ ", E)) values (" + payLoad1Merge + " * " + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+"))");
+						wcpsMaskpayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + " * " + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+"))");
 						wcpsPayLoad=wcpsMaskpayLoad;
 					}
 					
