@@ -81,10 +81,10 @@ public class Process implements Serializable{
 	private byte[] parameters = null;
 
 	//TODO fix the parsing of this from a json perspective of deserialization 
-//	@JsonProperty("returns")
-	@JsonIgnore
+	@JsonProperty("returns")
+	@Valid
 	@Embedded
-	private ProcessReturnValue returns;
+	private Object returns = null;
 
 	@JsonProperty("deprecated")
 	private Boolean deprecated = false;
@@ -296,28 +296,7 @@ public class Process implements Serializable{
 		}
 	}
 
-	public Process returns(ProcessReturnValue returns) {
-		this.returns = returns;
-		return this;
-	}
-
-	/**
-	 * Get returns
-	 * 
-	 * @return returns
-	 */
-	@ApiModelProperty(value = "")
-
-	@Valid
-
-	public ProcessReturnValue getReturns() {
-		return returns;
-	}
-
-	public void setReturns(ProcessReturnValue returns) {
-		this.returns = returns;
-	}
-
+	
 	public Process deprecated(Boolean deprecated) {
 		this.deprecated = deprecated;
 		return this;
@@ -366,6 +345,28 @@ public class Process implements Serializable{
 		this.experimental = experimental;
 	}
 
+	public Process returns(Object returns) {
+		this.returns = returns;
+		return this;
+	}
+
+	/**
+	 * Get returns
+	 * 
+	 * @return returns
+	 */
+	@ApiModelProperty(value = "")
+	@JsonProperty("returns")
+	@Valid
+
+	public Object getReturns() {
+		return new JSONObject((Map<String, Object>) this.returns);
+	}
+
+	public void setReturns(Object returns) {
+		this.returns = returns;
+	}
+	
 	public Process exceptions(Object exceptions) {
 		this.exceptions = exceptions;
 		return this;
