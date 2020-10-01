@@ -152,7 +152,7 @@ public class JobsApiController implements JobsApi {
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
 		job.setStatus(JobStates.CREATED);
-		job.setCreated(OffsetDateTime.now().atZoneSameInstant(ZoneOffset.UTC));
+		job.setCreated(OffsetDateTime.now());
 		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
