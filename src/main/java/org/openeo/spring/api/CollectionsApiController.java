@@ -11,6 +11,8 @@ import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -546,7 +548,11 @@ public class CollectionsApiController implements CollectionsApi {
 //		            	log.warn("Error in parsing Title :" + e.getMessage());
 				}
 				
-				Object provider = null;				
+				List<String> keywords = new ArrayList<String>();
+				keywords.add("openEO");
+ 				currentCollection.setKeywords(keywords);
+				
+				Object provider = null;
 				currentCollection.addProvidersItem(provider);
 
 			collectionsList.addCollectionsItem(currentCollection);
@@ -1076,6 +1082,11 @@ public class CollectionsApiController implements CollectionsApi {
 			}catch(Exception e) {
 				//            	log.warn("Error in parsing Title :" + e.getMessage());
 			}
+			
+			Set<String> stacExtensions = new HashSet<String>();
+			stacExtensions.add("datacube");
+			currentCollection.setStacExtensions(stacExtensions);
+			
 			String platform = null;
 			String citation = null;
 			String constellation = null;

@@ -851,12 +851,12 @@ public class WCPSQueryFactory {
 					log.error(builder.toString());
 				}
 				
-				JSONObject dimsCube1 = (JSONObject) (((JSONObject) collectionSTACMetdataCube1.get("properties")).get("cube:dimensions"));		
+				JSONObject dimsCube1 = (JSONObject) (((JSONObject) collectionSTACMetdataCube1).get("cube:dimensions"));		
 				for (String dimsCube1Keys : dimsCube1.keySet()) {
 					noOfDimsCube1 = noOfDimsCube1+1;
 				}
 				
-				JSONObject dimsCube2 = (JSONObject) (((JSONObject) collectionSTACMetdataCube2.get("properties")).get("cube:dimensions"));		
+				JSONObject dimsCube2 = (JSONObject) (((JSONObject) collectionSTACMetdataCube2).get("cube:dimensions"));		
 				for (String dimsCube2Keys : dimsCube2.keySet()) {
 					noOfDimsCube2 = noOfDimsCube2+1;
 				}
