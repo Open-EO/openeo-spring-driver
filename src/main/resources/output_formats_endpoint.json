@@ -1,0 +1,83 @@
+{
+"output": {
+
+"netCDF": {
+"gis_data_types": [ "raster" ],
+"title": "NetCDF"
+            
+        },
+
+"GTiff": {
+"gis_data_types": [ "raster" ],
+"title": "GeoTiff",
+"description": "Export to GeoTiff. Doesn't support cloud-optimized GeoTiffs (COGs) yet.",
+"links": 
+[
+
+    {
+        "href": "https://www.gdal.org/frmt_gtiff.html",
+        "rel": "about",
+        "title": "GDAL on the GeoTiff file format and storage options"
+    }
+
+]
+            
+},
+        
+"GIF": {
+            "gis_data_types": [ "raster" ],
+            "title": "GIf"
+            
+},
+        
+"CSV": {
+            "gis_data_types": [ "raster" ],
+            "title": "Comma Separated Value"
+            
+        },
+        
+"PNG": {
+            "gis_data_types": [ "raster" ],
+            "title": "Portable Network Graphics"
+            
+        },
+        
+"JSON": {
+            "gis_data_types": [ "raster" ],
+            "title": "JavaScript Object Notation"
+            
+        },
+        
+"JPEG": {
+            "gis_data_types": [ "raster" ],
+            "title": "Joint Photographic Experts Group"
+            
+        }
+},
+    
+    "input": {
+            "GPKG": {
+                "title": "OGC GeoPackage",
+                "gis_data_types": 
+    					[
+    						"raster"
+    					],
+    			"parameters": 
+    					{
+    				"table": 
+    						{
+        						"type": "string",
+        						"description": "**RASTER ONLY.** Name of the table containing the tiles. If the GeoPackage dataset only contains one table, this option is not necessary. Otherwise, it is required."
+    						}
+    					},
+    			"links": 
+    					[
+    						{
+    							"href": "https://www.gdal.org/drv_geopackage_raster.html",
+    							"rel": "about",
+    							"title": "GDAL on GeoPackage for raster data"
+        					}
+       					]
+      				}   			
+    		}
+}

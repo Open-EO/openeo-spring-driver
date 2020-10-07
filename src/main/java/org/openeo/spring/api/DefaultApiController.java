@@ -93,6 +93,11 @@ public class DefaultApiController implements DefaultApi {
 		processesEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(processesEndpoint);
 		
+		Endpoint fileFormatsEndpoint = new Endpoint();
+		fileFormatsEndpoint.setPath("/file_formats");
+		fileFormatsEndpoint.addMethodsItem(MethodsEnum.GET);
+		capabilities.addEndpointsItem(fileFormatsEndpoint);
+		
 		Endpoint udfEndpoint = new Endpoint();
 		udfEndpoint.setPath("/udf_runtimes");
 		udfEndpoint.addMethodsItem(MethodsEnum.GET);
