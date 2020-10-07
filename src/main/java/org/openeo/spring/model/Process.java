@@ -1,25 +1,37 @@
 package org.openeo.spring.model;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.Lob;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.Valid;
-import javax.validation.constraints.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hibernate.annotations.GenericGenerator;
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.openeo.spring.json.ProcessSerializerFull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.swagger.annotations.ApiModelProperty;
 
@@ -29,22 +41,27 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Entity
 @Table(name = "process")
+@JsonSerialize(using = ProcessSerializerFull.class)
 public class Process implements Serializable{
 	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -6102545771306725349L;
-
+	
 	@Transient
 	private final Logger log = LogManager.getLogger(Process.class);
 	
 	@Id
 	@JsonProperty("id")
+	@Column(name = "process_id")
+	@GenericGenerator(name = "uuid", strategy = "uuid2")
+	@GeneratedValue(generator = "uuid")
 	private String id;
 	
-//	@OneToOne(mappedBy = "process", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
-//	private Job job;
+	@JsonIgnore
+	@OneToOne( cascade = {CascadeType.ALL}, mappedBy = "process")
+	private Job job;
 
 	@JsonProperty("summary")
 	private String summary;
@@ -60,12 +77,14 @@ public class Process implements Serializable{
 
 	@JsonProperty("parameters")
 	@Valid
-	@Embedded
-	private List<ProcessParameter> parameters = null;
+	@Lob
+	private byte[] parameters = null;
 
+	//TODO fix the parsing of this from a json perspective of deserialization 
 	@JsonProperty("returns")
+	@Valid
 	@Embedded
-	private ProcessReturnValue returns;
+	private Object returns = null;
 
 	@JsonProperty("deprecated")
 	private Boolean deprecated = false;
@@ -80,8 +99,8 @@ public class Process implements Serializable{
 
 	@JsonProperty("examples")
 	@Valid
-	@Embedded
-	private List<ProcessExample> examples = null;
+	@Lob
+	private byte[] examples = null;
 
 	@JsonProperty("links")
 	@Valid
@@ -90,8 +109,8 @@ public class Process implements Serializable{
 	
 	@JsonProperty("process_graph")
 	@Valid
-	@Embedded
-	private Object processGraph = null;
+	@Lob
+	private byte[] processGraph = null;
 
 	public Process id(String id) {
 		this.id = id;
@@ -111,13 +130,21 @@ public class Process implements Serializable{
 	 */
 	@ApiModelProperty(example = "ndvi", value = "Unique identifier for the process.  MUST be unique across all predefined and user-defined processes available for the authenticated user. If a back-end adds a process with the name of a user-defined process, the user-defined process takes preference over predefined processes in execution to not break existing process graphs.  Back-ends may choose to enforce a prefix for user-defined processes while storing the process, e.g. `user_ndvi` with `user_` being the prefix. Prefixes must still follow the pattern.")
 
-	@Pattern(regexp = "^\\w+$")
+//	@Pattern(regexp = "^\\w+$")
 	public String getId() {
 		return id;
 	}
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public Job getJob() {
+		return job;
+	}
+
+	public void setJob(Job job) {
+		this.job = job;
 	}
 
 	public Process summary(String summary) {
@@ -192,18 +219,31 @@ public class Process implements Serializable{
 		this.categories = categories;
 	}
 
-	public Process parameters(List<ProcessParameter> parameters) {
-		this.parameters = parameters;
+	public Process parameters(Object parameters) {
+		log.debug("Called: processGraph(Object processGraph)");
+		try {
+			 ByteArrayOutputStream out = new ByteArrayOutputStream();
+		    ObjectOutputStream os = new ObjectOutputStream(out);
+		    os.writeObject(parameters);
+		    this.parameters = out.toByteArray();
+		} catch (Exception e) {
+			log.error("processGraph(Object processGraph): An error occured while deserializing process graph from byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 		return this;
 	}
 
-	public Process addParametersItem(ProcessParameter parametersItem) {
-		if (this.parameters == null) {
-			this.parameters = new ArrayList<>();
-		}
-		this.parameters.add(parametersItem);
-		return this;
-	}
+//	public Process addParametersItem(ProcessParameter parametersItem) {
+//		if (this.parameters == null) {
+//			this.parameters = new ArrayList<>();
+//		}
+//		this.parameters.add(parametersItem);
+//		return this;
+//	}
 
 	/**
 	 * A list of parameters. The order in the array corresponds to the parameter
@@ -220,36 +260,43 @@ public class Process implements Serializable{
 
 	@Valid
 
-	public List<ProcessParameter> getParameters() {
+	public Object getParameters() {
+		log.debug("Called: getParameters(Object parameters)");
+		if(this.parameters == null) return null;
+		ByteArrayInputStream in = new ByteArrayInputStream(this.parameters);
+		JSONArray parameters = null;
+		try {
+		    ObjectInputStream is = new ObjectInputStream(in);
+		    parameters = new JSONArray((List<Object>) is.readObject());
+		}catch (Exception e) {
+			log.error("getParameters(): An error occured while deserializing parameters from byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 		return parameters;
 	}
 
-	public void setParameters(List<ProcessParameter> parameters) {
-		this.parameters = parameters;
+	public void setParameters(Object parameters) {
+		log.debug("Called: setParameters(Object parameters)");
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+		    ObjectOutputStream os = new ObjectOutputStream(out);
+		    os.writeObject(parameters);
+		    this.parameters = out.toByteArray();
+		} catch (Exception e) {
+			log.error("setParameters(Object processGraph): An error occured while serializing parameters to byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 	}
 
-	public Process returns(ProcessReturnValue returns) {
-		this.returns = returns;
-		return this;
-	}
-
-	/**
-	 * Get returns
-	 * 
-	 * @return returns
-	 */
-	@ApiModelProperty(value = "")
-
-	@Valid
-
-	public ProcessReturnValue getReturns() {
-		return returns;
-	}
-
-	public void setReturns(ProcessReturnValue returns) {
-		this.returns = returns;
-	}
-
+	
 	public Process deprecated(Boolean deprecated) {
 		this.deprecated = deprecated;
 		return this;
@@ -298,6 +345,28 @@ public class Process implements Serializable{
 		this.experimental = experimental;
 	}
 
+	public Process returns(Object returns) {
+		this.returns = returns;
+		return this;
+	}
+
+	/**
+	 * Get returns
+	 * 
+	 * @return returns
+	 */
+	@ApiModelProperty(value = "")
+	@JsonProperty("returns")
+	@Valid
+
+	public Object getReturns() {
+		return new JSONObject((Map<String, Object>) this.returns);
+	}
+
+	public void setReturns(Object returns) {
+		this.returns = returns;
+	}
+	
 	public Process exceptions(Object exceptions) {
 		this.exceptions = exceptions;
 		return this;
@@ -324,17 +393,23 @@ public class Process implements Serializable{
 	}
 
 	public Process examples(List<ProcessExample> examples) {
-		this.examples = examples;
+		log.debug("Called: examples(Object examples)");
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+		    ObjectOutputStream os = new ObjectOutputStream(out);
+		    os.writeObject(examples);
+		    this.examples = out.toByteArray();
+		} catch (Exception e) {
+			log.error("examples(Object examples): An error occured while deserializing examples from byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 		return this;
 	}
 
-	public Process addExamplesItem(ProcessExample examplesItem) {
-		if (this.examples == null) {
-			this.examples = new ArrayList<>();
-		}
-		this.examples.add(examplesItem);
-		return this;
-	}
 
 	/**
 	 * Examples, may be used for unit tests.
@@ -345,12 +420,40 @@ public class Process implements Serializable{
 
 	@Valid
 
-	public List<ProcessExample> getExamples() {
+	public Object getExamples() {
+		log.debug("Called: getExamples(Object examples)");
+		if(this.examples == null) return null;
+		ByteArrayInputStream in = new ByteArrayInputStream(this.examples);
+		JSONArray examples = null;
+		try {
+		    ObjectInputStream is = new ObjectInputStream(in);
+		    examples = new JSONArray((List<Object>) is.readObject());
+		}catch (Exception e) {
+			log.error("getExamples(): An error occured while deserializing examples from byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 		return examples;
 	}
 
-	public void setExamples(List<ProcessExample> examples) {
-		this.examples = examples;
+	public void setExamples(Object examples) {
+		log.debug("Called: setExamples(Object parameters)");
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+		    ObjectOutputStream os = new ObjectOutputStream(out);
+		    os.writeObject(examples);
+		    this.examples = out.toByteArray();
+		} catch (Exception e) {
+			log.error("setExamples(Object examples): An error occured while serializing examples to byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 	}
 
 	public Process links(List<Link> links) {
@@ -393,7 +496,20 @@ public class Process implements Serializable{
 	}
 
 	public Process processGraph(Object processGraph) {
-		this.processGraph = processGraph;
+		log.debug("Called: processGraph(Object processGraph)");
+		try {
+			 ByteArrayOutputStream out = new ByteArrayOutputStream();
+		    ObjectOutputStream os = new ObjectOutputStream(out);
+		    os.writeObject(processGraph);
+		    this.processGraph = out.toByteArray();
+		} catch (Exception e) {
+			log.error("processGraph(Object processGraph): An error occured while deserializing process graph from byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 		return this;
 
 	}
@@ -408,11 +524,38 @@ public class Process implements Serializable{
 	@ApiModelProperty(example = "{\"dc\":{\"process_id\":\"load_collection\",\"arguments\":{\"id\":\"Sentinel-2\",\"spatial_extent\":{\"west\":16.1,\"east\":16.6,\"north\":48.6,\"south\":47.2},\"temporal_extent\":[\"2018-01-01\",\"2018-02-01\"]}},\"bands\":{\"process_id\":\"filter_bands\",\"description\":\"Filter and order the bands. The order is important for the following reduce operation.\",\"arguments\":{\"data\":{\"from_node\":\"dc\"},\"bands\":[\"B08\",\"B04\",\"B02\"]}},\"evi\":{\"process_id\":\"reduce\",\"description\":\"Compute the EVI. Formula: 2.5 * (NIR - RED) / (1 + NIR + 6*RED + -7.5*BLUE)\",\"arguments\":{\"data\":{\"from_node\":\"bands\"},\"dimension\":\"bands\",\"reducer\":{\"process_graph\":{\"nir\":{\"process_id\":\"array_element\",\"arguments\":{\"data\":{\"from_parameter\":\"data\"},\"index\":0}},\"red\":{\"process_id\":\"array_element\",\"arguments\":{\"data\":{\"from_parameter\":\"data\"},\"index\":1}},\"blue\":{\"process_id\":\"array_element\",\"arguments\":{\"data\":{\"from_parameter\":\"data\"},\"index\":2}},\"sub\":{\"process_id\":\"subtract\",\"arguments\":{\"data\":[{\"from_node\":\"nir\"},{\"from_node\":\"red\"}]}},\"p1\":{\"process_id\":\"product\",\"arguments\":{\"data\":[6,{\"from_node\":\"red\"}]}},\"p2\":{\"process_id\":\"product\",\"arguments\":{\"data\":[-7.5,{\"from_node\":\"blue\"}]}},\"sum\":{\"process_id\":\"sum\",\"arguments\":{\"data\":[1,{\"from_node\":\"nir\"},{\"from_node\":\"p1\"},{\"from_node\":\"p2\"}]}},\"div\":{\"process_id\":\"divide\",\"arguments\":{\"data\":[{\"from_node\":\"sub\"},{\"from_node\":\"sum\"}]}},\"p3\":{\"process_id\":\"product\",\"arguments\":{\"data\":[2.5,{\"from_node\":\"div\"}]},\"result\":true}}}}},\"mintime\":{\"process_id\":\"reduce\",\"description\":\"Compute a minimum time composite by reducing the temporal dimension\",\"arguments\":{\"data\":{\"from_node\":\"evi\"},\"dimension\":\"temporal\",\"reducer\":{\"process_graph\":{\"min\":{\"process_id\":\"min\",\"arguments\":{\"data\":{\"from_parameter\":\"data\"}},\"result\":true}}}}},\"save\":{\"process_id\":\"save_result\",\"arguments\":{\"data\":{\"from_node\":\"mintime\"},\"format\":\"GTiff\"},\"result\":true}}", value = "A process graph defines a graph-like structure as a connected set of executable processes. Each key is a unique identifier (node ID) that is used to refer to the process in the graph.")
 	@JsonProperty("process_graph")
 	public Object getProcessGraph() {
-		return new JSONObject((Map<String, Object>) this.processGraph);
+		log.debug("Called: getProcessGraph(Object processGraph)");
+		ByteArrayInputStream in = new ByteArrayInputStream(this.processGraph);
+		JSONObject processGraph = null;
+		try {
+		    ObjectInputStream is = new ObjectInputStream(in);
+		    processGraph = new JSONObject((Map<String, Object>) is.readObject());
+		}catch (Exception e) {
+			log.error("getProcessGraph(): An error occured while deserializing process graph from byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
+		return processGraph;
 	}
 
 	public void setProcessGraph(Object processGraph) {
-		this.processGraph = processGraph;
+		log.debug("Called: setProcessGraph(Object processGraph)");
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+		    ObjectOutputStream os = new ObjectOutputStream(out);
+		    os.writeObject(processGraph);
+		    this.processGraph = out.toByteArray();
+		} catch (Exception e) {
+			log.error("setProcessGraph(Object processGraph): An error occured while serializing process graph to byte array: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+		}
 	}
 
 	@Override

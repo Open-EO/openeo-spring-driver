@@ -10,6 +10,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -21,6 +22,7 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(description = "Describes a specific file format.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class FileFormat   {
   @JsonProperty("title")
   private String title;

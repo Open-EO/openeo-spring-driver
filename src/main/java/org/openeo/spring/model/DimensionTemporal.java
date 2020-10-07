@@ -10,6 +10,7 @@ import javax.validation.constraints.Size;
 
 import org.openapitools.jackson.nullable.JsonNullable;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -18,6 +19,7 @@ import io.swagger.annotations.ApiModelProperty;
  * DimensionTemporal
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class DimensionTemporal extends Dimension  {
   @JsonProperty("values")
   @Valid

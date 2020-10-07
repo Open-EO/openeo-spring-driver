@@ -12,6 +12,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -20,6 +21,7 @@ import io.swagger.annotations.ApiModelProperty;
  * Collection
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Collection   {
   @JsonProperty("stac_version")
   private String stacVersion;

@@ -5,6 +5,7 @@ import java.util.Properties;
 import javax.sql.DataSource;
 
 import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
@@ -49,10 +50,11 @@ public class HibernateConf {
 //		hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "create-drop");
 		hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "update");
 		hibernateProperties.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
-		hibernateProperties.setProperty("hibernate.show_sql", "true");
+//		hibernateProperties.setProperty("hibernate.show_sql", "true");
 		hibernateProperties.setProperty("hibernate.use_sql_comments", "true");
 		hibernateProperties.setProperty("hibernate.format_sql", "true");
 
 		return hibernateProperties;
 	}
+	
 }

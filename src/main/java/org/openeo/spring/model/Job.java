@@ -3,30 +3,31 @@ package org.openeo.spring.model;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.Map;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import javax.validation.Valid;
 import javax.validation.constraints.DecimalMax;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotNull;
 
-import org.json.JSONObject;
+import org.openeo.spring.json.ProcessSerializer;
+import org.openeo.spring.json.OpenEODateSerializer;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -45,7 +46,11 @@ public class Job implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 7246407729624717591L;
-
+	
+	@Column(name = "owner")
+	@JsonIgnore
+	private String ownerPrincipal;
+	
 	@Id
 	@GeneratedValue
 	private UUID id;
@@ -57,28 +62,26 @@ public class Job implements Serializable {
 	@Column(name = "job_description")
 	private String description = null;
 	
-//	@OneToOne(targetEntity = Process.class)
-//	@JoinColumn(name = "process_id")
-	@Transient
+	@OneToOne(targetEntity = Process.class, cascade = {CascadeType.MERGE, CascadeType.REFRESH}, fetch = FetchType.EAGER, optional = false)
+	@JoinColumn(name = "process_id")
 	@JsonProperty("process")
+	@JsonSerialize(using = ProcessSerializer.class)
 	private Process process;
-	
-	@Valid
-	@Embedded
-	private Object processGraph = null;
 
 	@JsonProperty("status")
 	@Enumerated
 	private JobStates status = JobStates.CREATED;
 
 	@JsonProperty("progress")
-	private BigDecimal progress;
+	private BigDecimal progress = new BigDecimal(0);
 
 	@JsonProperty("created")
+	@JsonSerialize(using = OpenEODateSerializer.class)
 	@org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
 	private OffsetDateTime created;
 
 	@JsonProperty("updated")
+	@JsonSerialize(using = OpenEODateSerializer.class)
 	@org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
 	private OffsetDateTime updated;
 
@@ -109,6 +112,14 @@ public class Job implements Serializable {
 
 	public void setId(UUID id) {
 		this.id = id;
+	}
+
+	public String getOwnerPrincipal() {
+		return ownerPrincipal;
+	}
+
+	public void setOwnerPrincipal(String ownerPrincipal) {
+		this.ownerPrincipal = ownerPrincipal;
 	}
 
 	public Job title(String title) {
@@ -158,11 +169,6 @@ public class Job implements Serializable {
 		return this;
 	}
 	
-	public Process processGraph(Object processGraph) {
-		this.setProcessGraph(processGraph);		
-		return this.process;
-	}
-
 	/**
 	 * Get process
 	 * 
@@ -177,17 +183,10 @@ public class Job implements Serializable {
 	}
 
 	public void setProcess(Process process) {
+		process.setJob(this);
 		this.process = process;
 	}
 	
-	public Object getProcessGraph() {
-		return this.process.getProcessGraph();
-	}
-	
-	public void setProcessGraph(Object processGraph) {
-		this.processGraph = processGraph;
-		this.process.setProcessGraph(processGraph);
-	}
 
 	public Job status(JobStates status) {
 		this.status = status;

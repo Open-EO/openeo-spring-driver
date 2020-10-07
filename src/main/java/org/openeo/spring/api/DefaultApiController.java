@@ -4,6 +4,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 
+import org.openeo.spring.model.Billing;
+import org.openeo.spring.model.BillingPlan;
 import org.openeo.spring.model.Capabilities;
 import org.openeo.spring.model.Endpoint;
 import org.openeo.spring.model.Endpoint.MethodsEnum;
@@ -90,6 +92,51 @@ public class DefaultApiController implements DefaultApi {
 		processesEndpoint.setPath("/processes");
 		processesEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(processesEndpoint);
+		
+		Endpoint fileFormatsEndpoint = new Endpoint();
+		fileFormatsEndpoint.setPath("/file_formats");
+		fileFormatsEndpoint.addMethodsItem(MethodsEnum.GET);
+		capabilities.addEndpointsItem(fileFormatsEndpoint);
+		
+		Endpoint udfEndpoint = new Endpoint();
+		udfEndpoint.setPath("/udf_runtimes");
+		udfEndpoint.addMethodsItem(MethodsEnum.GET);
+		capabilities.addEndpointsItem(udfEndpoint);
+		
+		Endpoint conformanceEndpoint = new Endpoint();
+		conformanceEndpoint.setPath("/conformance");
+		conformanceEndpoint.addMethodsItem(MethodsEnum.GET);
+		capabilities.addEndpointsItem(conformanceEndpoint);
+		
+		Endpoint credntialsOIDCEndpoint = new Endpoint();
+		credntialsOIDCEndpoint.setPath("/credentials/oidc");
+		credntialsOIDCEndpoint.addMethodsItem(MethodsEnum.GET);
+		capabilities.addEndpointsItem(credntialsOIDCEndpoint);
+		
+		Endpoint jobsEndpoint = new Endpoint();
+		jobsEndpoint.setPath("/jobs");
+		jobsEndpoint.addMethodsItem(MethodsEnum.GET);
+		jobsEndpoint.addMethodsItem(MethodsEnum.POST);
+		capabilities.addEndpointsItem(jobsEndpoint);
+		
+		Endpoint jobEndpoint = new Endpoint();
+		jobEndpoint.setPath("/jobs/{job-id}");
+		jobEndpoint.addMethodsItem(MethodsEnum.GET);
+		jobEndpoint.addMethodsItem(MethodsEnum.PATCH);
+		jobEndpoint.addMethodsItem(MethodsEnum.DELETE);
+		capabilities.addEndpointsItem(jobEndpoint);
+		
+		Endpoint jobResultEndpoint = new Endpoint();
+		jobResultEndpoint.setPath("/jobs/{job-id}/results");
+		jobResultEndpoint.addMethodsItem(MethodsEnum.GET);
+		jobResultEndpoint.addMethodsItem(MethodsEnum.POST);
+//		jobResultEndpoint.addMethodsItem(MethodsEnum.DELETE);
+		capabilities.addEndpointsItem(jobResultEndpoint);
+		
+		Endpoint downloadEndpoint = new Endpoint();
+		downloadEndpoint.setPath("/download/{file_name}");
+		downloadEndpoint.addMethodsItem(MethodsEnum.GET);
+		capabilities.addEndpointsItem(downloadEndpoint);
 
 		Link operatorUrl = new Link();
 		try {
@@ -100,6 +147,19 @@ public class DefaultApiController implements DefaultApi {
 		operatorUrl.setType("text/html");
 		operatorUrl.setRel("Eurac Research");
 		capabilities.addLinksItem(operatorUrl);
+		Billing billing = new Billing();
+		billing.setDefaultPlan("free");
+		billing.setCurrency(null);
+		BillingPlan billingPlan = new BillingPlan();
+		billingPlan.setName("free");
+		billingPlan.setDescription("free use of service for research purposes and testing");
+		billingPlan.setPaid(false);
+		try {
+			billingPlan.setUrl(new URI(openEOEndpoint));
+		} catch (URISyntaxException e1) {
+		}
+		billing.addPlansItem(billingPlan);
+		capabilities.setBilling(billing);
 
 		Link openEOUrl = new Link();
 		try {

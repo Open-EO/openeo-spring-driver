@@ -3,8 +3,6 @@ package org.openeo.spring.model;
 import java.util.Objects;
 
 import javax.persistence.Embeddable;
-import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 

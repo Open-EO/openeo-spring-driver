@@ -11,6 +11,8 @@ import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,6 +20,7 @@ import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
+import org.openapitools.jackson.nullable.JsonNullable;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,6 +31,9 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.CollectionExtent;
 import org.openeo.spring.model.CollectionSpatialExtent;
@@ -41,6 +47,7 @@ import org.openeo.spring.model.DimensionSpatial;
 import org.openeo.spring.model.DimensionSpatial.AxisEnum;
 import org.openeo.spring.model.DimensionTemporal;
 import org.openeo.spring.model.Link;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -62,7 +69,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 @RequestMapping("${openapi.openEO.base-path:}")
 public class CollectionsApiController implements CollectionsApi {
     private final NativeWebRequest request;
-    
+    @Value("${org.openeo.wcps.endpoint}")
+    private String wcpsEndpoint;
     private final Logger log = LogManager.getLogger(CollectionsApiController.class);
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -96,7 +104,7 @@ public class CollectionsApiController implements CollectionsApi {
     	
     	try {
 			URL url;
-			url = new URL("http://saocompute.eurac.edu/rasdaman/ows" + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCapabilities");
+			url = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCapabilities");
     	
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
@@ -114,7 +122,7 @@ public class CollectionsApiController implements CollectionsApi {
 				String coverageID = coverage.getChildText("CoverageId", defaultNSCollectionsList);
 				currentCollection.setId(coverageID);				
 				currentCollection.setStacVersion("0.9.0");
-				URL urlCollections = new URL("http://saocompute.eurac.edu/rasdaman/ows"
+				URL urlCollections = new URL(wcpsEndpoint
 						+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + coverageID);
 				HttpURLConnection connCollections = (HttpURLConnection) urlCollections.openConnection();
 				connCollections.setRequestMethod("GET");
@@ -143,7 +151,7 @@ public class CollectionsApiController implements CollectionsApi {
 						gmlrgridNS = current;
 					}
 				}			
-//				log.debug("root node info: " + rootNode.getName());		
+				log.debug("root node info: " + rootNode.getName());		
 						
 				Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
 				Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
@@ -152,8 +160,8 @@ public class CollectionsApiController implements CollectionsApi {
 				try {
 				metadataElement = rootNode.getChild("CoverageDescription", defaultNS).getChild("metadata", gmlNS).getChild("Extension", gmlNS).getChild("covMetadata", gmlNS);
 			    }catch(Exception e) {
-//				log.warn("Error in parsing bands :" + e.getMessage());
-			    }		
+				log.warn("Error in parsing bands :" + e.getMessage());
+			    }
 				
 //				metadataObj = new JSONObject(metadataString1);
 //				String metadataString2 = metadataString1.replaceAll("\\n","");
@@ -185,83 +193,18 @@ public class CollectionsApiController implements CollectionsApi {
 
 				String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
 				int xIndex = 0;
-				int yIndex = 0;
-
-				Map<String, Dimension> cubeColonDimensions = new HashMap<String, Dimension>();
-				DimensionBands dimensionbands = new DimensionBands();
-				dimensionbands.setType(TypeEnum.BANDS);
-//				log.debug("number of bands found: " + bandsListSwe.size());			
-				DimensionSpatial dimensionXspatial = new DimensionSpatial();
-				dimensionXspatial.setType(TypeEnum.SPATIAL);
-				DimensionSpatial dimensionYspatial = new DimensionSpatial();
-				dimensionYspatial.setType(TypeEnum.SPATIAL);
-				DimensionTemporal dimensionTemporal = new DimensionTemporal();
-				dimensionTemporal.setType(TypeEnum.TEMPORAL);
-				
-				List<Element> bandsList = null;
-				List<Element> bandsListSwe = null;
-				Boolean bandsMeta = false;
-				try {
-					bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
-					bandsMeta = true;
-				}catch(Exception e) {
-//			        log.warn("Error in parsing bands :" + e.getMessage());
-				}
-				try {
-					bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
-				}catch(Exception e) {
-//					log.warn("Error in parsing bands List :" + e.getMessage());
-				}
-				if (bandsMeta) {
-					try {
-						for(int c = 0; c < bandsList.size(); c++) {
-							String bandWave = null;
-							String bandCommonName = null;
-							String bandGSD = null;
-							Element band = bandsList.get(c);
-							String bandId = band.getName();
-							dimensionbands.addValuesItem(bandId);
-							try {
-								bandWave = band.getChildText("WAVELENGTH");
-							}catch(Exception e) {
-//								log.warn("Error in parsing band wave-lenght:" + e.getMessage());
-							}
-							try {
-								bandCommonName = band.getChildText("common_name");
-							}catch(Exception e) {
-//								log.warn("Error in parsing band common name:" + e.getMessage());
-							}
-							try {
-								bandGSD = band.getChildText("gsd");
-							}catch(Exception e) {
-//								log.warn("Error in parsing band gsd:" + e.getMessage());
-							}
-						}
-					}catch(Exception e) {
-//						log.warn("Error in parsing bands :" + e.getMessage());
-					}
-				}
-				else {
-					for(int c = 0; c < bandsListSwe.size(); c++) {
-						String bandId = bandsListSwe.get(c).getAttributeValue("name");
-						dimensionbands.addValuesItem(bandId);
-					}
-				}
-				cubeColonDimensions.put("bands", dimensionbands);
-				currentCollection.setCubeColonDimensions(cubeColonDimensions);			
+				int yIndex = 0;		
 
 				double[] c1 = null;
 				double[] c2 = null;
 				int j = 0;
 
 				for(int a = 0; a < axis.length; a++) {
-//				    log.debug(axis[a]);
 					if(axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long") || axis[a].equals("N") || axis[a].equals("Y") || axis[a].equals("Lat")){
 						j = a;
 						break;
 					}
 				}
-//				log.debug(j);
 
 				c1 = tx.TransformPoint(Double.parseDouble(minValues[j]), Double.parseDouble(minValues[j+1]));
 				c2 = tx.TransformPoint(Double.parseDouble(maxValues[j]), Double.parseDouble(maxValues[j+1]));
@@ -269,26 +212,17 @@ public class CollectionsApiController implements CollectionsApi {
 				String startTime = null;
 				String endTime = null;
 				for(int a = 0; a < axis.length; a++) {
-//				    log.debug(axis[a]);
 					if(axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long")){
 						xIndex=a;
-						dimensionXspatial.setReferenceSystem(srsDescription);
-						dimensionXspatial.setAxis(AxisEnum.X);
 						List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
 						xExtent.add(0, new BigDecimal(c1[1]));
 						xExtent.add(1, new BigDecimal(c2[1]));
-						dimensionXspatial.setExtent(xExtent);
-						cubeColonDimensions.put(axis[a], dimensionXspatial);
 					}
 					if(axis[a].equals("N") || axis[a].equals("Y") || axis[a].equals("Lat")){
 						yIndex=a;
-						dimensionYspatial.setReferenceSystem(srsDescription);
-						dimensionYspatial.setAxis(AxisEnum.Y);
 						List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
 						yExtent.add(0, new BigDecimal(c1[0]));
 						yExtent.add(1, new BigDecimal(c2[0]));
-						dimensionYspatial.setExtent(yExtent);
-						cubeColonDimensions.put(axis[a], dimensionYspatial);
 					}
 					if(axis[a].equals("DATE")  || axis[a].equals("TIME") || axis[a].equals("ANSI") || axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time") || axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")){
 						List<String> temporalExtent = new ArrayList<String>();
@@ -296,12 +230,15 @@ public class CollectionsApiController implements CollectionsApi {
 						temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
 						startTime = minValues[a].replaceAll("\"", "");
 						endTime = maxValues[a].replaceAll("\"", "");
-						dimensionTemporal.setExtent(temporalExtent);
-						dimensionTemporal.setStep(null);
-						cubeColonDimensions.put(axis[a], dimensionTemporal);
+						String[] taxis = null;
+						try {
+							List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+							taxis = tList.get(a).getValue().split(" ");
+					    }catch(Exception e) {
+					    	log.warn("Irregular Axis :" + e.getMessage());
+					    }
 					}
-				}		    
-//				log.debug(srsDescription);
+				}
 
 				CollectionExtent extent = new CollectionExtent();
 				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
@@ -317,18 +254,7 @@ public class CollectionsApiController implements CollectionsApi {
 				bbox1.add(new BigDecimal(c2[0]));
 				bbox.add(bbox1);
 				spatialExtent.setBbox(bbox);
-				extent.setSpatial(spatialExtent);			
-
-//				int k = 0;
-//				for(int a = 0; a < axis.length; a++) {
-//					//				    	log.debug(axis[a]);
-//					String timeAxis = axis[a].toUpperCase();
-//					if(timeAxis.equals("DATE") || timeAxis.equals("TIME") || timeAxis.equals("ANSI") || timeAxis.equals("UNIX"))
-//					{
-//						k = a;
-//						break;
-//					}
-//				}							
+				extent.setSpatial(spatialExtent);					
 
 				try {
 					interval1.add(OffsetDateTime.parse(startTime));
@@ -343,110 +269,34 @@ public class CollectionsApiController implements CollectionsApi {
 				
 				else {
 					srsDescription = "0";
-
 					String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
 					String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");
 					String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
 					int xIndex = 0;
-					int yIndex = 0;
-
-					Map<String, Dimension> cubeColonDimensions = new HashMap<String, Dimension>();
-					DimensionBands dimensionbands = new DimensionBands();
-					dimensionbands.setType(TypeEnum.BANDS);
-//					log.debug("number of bands found: " + bandsListSwe.size());			
-					DimensionSpatial dimensionXspatial = new DimensionSpatial();
-					dimensionXspatial.setType(TypeEnum.SPATIAL);
-					DimensionSpatial dimensionYspatial = new DimensionSpatial();
-					dimensionYspatial.setType(TypeEnum.SPATIAL);
-					DimensionTemporal dimensionTemporal = new DimensionTemporal();
-					dimensionTemporal.setType(TypeEnum.TEMPORAL);
-					
-					List<Element> bandsList = null;
-					List<Element> bandsListSwe = null;
-					Boolean bandsMeta = false;
-					try {
-						bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
-						bandsMeta = true;
-					}catch(Exception e) {
-//				        log.warn("Error in parsing bands :" + e.getMessage());
-					}
-					try {
-						bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
-					}catch(Exception e) {
-//						log.warn("Error in parsing bands List :" + e.getMessage());
-					}
-					if (bandsMeta) {
-						try {
-							for(int c = 0; c < bandsList.size(); c++) {
-								String bandWave = null;
-								String bandCommonName = null;
-								String bandGSD = null;
-								Element band = bandsList.get(c);
-								String bandId = band.getName();
-								dimensionbands.addValuesItem(bandId);
-								try {
-									bandWave = band.getChildText("WAVELENGTH");
-								}catch(Exception e) {
-//									log.warn("Error in parsing band wave-lenght:" + e.getMessage());
-								}
-								try {
-									bandCommonName = band.getChildText("common_name");
-								}catch(Exception e) {
-//									log.warn("Error in parsing band common name:" + e.getMessage());
-								}
-								try {
-									bandGSD = band.getChildText("gsd");
-								}catch(Exception e) {
-//									log.warn("Error in parsing band gsd:" + e.getMessage());
-								}
-							}
-						}catch(Exception e) {
-//							log.warn("Error in parsing bands :" + e.getMessage());
-						}
-					}
-					else {
-						for(int c = 0; c < bandsListSwe.size(); c++) {
-							String bandId = bandsListSwe.get(c).getAttributeValue("name");
-							dimensionbands.addValuesItem(bandId);
-						}
-					}
-					cubeColonDimensions.put("bands", dimensionbands);
-					currentCollection.setCubeColonDimensions(cubeColonDimensions);
-
+					int yIndex = 0;				
 					int j = 0;
 
 					for(int a = 0; a < axis.length; a++) {
-//					    log.debug(axis[a]);
 						if(axis[a].equals("i") || axis[a].equals("j")){
 							j = a;
 							break;
 						}
 					}
-//					log.debug(j);
 					
 					String startTime = null;
 					String endTime = null;
 					for(int a = 0; a < axis.length; a++) {
-//					    log.debug(axis[a]);
 						if(axis[a].equals("i")){
-							xIndex=a;
-							dimensionXspatial.setReferenceSystem(srsDescription);
-							dimensionXspatial.setAxis(AxisEnum.X);
+							xIndex=a;							
 							List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
 							xExtent.add(0, new BigDecimal(minValues[j]));
 							xExtent.add(1, new BigDecimal(maxValues[j]));
-							dimensionXspatial.setExtent(xExtent);
-							cubeColonDimensions.put(axis[a], dimensionXspatial);
 						}
 						if(axis[a].equals("j")){
 							yIndex=a;
-							dimensionYspatial.setReferenceSystem(srsDescription);
-							dimensionYspatial.setAxis(AxisEnum.Y);
 							List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
 							yExtent.add(0, new BigDecimal(minValues[j+1]));
 							yExtent.add(1, new BigDecimal(minValues[j+1]));
-							dimensionYspatial.setExtent(yExtent);
-							cubeColonDimensions.put(axis[a], dimensionYspatial);
 						}
 						if(axis[a].equals("DATE")  || axis[a].equals("TIME") || axis[a].equals("ANSI") || axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time") || axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")){
 							List<String> temporalExtent = new ArrayList<String>();
@@ -454,9 +304,13 @@ public class CollectionsApiController implements CollectionsApi {
 							temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
 							startTime = minValues[a].replaceAll("\"", "");
 							endTime = maxValues[a].replaceAll("\"", "");
-							dimensionTemporal.setExtent(temporalExtent);
-							dimensionTemporal.setStep(null);
-							cubeColonDimensions.put(axis[a], dimensionTemporal);
+							String[] taxis = null;
+							try {
+								List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+								taxis = tList.get(a).getValue().split(" ");
+						    }catch(Exception e) {
+						    	log.warn("Irregular Axis :" + e.getMessage());
+						    }
 						}
 					}
 
@@ -476,17 +330,6 @@ public class CollectionsApiController implements CollectionsApi {
 					spatialExtent.setBbox(bbox);
 					extent.setSpatial(spatialExtent);
 
-//					int k = 0;
-//					for(int a = 0; a < axis.length; a++) {
-//						//				    	log.debug(axis[a]);
-//						String timeAxis = axis[a].toUpperCase();
-//						if(timeAxis.equals("DATE") || timeAxis.equals("TIME") || timeAxis.equals("ANSI") || timeAxis.equals("UNIX"))
-//						{
-//							k = a;
-//							break;
-//						}
-//					}							
-
 					try {
 						interval1.add(OffsetDateTime.parse(startTime));
 						interval1.add(OffsetDateTime.parse(endTime));
@@ -495,8 +338,8 @@ public class CollectionsApiController implements CollectionsApi {
 						extent.setTemporal(temporalExtent);
 					}catch(Exception e) {
 					}
-					currentCollection.setExtent(extent);
-					}
+					currentCollection.setExtent(extent);				
+				}
 
 				Link link1 = new Link();
 				List<Link> links = new ArrayList<Link>();
@@ -505,7 +348,6 @@ public class CollectionsApiController implements CollectionsApi {
 				try {
 					link1.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
 				} catch (URISyntaxException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 				links.add(0, link1);
@@ -517,18 +359,42 @@ public class CollectionsApiController implements CollectionsApi {
 					title = metadataElement.getChildText("Title", gmlNS);
 					currentCollection.setTitle(title);
 				}catch(Exception e) {
-//				    	log.warn("Error in parsing Project Name :" + e.getMessage());
 				}
 				try {
 					description = metadataElement.getChildText("Description", gmlNS);
 					currentCollection.setDescription(description);
 				}catch(Exception e) {
-//		            	log.warn("Error in parsing Title :" + e.getMessage());
 				}
+				
+				List<String> keywords = new ArrayList<String>();
+				keywords.add("");
+ 				currentCollection.setKeywords(keywords);
+ 				currentCollection.setLicense("proprietary");
+ 				
+ 				Link linkItemsCollection = new Link();
+ 				List<Link> linksCollections = new ArrayList<Link>();
+ 				linkItemsCollection.setRel("licence");
+ 				try {
+ 					linkItemsCollection.setHref(new URI (""));
+ 				} catch (URISyntaxException e) {
+ 					// TODO Auto-generated catch block
+ 					e.printStackTrace();
+ 				}
+ 				linkItemsCollection.setTitle("License Link");
+ 				linkItemsCollection.setType("");
+ 				linksCollections.add(linkItemsCollection);
+ 				currentCollection.setLinks(linksCollections);
+				
+//				JSONArray provider = new JSONArray();
+//				Object provider1 = new Object();
+//				
+//				provider.put(provider1);
+//				currentCollection.addProvidersItem(provider);
 
 			collectionsList.addCollectionsItem(currentCollection);
 			}
 			Link linkItems = new Link();
+			linkItems.setType("text/gml");
 			linkItems.setRel("alternate");
 			try {
 				linkItems.setHref(new URI ("http://saocompute.eurac.edu/rasdaman/ows"));
@@ -623,7 +489,7 @@ public class CollectionsApiController implements CollectionsApi {
     	try {
     		currentCollection.setId(collectionId);
     		currentCollection.setStacVersion("0.9.0");
-			url = new URL("http://saocompute.eurac.edu/rasdaman/ows" + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionId);
+			url = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionId);
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
 			SAXBuilder builder = new SAXBuilder();
@@ -667,6 +533,8 @@ public class CollectionsApiController implements CollectionsApi {
 //			String metadataString3 = metadataString2.replaceAll("\"\"","\"");
 //			metadataObj = new JSONObject(metadataString3);
 //			JSONArray slices = metadataObj.getJSONArray("slices");
+			Map<String, CollectionSummaryStats[]> summaries = new HashMap<String, CollectionSummaryStats[]>();
+			Map<String, Asset> assets = new HashMap<String, Asset>();
 			
 			String srsDescription = boundingBoxElement.getAttributeValue("srsName");
 			if (srsDescription.contains("EPSG")) {
@@ -743,7 +611,6 @@ public class CollectionsApiController implements CollectionsApi {
 						}catch(Exception e) {
 //							log.warn("Error in parsing band gsd:" + e.getMessage());
 						}
-						Map<String,CollectionSummaryStats[]> summaries = new HashMap<String,CollectionSummaryStats[]>();
 						CollectionSummaryStats gsd = new CollectionSummaryStats();
 						CollectionSummaryStats[] eoGsd = {gsd};
 //						summaries.put("eo:bands", eoGsd);
@@ -811,7 +678,15 @@ public class CollectionsApiController implements CollectionsApi {
 					startTime = minValues[a].replaceAll("\"", "");
 					endTime = maxValues[a].replaceAll("\"", "");
 					dimensionTemporal.setExtent(temporalExtent);
-					dimensionTemporal.setStep(null);
+					String[] taxis = null;
+					try {
+						List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+						taxis = tList.get(a).getValue().split(" ");
+						dimensionTemporal.setStep(JsonNullable.of(taxis[0]));
+				    }catch(Exception e) {
+				    	log.warn("Irregular Axis :" + e.getMessage());
+				    	dimensionTemporal.setStep(JsonNullable.of("0"));
+				    }
 					cubeColonDimensions.put(axis[a], dimensionTemporal);
 				}
 		    }
@@ -843,7 +718,7 @@ public class CollectionsApiController implements CollectionsApi {
 //				}
 //			}
 			
-			try {							
+			try {
 				interval1.add(OffsetDateTime.parse(startTime));
 				interval1.add(OffsetDateTime.parse(endTime));
 				interval.add(interval1);
@@ -881,12 +756,10 @@ public class CollectionsApiController implements CollectionsApi {
 					bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
 					bandsMeta = true;
 				}catch(Exception e) {
-					//			log.warn("Error in parsing bands :" + e.getMessage());
 				}
 				try {
 					bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
 				}catch(Exception e) {
-					//					log.warn("Error in parsing bands List :" + e.getMessage());
 				}
 				if (bandsMeta) {
 					try {
@@ -967,7 +840,15 @@ public class CollectionsApiController implements CollectionsApi {
 						startTime = minValues[a].replaceAll("\"", "");
 						endTime = maxValues[a].replaceAll("\"", "");
 						dimensionTemporal.setExtent(temporalExtent);
-						dimensionTemporal.setStep(null);
+						String[] taxis = null;
+						try {
+							List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+							taxis = tList.get(a).getValue().split(" ");
+							dimensionTemporal.setStep(JsonNullable.of(taxis[0]));
+					    }catch(Exception e) {
+					    	log.warn("Irregular Axis :" + e.getMessage());
+					    	dimensionTemporal.setStep(JsonNullable.of("0"));
+					    }						
 						cubeColonDimensions.put(axis[a], dimensionTemporal);
 					}
 			    }
@@ -999,7 +880,7 @@ public class CollectionsApiController implements CollectionsApi {
 //					}
 //				}
 				
-				try {							
+				try {
 					interval1.add(OffsetDateTime.parse(startTime));
 					interval1.add(OffsetDateTime.parse(endTime));
 					interval.add(interval1);
@@ -1008,12 +889,13 @@ public class CollectionsApiController implements CollectionsApi {
 				}catch(Exception e) {
 				}
 				currentCollection.setExtent(extent);
-			}			
+			}
 			
 			Link link1 = new Link();
 			List<Link> links = new ArrayList<Link>();
 			link1.setRel("license");
 			link1.setType("text/html");
+			link1.setTitle("License Link");
 			try {
 				link1.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
 			} catch (URISyntaxException e1) {
@@ -1022,22 +904,65 @@ public class CollectionsApiController implements CollectionsApi {
 			}
 			links.add(0, link1);
 			currentCollection.setLinks(links);
+			currentCollection.setVersion("v1");
+			currentCollection.setLicense("proprietary");
+			List<String> keywords = new ArrayList<String>();
+			keywords.add("");
+			currentCollection.setKeywords(keywords);
 			
 			String title = null;
 			String description = null;
 			try {
-			title = metadataElement.getChildText("Title", gmlNS);
-			currentCollection.setTitle(title);
-		    }catch(Exception e) {
-//		    	log.warn("Error in parsing Project Name :" + e.getMessage());
-		    }
-		    try {
-			description = metadataElement.getChildText("Description", gmlNS);
-			currentCollection.setDescription(description);
-            }catch(Exception e) {
-//            	log.warn("Error in parsing Title :" + e.getMessage());
-	        }
-		       
+				title = metadataElement.getChildText("Title", gmlNS);
+				currentCollection.setTitle(title);
+			}catch(Exception e) {
+				//		    	log.warn("Error in parsing Project Name :" + e.getMessage());
+			}
+			try {
+				description = metadataElement.getChildText("Description", gmlNS);
+				currentCollection.setDescription(description);
+			}catch(Exception e) {
+				//            	log.warn("Error in parsing Title :" + e.getMessage());
+			}
+			
+			Set<String> stacExtensions = new HashSet<String>();
+			stacExtensions.add("datacube");
+			currentCollection.setStacExtensions(stacExtensions);
+			
+			String platform = null;
+			String citation = null;
+			String constellation = null;
+			String intruments = null;
+			try {
+				platform = metadataElement.getChildText("Platform", gmlNS);
+			}catch(Exception e) {
+			    	log.warn("Error in parsing Platform Name :" + e.getMessage());
+			    }
+			try {
+				citation = metadataElement.getChildText("Citation", gmlNS);
+			}catch(Exception e) {
+				log.warn("Error in parsing Constellation:" + e.getMessage());
+			}
+
+			try {
+				constellation = metadataElement.getChildText("Constellation", gmlNS);
+			}catch(Exception e) {
+				log.warn("Error in parsing Constellation:" + e.getMessage());
+			}
+
+			try {				
+				intruments = metadataElement.getChildText("Instrument", gmlNS);
+			}catch(Exception e) {
+				log.warn("Error in parsing Instrument:" + e.getMessage());
+			}
+						
+			List<Object> providers = new ArrayList<Object>();
+//			Object provider1 = new Object();
+//			providers.add(0, provider1);
+			currentCollection.setProviders(providers);	
+			
+			currentCollection.setSummaries(summaries);
+			currentCollection.setAssets(assets);
 			
 //			JSONArray links = new JSONArray();			
 //			JSONObject linkSelf = new JSONObject();
@@ -1066,8 +991,13 @@ public class CollectionsApiController implements CollectionsApi {
 			
 			//String providerName = metadataObj.getString("Creator");		
 			
-			//String role1 = metadataObj.getString("Roles");
-			
+//			JSONArray roles1 = new JSONArray();
+//			roles1.put("host");
+//			try {
+//				roles1.put(metadataElement.getChildText("Role", gmlNS));
+//			}catch(Exception e) {
+//				log.warn("Error in parsing Role :" + e.getMessage());
+//			}
 			
 //			JSONArray provider1 = new JSONArray();
 //			JSONObject provider1Info = new JSONObject();
@@ -1086,6 +1016,11 @@ public class CollectionsApiController implements CollectionsApi {
 //			epsgvalues.put("values", epsg_values);
 //			
 //			JSONArray platform_values = new JSONArray();
+//		    try {
+//				platform = metadataElement.getChildText("Platform", gmlNS);
+//			}catch(Exception e) {
+//			    	log.warn("Error in parsing Project Name :" + e.getMessage());
+//			    }
 //			platform_values.put("Sentinel-2A");
 //			platform_values.put("Sentinel-2B");
 //			pltfrmvalues.put("values", platform_values);			
@@ -1116,19 +1051,19 @@ public class CollectionsApiController implements CollectionsApi {
 //		    	log.warn("Error in parsing metadata slice :" + e.getMessage());
 //		    }
 //			try {
-//				properties.put("sci:citation", props.getChildText("CITATION"));
+//				properties.put("sci:citation", metadataElement.getChildText("Citation", gmlNS));
 //			}catch(Exception e) {
 //				log.warn("Error in parsing Constellation:" + e.getMessage());
 //			}
 //
 //			try {
-//				properties.put("eo:constellation", props.getChildText("CONSTELLATON"));
+//				properties.put("eo:constellation", metadataElement.getChildText("Constellation", gmlNS));
 //			}catch(Exception e) {
 //				log.warn("Error in parsing Constellation:" + e.getMessage());
 //			}				
 //
 //			try {				
-//				properties.put("eo:instrument", props.getChildText("INSTRUMENT"));
+//				properties.put("eo:instrument", metadataElement.getChildText("Instrument", gmlNS));
 //			}catch(Exception e) {
 //				log.warn("Error in parsing Instrument:" + e.getMessage());
 //			}

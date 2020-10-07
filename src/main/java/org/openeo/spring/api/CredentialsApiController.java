@@ -2,20 +2,22 @@ package org.openeo.spring.api;
 
 import java.util.Optional;
 
-import org.openeo.spring.model.OpenIDProviders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.view.RedirectView;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Controller
-@RequestMapping("${openapi.openEO.base-path:/api/v1.0}")
+@RequestMapping("${openapi.openEO.base-path:}")
 public class CredentialsApiController implements CredentialsApi {
 
     private final NativeWebRequest request;
+    
+    @Value("${org.openeo.oidc.configuration.endpoint}")
+	private String oidcEndpoint;
 
     @org.springframework.beans.factory.annotation.Autowired
     public CredentialsApiController(NativeWebRequest request) {
@@ -27,20 +29,11 @@ public class CredentialsApiController implements CredentialsApi {
         return Optional.ofNullable(request);
     }
     
-    @GetMapping(value = "/credentials/oidc", produces = { "application/json" })
+    @GetMapping(value = "/credentials/oidc")
     @Override
-    public ResponseEntity<OpenIDProviders> authenticateOidc() {
-        getRequest().ifPresent(request -> {
-            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
-                if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-                    String exampleString = "{ \"providers\" : [ { \"description\" : \"description\", \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ], \"id\" : \"id\", \"scopes\" : [ \"scopes\", \"scopes\" ], \"title\" : \"title\", \"issuer\" : \"https://accounts.google.com\" }, { \"description\" : \"description\", \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ], \"id\" : \"id\", \"scopes\" : [ \"scopes\", \"scopes\" ], \"title\" : \"title\", \"issuer\" : \"https://accounts.google.com\" } ] }";
-                    ApiUtil.setExampleResponse(request, "application/json", exampleString);
-                    break;
-                }
-            }
-        });
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-
+    public RedirectView authenticateOidc(RedirectAttributes attributes) {
+    	attributes.addAttribute("attribute", "redirectWithRedirectView");
+        return new RedirectView(oidcEndpoint);
     }
 
 }

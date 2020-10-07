@@ -26,8 +26,8 @@ public class WellKnownApiController implements WellKnownApi {
 
 	private final NativeWebRequest request;
 
-	@Value("${org.openeo.endpoint}")
-	private String openEOEndpoint;
+	@Value("${org.openeo.public.endpoint}")
+	private String openEOPublicEndpoint;
 
 	@org.springframework.beans.factory.annotation.Autowired
 	public WellKnownApiController(NativeWebRequest request) {
@@ -53,7 +53,7 @@ public class WellKnownApiController implements WellKnownApi {
 		apiInstance.apiVersion("1.0.0");
 		apiInstance.setProduction(false);
 		try {
-			apiInstance.setUrl(new URI(openEOEndpoint));
+			apiInstance.setUrl(new URI(openEOPublicEndpoint));
 		} catch (URISyntaxException e) {
 			Error error = new Error();
 			error.setCode("500");

@@ -12,7 +12,7 @@
         <springfox-version>3.0.0</springfox-version>
         <springdoc-version>1.4.6</springdoc-version>
         <gdal.path>/usr/share/java/gdal.jar</gdal.path>
-        <gdal.version>3.0.4</gdal.version>
+        <gdal.version>3.1.0</gdal.version>
         <netcdfJavaVersion>5.2.0</netcdfJavaVersion>
         <log4JVersion>2.11.1</log4JVersion>
         <commonsio.version>2.6</commonsio.version>
@@ -96,14 +96,14 @@
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
-		<dependency>
-	        <groupId>org.springframework.boot</groupId>
-	        <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-<!-- 		 <dependency>		 -->
-<!-- 		 	<groupId>org.keycloak</groupId> -->
-<!-- 		 	<artifactId>keycloak-spring-boot-starter</artifactId> -->
-<!-- 		 </dependency> -->
+		<dependency> 
+ 	        <groupId>org.springframework.boot</groupId> 
+	        <artifactId>spring-boot-starter-security</artifactId> 
+         </dependency> 
+		 <dependency>		
+		 	<groupId>org.keycloak</groupId>
+		 	<artifactId>keycloak-spring-boot-starter</artifactId>
+		 </dependency>
 		 <dependency>
 		    <groupId>org.springframework.security</groupId>
 		    <artifactId>spring-security-core</artifactId>
@@ -146,12 +146,17 @@
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
         </dependency>
-        <dependency>
-			<groupId>org.gdal</groupId>
-			<artifactId>gdal</artifactId>
-			<version>${gdal.version}</version>
-			<scope>system</scope>
-			<systemPath>${gdal.path}</systemPath>
+<!--         <dependency> -->
+<!-- 			<groupId>org.gdal</groupId> -->
+<!-- 			<artifactId>gdal</artifactId> -->
+<!-- 			<version>${gdal.version}</version> -->
+<!-- 			<scope>system</scope> -->
+<!-- 			<systemPath>${gdal.path}</systemPath> -->
+<!-- 		</dependency> -->
+		<dependency>
+		    <groupId>org.gdal</groupId>
+		    <artifactId>gdal</artifactId>
+		    <version>${gdal.version}</version>
 		</dependency>
 		<dependency>
 		  <groupId>edu.ucar</groupId>

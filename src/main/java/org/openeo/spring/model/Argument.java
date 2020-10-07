@@ -11,6 +11,7 @@ import javax.validation.constraints.NotNull;
 import org.openapitools.jackson.nullable.JsonNullable;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -22,6 +23,7 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(description = "Describes a general argument for various entities.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Argument   {
   /**
    * The type is the expected data type for the content of the parameter. `null` is allowed for all types. If no type is specified, any type is allowed to be passed.
