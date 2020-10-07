@@ -2,55 +2,60 @@
 "output": {
 
 "netCDF": {
-"gis_data_types": [ "raster" ],
-"title": "NetCDF"
+			"gis_data_types": [ "raster" ],
+			"title": "NetCDF",
+			"parameters": {}
             
         },
 
 "GTiff": {
-"gis_data_types": [ "raster" ],
-"title": "GeoTiff",
-"description": "Export to GeoTiff. Doesn't support cloud-optimized GeoTiffs (COGs) yet.",
-"links": 
-[
+			"gis_data_types": [ "raster" ],
+			"title": "GeoTiff",
+			"description": "Export to GeoTiff. Doesn't support cloud-optimized GeoTiffs (COGs) yet.",
+			"parameters": {},
+			"links": 
+					[
+    					{
+        				"href": "https://www.gdal.org/frmt_gtiff.html",
+        				"rel": "about",
+       					"title": "GDAL on the GeoTiff file format and storage options"
+    					}
+					]
 
-    {
-        "href": "https://www.gdal.org/frmt_gtiff.html",
-        "rel": "about",
-        "title": "GDAL on the GeoTiff file format and storage options"
-    }
-
-]
-            
 },
         
 "GIF": {
             "gis_data_types": [ "raster" ],
-            "title": "GIf"
+            "title": "GIf",
+            "parameters": {}
             
 },
         
 "CSV": {
             "gis_data_types": [ "raster" ],
-            "title": "Comma Separated Value"
+            "title": "Comma Separated Value",
+            "parameters": {}
             
         },
         
 "PNG": {
             "gis_data_types": [ "raster" ],
-            "title": "Portable Network Graphics"
+            "title": "Portable Network Graphics",
+            "parameters": {}
             
         },
         
 "JSON": {
             "gis_data_types": [ "raster" ],
-            "title": "JavaScript Object Notation"
+            "title": "JavaScript Object Notation",
+            "parameters": {}
             
         },
         
 "JPEG": {
             "gis_data_types": [ "raster" ],
-            "title": "Joint Photographic Experts Group"
+            "title": "Joint Photographic Experts Group",
+            "parameters": {}
             
         }
 },
