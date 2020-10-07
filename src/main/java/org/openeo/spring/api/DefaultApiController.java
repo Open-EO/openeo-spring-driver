@@ -103,6 +103,11 @@ public class DefaultApiController implements DefaultApi {
 		udfEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(udfEndpoint);
 		
+		Endpoint conformanceEndpoint = new Endpoint();
+		conformanceEndpoint.setPath("/conformance");
+		conformanceEndpoint.addMethodsItem(MethodsEnum.GET);
+		capabilities.addEndpointsItem(conformanceEndpoint);
+		
 		Endpoint credntialsOIDCEndpoint = new Endpoint();
 		credntialsOIDCEndpoint.setPath("/credentials/oidc");
 		credntialsOIDCEndpoint.addMethodsItem(MethodsEnum.GET);
