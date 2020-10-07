@@ -23,8 +23,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import javax.transaction.Transactional;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -36,7 +34,6 @@ import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
-import org.openeo.spring.model.AssetType;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
 import org.openeo.wcps.events.UDFEvent;

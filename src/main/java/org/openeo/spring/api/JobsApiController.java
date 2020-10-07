@@ -296,9 +296,25 @@ public class JobsApiController implements JobsApi {
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
+			BatchJobResult jobResult = resultDAO.findOne(jobId);
+			if(jobResult != null) {
+				log.debug("The job result " + jobId + " was detected.");
+				File jobResults = new File(tmpDir + jobId);
+				if(jobResults.exists()) {
+					log.debug("Directory of job results has been found: " + jobResults.getAbsolutePath());
+					for(File file: jobResults.listFiles()) {
+						log.debug("The following result will be deleted: " + file.getName());
+						file.delete();
+					}
+					jobResults.delete();
+					log.debug("All persistent files have been successfully deleted for job with id: " + jobId);
+				}
+				resultDAO.delete(jobResult);
+				log.debug("The job result " + jobId + " was successfully deleted.");
+			}
 			jobDAO.delete(job);
 			log.debug("The job " + jobId + " was successfully deleted.");
-			return new ResponseEntity<Job>(job, HttpStatus.OK);
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
 			Error error = new Error();
 			error.setCode("400");
@@ -761,8 +777,7 @@ public class JobsApiController implements JobsApi {
 			job.setTitle(updateBatchJobRequest.getTitle());
 			job.setUpdated(OffsetDateTime.now());
 			jobDAO.update(job);
-			this.fireJobQueuedEvent(job.getId());
-			return new ResponseEntity<Job>(HttpStatus.ACCEPTED);
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
 			Error error = new Error();
 			error.setCode("400");
