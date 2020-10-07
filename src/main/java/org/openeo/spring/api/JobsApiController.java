@@ -296,7 +296,7 @@ public class JobsApiController implements JobsApi {
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
-			BatchJobResult jobResult = resultDAO.findOne(jobId);
+			BatchJobResult jobResult = resultDAO.findOne(UUID.fromString(jobId));
 			if(jobResult != null) {
 				log.debug("The job result " + jobId + " was detected.");
 				File jobResults = new File(tmpDir + jobId);
