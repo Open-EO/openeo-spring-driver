@@ -31,7 +31,7 @@ public class DefaultApiController implements DefaultApi {
 
 	private final NativeWebRequest request;
 
-	@Value("${org.openeo.endpoint}")
+	@Value("$org.openeo.public.endpoint}")
 	private String openEOEndpoint;
 
 	@org.springframework.beans.factory.annotation.Autowired
@@ -84,7 +84,7 @@ public class DefaultApiController implements DefaultApi {
 		capabilities.addEndpointsItem(collectionsEndpoint);
 
 		Endpoint collectionIDEndpoint = new Endpoint();
-		collectionIDEndpoint.setPath("/collections/{collection-id}");
+		collectionIDEndpoint.setPath("/collections/{collection_id}");
 		collectionIDEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(collectionIDEndpoint);
 
@@ -120,14 +120,14 @@ public class DefaultApiController implements DefaultApi {
 		capabilities.addEndpointsItem(jobsEndpoint);
 		
 		Endpoint jobEndpoint = new Endpoint();
-		jobEndpoint.setPath("/jobs/{job-id}");
+		jobEndpoint.setPath("/jobs/{job_id}");
 		jobEndpoint.addMethodsItem(MethodsEnum.GET);
 		jobEndpoint.addMethodsItem(MethodsEnum.PATCH);
 		jobEndpoint.addMethodsItem(MethodsEnum.DELETE);
 		capabilities.addEndpointsItem(jobEndpoint);
 		
 		Endpoint jobResultEndpoint = new Endpoint();
-		jobResultEndpoint.setPath("/jobs/{job-id}/results");
+		jobResultEndpoint.setPath("/jobs/{job_id}/results");
 		jobResultEndpoint.addMethodsItem(MethodsEnum.GET);
 		jobResultEndpoint.addMethodsItem(MethodsEnum.POST);
 //		jobResultEndpoint.addMethodsItem(MethodsEnum.DELETE);

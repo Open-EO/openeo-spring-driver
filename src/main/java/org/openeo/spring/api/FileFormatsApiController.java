@@ -93,7 +93,7 @@ public class FileFormatsApiController implements FileFormatsApi {
     	FileFormats fileFormatsList = null;
     	
 		try {
-			fileFormatsList = mapper.readValue(fileFormatsFile.getFile(), FileFormats.class);
+			fileFormatsList = mapper.readValue(fileFormatsFile.getInputStream(), FileFormats.class);
 		} catch (JsonParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
