@@ -855,7 +855,7 @@ public class WCPSQueryFactory {
 				if (noOfDimsCube1==noOfDimsCube2 && !temporalStartCube1.equals(temporalEndCube1) && !temporalStartCube2.equals(temporalEndCube2) && !payLoad2.contains("condense") && !payLoad1.contains("coverage") && !payLoad1.contains("condense")) {
 					try {
 						replacement = processArguments.getDouble("replacement");
-						wcpsMaskpayLoad.append("(" + payLoad1 + "*" + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2.replaceAll("\\$pm", "\\$pm" + nodeKeyOfCurrentProcess).replaceAll("\\$T", "\\$T" + nodeKeyOfCurrentProcess).replaceAll("\\$Y", "\\$Y" + nodeKeyOfCurrentProcess).replaceAll("\\$X", "\\$X" + nodeKeyOfCurrentProcess).replaceAll("\\$N", "\\$N" + nodeKeyOfCurrentProcess).replaceAll("\\$E", "\\$E" + nodeKeyOfCurrentProcess)+")"+")"+"*"+replacement+"))");
+						wcpsMaskpayLoad.append("(" + payLoad1 + "*" + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2.replaceAll("\\$pm", "\\$qm")+")"+"*"+replacement+"))");
 						wcpsPayLoad=wcpsMaskpayLoad;
 					}catch(Exception e) {
 						wcpsMaskpayLoad.append("(" + payLoad1 + "*" + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")");
@@ -896,7 +896,7 @@ public class WCPSQueryFactory {
 					
 					try {
 						replacement = processArguments.getDouble("replacement");						
-						wcpsMaskpayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + " * " + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+"))" + " + " + "(("+payLoad2Merge.replaceAll("\\$pm", "\\$pm" + nodeKeyOfCurrentProcess).replaceAll("\\$T", "\\$T" + nodeKeyOfCurrentProcess).replaceAll("\\$Y", "\\$Y" + nodeKeyOfCurrentProcess).replaceAll("\\$X", "\\$X" + nodeKeyOfCurrentProcess).replaceAll("\\$N", "\\$N" + nodeKeyOfCurrentProcess).replaceAll("\\$E", "\\$E" + nodeKeyOfCurrentProcess)+")"+" * "+replacement+")");
+						wcpsMaskpayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + " * " + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+"))" + " + " + "(("+payLoad2Merge.replaceAll("\\$pm", "\\$qm")+")"+" * "+replacement+")");
 						wcpsPayLoad=wcpsMaskpayLoad;
 					}catch(Exception e) {
 						wcpsMaskpayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", E)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", N)) values (" + payLoad1Merge + " * " + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+"))");
@@ -911,7 +911,7 @@ public class WCPSQueryFactory {
 				else if (noOfDimsCube1==noOfDimsCube2 && !temporalStartCube1.equals(temporalEndCube1) && !temporalStartCube2.equals(temporalEndCube2) && !payLoad2.contains("condense") && payLoad1.contains("coverage") && payLoad1.contains("condense")) {
 					try {
 						replacement = processArguments.getDouble("replacement");
-						wcpsMaskpayLoad.append("(" + payLoad1 + "*" + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2.replaceAll("\\$pm", "\\$pm" + nodeKeyOfCurrentProcess).replaceAll("\\$T", "\\$T" + nodeKeyOfCurrentProcess).replaceAll("\\$Y", "\\$Y" + nodeKeyOfCurrentProcess).replaceAll("\\$X", "\\$X" + nodeKeyOfCurrentProcess).replaceAll("\\$N", "\\$N" + nodeKeyOfCurrentProcess).replaceAll("\\$E", "\\$E" + nodeKeyOfCurrentProcess).replaceAll("\\sY"+"\\(.*?\\)", " Y\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)")+"*"+replacement+"))");
+						wcpsMaskpayLoad.append("(" + payLoad1 + "*" + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2.replaceAll("\\$pm", "\\$qm")+")"+"*"+replacement+"))");
 						wcpsPayLoad=wcpsMaskpayLoad;
 					}catch(Exception e) {
 						wcpsMaskpayLoad.append("(" + payLoad1 + "*" + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")");
@@ -926,7 +926,7 @@ public class WCPSQueryFactory {
 				else if (noOfDimsCube1==noOfDimsCube2 && !temporalStartCube1.equals(temporalEndCube1) && !temporalStartCube2.equals(temporalEndCube2) && !payLoad2.contains("condense") && payLoad1.contains("coverage") && !payLoad1.contains("condense")) {
 					try {
 						replacement = processArguments.getDouble("replacement");
-						wcpsMaskpayLoad.append("(" + payLoad1 + "*(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2.replaceAll("\\$pm", "\\$pm" + nodeKeyOfCurrentProcess).replaceAll("\\$T", "\\$T" + nodeKeyOfCurrentProcess).replaceAll("\\$Y", "\\$Y" + nodeKeyOfCurrentProcess).replaceAll("\\$X", "\\$X" + nodeKeyOfCurrentProcess).replaceAll("\\$N", "\\$N" + nodeKeyOfCurrentProcess).replaceAll("\\$E", "\\$E" + nodeKeyOfCurrentProcess).replaceAll("\\sY"+"\\(.*?\\)", " Y\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)")+")"+"*"+replacement+"))");
+						wcpsMaskpayLoad.append("(" + payLoad1 + "*(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2.replaceAll("\\$pm", "\\$qm")+")"+"*"+replacement+"))");
 						wcpsPayLoad=wcpsMaskpayLoad;
 					}catch(Exception e) {
 						wcpsMaskpayLoad.append("(" + payLoad1 + "*(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")");
@@ -966,7 +966,7 @@ public class WCPSQueryFactory {
 					
 					try {
 						replacement = processArguments.getDouble("replacement");
-						wcpsMaskpayLoad.append("" + payLoad1 + "*(not("+payLoad2Merge.replaceAll("\\$pm", "\\$rm")+"))" + "+("+payLoad2Merge.replaceAll("\\$pm", "\\$pm" + nodeKeyOfCurrentProcess).replaceAll("\\$T", "\\$T" + nodeKeyOfCurrentProcess).replaceAll("\\$Y", "\\$Y" + nodeKeyOfCurrentProcess).replaceAll("\\$X", "\\$X" + nodeKeyOfCurrentProcess).replaceAll("\\$N", "\\$N" + nodeKeyOfCurrentProcess).replaceAll("\\$E", "\\$E" + nodeKeyOfCurrentProcess)+")*" + replacement +")");					
+						wcpsMaskpayLoad.append("" + payLoad1 + "*(not("+payLoad2Merge.replaceAll("\\$pm", "\\$rm")+"))" + "+("+payLoad2Merge.replaceAll("\\$pm", "\\$rrm")+")*" + replacement +")");					
 						wcpsPayLoad=wcpsMaskpayLoad;
 					}catch(Exception e) {
 						wcpsMaskpayLoad.append("" + payLoad1 + "*(not("+payLoad2Merge.replaceAll("\\$pm", "\\$rm")+"))");					
