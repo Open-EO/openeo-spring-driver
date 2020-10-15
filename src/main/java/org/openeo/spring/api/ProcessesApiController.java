@@ -20,8 +20,11 @@ import org.openeo.spring.model.ParameterSchema;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,38 +50,49 @@ public class ProcessesApiController implements ProcessesApi {
 	private ObjectMapper mapper = null;
 	@Value("classpath:processes.json")
 	Resource processesFile;
+//	
+	@Autowired
+	ResourceLoader resourceLoader;
+	
     @org.springframework.beans.factory.annotation.Autowired
     public ProcessesApiController(NativeWebRequest request) {
         this.request = request;
         
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-    	InputStream stream = classLoader.getResourceAsStream("processes.json");
-    	InputStream linkstream = classLoader.getResourceAsStream("links.json");
+//        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+//        new ClassPathResource("processes.json").getInputStream();
+//        Resource processResource = resourceLoader.getResource("classpath:processes.json");
+//        Resource linksResource = resourceLoader.getResource("classpath:links.json");
+        
+//    	InputStream stream = processResource.getInputStream();
+//    	InputStream linkstream = linksResource.getInputStream();
     	
-    	this.mapper = new ObjectMapper();
-    	this.processes = new HashMap<String, Process>();
-    	this.links = new HashMap<String, Link>();
+//    	InputStream stream = classLoader.getResourceAsStream("processes.json");
+//    	InputStream linkstream = classLoader.getResourceAsStream("links.json");
     	
-    	try {
-			Process[] processArray = this.mapper.readValue(stream, Process[].class);
-			Link[] linksArray = this.mapper.readValue(linkstream, Link[].class);
-			
-			for(int p = 0; p < linksArray.length; p++) {
-				this.links.put(linksArray[p].getRel(), linksArray[p]);				
-//				log.debug("Found and stored process: " + linksArray[p].getRel());
-			}
-			
-			for(int p = 0; p < processArray.length; p++) {
-				this.processes.put(processArray[p].getId(), processArray[p]);				
-//				log.debug("Found and stored process: " + processArray[p].getId());
-			}			
-		} catch (JsonParseException e) {
-//			log.error("Error parsing json: " + e.getMessage());
-		} catch (JsonMappingException e) {
-//			log.error("Error mapping json to java: " + e.getMessage());
-		} catch (IOException e) {
-//			log.error("Error reading json file: " + e.getMessage());
-		}
+//    	this.mapper = new ObjectMapper();
+//    	this.processes = new HashMap<String, Process>();
+//    	this.links = new HashMap<String, Link>();
+//    	
+//    	try {
+//			Process[] processArray = this.mapper.readValue(stream, Process[].class);
+//			Link[] linksArray = this.mapper.readValue(linkstream, Link[].class);
+//			
+//			for(int p = 0; p < linksArray.length; p++) {
+//				this.links.put(linksArray[p].getRel(), linksArray[p]);				
+////				log.debug("Found and stored process: " + linksArray[p].getRel());
+//			}
+//			
+//			for(int p = 0; p < processArray.length; p++) {
+//				this.processes.put(processArray[p].getId(), processArray[p]);				
+////				log.debug("Found and stored process: " + processArray[p].getId());
+//			}			
+//		} catch (JsonParseException e) {
+////			log.error("Error parsing json: " + e.getMessage());
+//		} catch (JsonMappingException e) {
+////			log.error("Error mapping json to java: " + e.getMessage());
+//		} catch (IOException e) {
+////			log.error("Error reading json file: " + e.getMessage());
+//		}
     }
 
     @Override
@@ -107,7 +121,7 @@ public class ProcessesApiController implements ProcessesApi {
     	ObjectMapper mapper = new ObjectMapper();
     	Processes processesList = null;
 		try {
-			processesList = mapper.readValue(processesFile.getFile(), Processes.class);
+			processesList = mapper.readValue(processesFile.getInputStream(), Processes.class);
 		} catch (JsonParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
