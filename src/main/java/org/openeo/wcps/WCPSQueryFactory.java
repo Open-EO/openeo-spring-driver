@@ -5124,9 +5124,10 @@ public class WCPSQueryFactory {
 
 	private String createBandSubsetString(String collectionName, String bandName, String subsetString) {
 		StringBuilder stringBuilder = new StringBuilder(collectionName);
+		stringBuilder.append(subsetString);
 		stringBuilder.append(".");
 		stringBuilder.append(bandName);
-		stringBuilder.append(subsetString);
+		
 		return stringBuilder.toString();
 	}
 	
