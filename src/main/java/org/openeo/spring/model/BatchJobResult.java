@@ -27,7 +27,10 @@ import javax.persistence.JoinColumn;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import org.openeo.spring.json.AssetsSerializer;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.swagger.annotations.ApiModelProperty;
 
@@ -73,6 +76,7 @@ public class BatchJobResult implements Serializable {
 	private Map<String, Object> properties = new HashMap<>();
 
 	@JsonProperty("assets")
+	@JsonSerialize(using = AssetsSerializer.class)
 	@OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.EAGER)
     @JoinTable(name = "result_asset_mapping", 
       joinColumns = {@JoinColumn(name = "result_id", referencedColumnName = "id")},

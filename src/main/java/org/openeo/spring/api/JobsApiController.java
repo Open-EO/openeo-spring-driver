@@ -592,7 +592,8 @@ public class JobsApiController implements JobsApi {
 			log.debug(userFile.getAbsolutePath());
 			response = IOUtils.toByteArray(new FileInputStream(userFile));
 			log.debug("File found and converted in bytes for download");
-			return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(response);
+			//Content-Disposition: inline; filename="myfile.txt"
+			return ResponseEntity.ok().header("Content-Disposition", "inline; filename=\"" + fileName + "\"").contentType(MediaType.parseMediaType(mime)).body(response);
 		} catch (FileNotFoundException e) {
 			log.error("File not found:" + fileName);
 			StringBuilder builder = new StringBuilder();
