@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -504,6 +505,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 		job.setStatus(JobStates.FINISHED);
 		job.setUpdated(OffsetDateTime.now());
+		job.setProgress(new BigDecimal(100));
 		jobDAO.update(job);
 		log.debug("The following job was set to status finished: \n" + job.toString());
 	}
