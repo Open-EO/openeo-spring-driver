@@ -618,7 +618,7 @@ public class WCPSQueryFactory {
 					YImageCrsDomain = Pattern.compile(" E"+"\\(.*?\\)").matcher(YImageCrsDomain).replaceAll("");
 					YImageCrsDomain = Pattern.compile(",").matcher(YImageCrsDomain).replaceAll("");					
 					
-					String payLoad1Merge = payLoad1.replaceAll("\\sDATE"+"\\(.*?\\)", " DATE\\(\\$T" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sY"+"\\(.*?\\)", " Y\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sX"+"\\(.*?\\)", " X\\(\\$X" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sN"+"\\(.*?\\)", " N\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sE"+"\\(.*?\\)", " E\\(\\$X" + nodeKeyOfCurrentProcess + "\\)");				
+					String payLoad1Merge = payLoad1.replaceAll("\\sDATE"+"\\(.*?\\)", " DATE\\(\\$T" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sY"+"\\(.*?\\)", " Y\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sX"+"\\(.*?\\)", " X\\(\\$X" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sN"+"\\(.*?\\)", " N\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sE"+"\\(.*?\\)", " E\\(\\$X" + nodeKeyOfCurrentProcess + "\\)");
 					String payLoad2Merge = payLoad2.replaceAll("\\sY"+"\\(.*?\\)", " Y\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sX"+"\\(.*?\\)", " X\\(\\$X" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sN"+"\\(.*?\\)", " N\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sE"+"\\(.*?\\)", " E\\(\\$X" + nodeKeyOfCurrentProcess + "\\)");
 					log.debug(timeImageCrsDomain);
 					log.debug(XImageCrsDomain);
@@ -885,6 +885,7 @@ public class WCPSQueryFactory {
 					
 					String payLoad1Merge = payLoad1.replaceAll("\\sDATE"+"\\(.*?\\)", " DATE\\(\\$T" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sY"+"\\(.*?\\)", " Y\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sX"+"\\(.*?\\)", " X\\(\\$X" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sN"+"\\(.*?\\)", " N\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sE"+"\\(.*?\\)", " E\\(\\$X" + nodeKeyOfCurrentProcess + "\\)");				
 					String payLoad2Merge = payLoad2.replaceAll("\\sY"+"\\(.*?\\)", " Y\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sX"+"\\(.*?\\)", " X\\(\\$X" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sN"+"\\(.*?\\)", " N\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)").replaceAll("\\sE"+"\\(.*?\\)", " E\\(\\$X" + nodeKeyOfCurrentProcess + "\\)");
+					
 					log.debug(timeImageCrsDomain);
 					log.debug(XImageCrsDomain);
 					log.debug(YImageCrsDomain);
@@ -2902,6 +2903,7 @@ public class WCPSQueryFactory {
 						else if (fromType.equals("from_node")) {
 							String dataNode = orArguments.getJSONObject("y").getString("from_node");
 							String orPayLoad = applyPayLoads.getString(dataNode);
+							orPayLoad = orPayLoad.replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							orArrayreturn.put(orPayLoad);
 						}
 					}
@@ -3415,6 +3417,7 @@ public class WCPSQueryFactory {
 						else if (fromType.equals("from_node")) {
 							String dataNode = orArguments.getJSONObject("y").getString("from_node");
 							String orPayLoad = reducerPayLoads.getString(dataNode);
+							orPayLoad = orPayLoad.replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							orArrayreturn.put(orPayLoad);
 						}
 					}
@@ -5124,9 +5127,10 @@ public class WCPSQueryFactory {
 
 	private String createBandSubsetString(String collectionName, String bandName, String subsetString) {
 		StringBuilder stringBuilder = new StringBuilder(collectionName);
+		stringBuilder.append(subsetString);
 		stringBuilder.append(".");
 		stringBuilder.append(bandName);
-		stringBuilder.append(subsetString);
+		
 		return stringBuilder.toString();
 	}
 	
