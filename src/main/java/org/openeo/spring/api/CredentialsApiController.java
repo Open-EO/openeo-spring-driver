@@ -1,8 +1,14 @@
 package org.openeo.spring.api;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Optional;
 
+import org.openeo.spring.model.OpenIDProvider;
+import org.openeo.spring.model.OpenIDProviders;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,11 +35,22 @@ public class CredentialsApiController implements CredentialsApi {
         return Optional.ofNullable(request);
     }
     
-    @GetMapping(value = "/credentials/oidc")
+    @GetMapping(value = "/credentials/oidc", produces = { "application/json" })
     @Override
-    public RedirectView authenticateOidc(RedirectAttributes attributes) {
-    	attributes.addAttribute("attribute", "redirectWithRedirectView");
-        return new RedirectView(oidcEndpoint);
+    public ResponseEntity<OpenIDProviders>  authenticateOidc() {
+    	OpenIDProviders providers = new OpenIDProviders();
+    	OpenIDProvider provider = new OpenIDProvider();
+    	provider.setId("Eurac_EDP_Keycloak");
+    	try {
+			provider.setIssuer(new URI(oidcEndpoint));
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	provider.setTitle("Eurac EDP Keycloak");
+    	provider.setDescription("Keycloak server linking to the eurac active directory. This service can be used with Eurac and general MS accounts");
+    	providers.addProvidersItem(provider);
+    	return new ResponseEntity<OpenIDProviders>(providers, HttpStatus.OK);
     }
 
 }
