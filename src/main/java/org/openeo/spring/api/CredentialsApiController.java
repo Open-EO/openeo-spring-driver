@@ -4,6 +4,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.OpenIDProvider;
 import org.openeo.spring.model.OpenIDProviders;
@@ -14,8 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.web.servlet.view.RedirectView;
+
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Controller
 @RequestMapping("${openapi.openEO.base-path:}")
@@ -23,10 +24,12 @@ public class CredentialsApiController implements CredentialsApi {
 
     private final NativeWebRequest request;
     
+    private final Logger log = LogManager.getLogger(CredentialsApiController.class);
+    
     @Value("${org.openeo.oidc.configuration.endpoint}")
 	private String oidcEndpoint;
     
-    @Value("{keycloak.auth-server-url}")
+    @Value("${keycloak.auth-server-url}")
     private String oidcProvider;
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -56,6 +59,7 @@ public class CredentialsApiController implements CredentialsApi {
 		try {
 			providerUrl.setHref(new URI(oidcProvider));
 		} catch (URISyntaxException e) {
+			log.error("the url provided is not valid: " + oidcProvider);
 		}
 		provider.addLinksItem(providerUrl);
     	provider.setTitle("Eurac EDP Keycloak");
