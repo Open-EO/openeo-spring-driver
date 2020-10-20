@@ -4,6 +4,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.openeo.spring.model.Billing;
 import org.openeo.spring.model.BillingPlan;
 import org.openeo.spring.model.Capabilities;
@@ -30,8 +32,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 public class DefaultApiController implements DefaultApi {
 
 	private final NativeWebRequest request;
+	
+	private final Logger log = LogManager.getLogger(DefaultApiController.class);
 
-	@Value("$org.openeo.public.endpoint}")
+	@Value("${org.openeo.public.endpoint}")
 	private String openEOEndpoint;
 
 	@org.springframework.beans.factory.annotation.Autowired
@@ -157,6 +161,7 @@ public class DefaultApiController implements DefaultApi {
 		try {
 			billingPlan.setUrl(new URI(openEOEndpoint));
 		} catch (URISyntaxException e1) {
+			log.error("the url provided is not valid: " + openEOEndpoint);
 		}
 		billing.addPlansItem(billingPlan);
 		capabilities.setBilling(billing);
@@ -165,6 +170,7 @@ public class DefaultApiController implements DefaultApi {
 		try {
 			openEOUrl.setHref(new URI(this.openEOEndpoint));
 		} catch (URISyntaxException e) {
+			log.error("the url provided is not valid: " + openEOEndpoint);
 		}
 		openEOUrl.setTitle("url to openeo api service");
 		openEOUrl.setType("text/html");
