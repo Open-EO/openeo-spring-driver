@@ -4,6 +4,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.openeo.spring.model.Billing;
 import org.openeo.spring.model.BillingPlan;
 import org.openeo.spring.model.Capabilities;
@@ -30,9 +32,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 public class DefaultApiController implements DefaultApi {
 
 	private final NativeWebRequest request;
+	
+	private final Logger log = LogManager.getLogger(DefaultApiController.class);
 
-	@Value("$org.openeo.public.endpoint}")
+	@Value("${org.openeo.public.endpoint}")
 	private String openEOEndpoint;
+	
+	@Value("${org.openeo.wcps.provider.url}")
+	private String providerUrl;
 
 	@org.springframework.beans.factory.annotation.Autowired
 	public DefaultApiController(NativeWebRequest request) {
@@ -140,8 +147,9 @@ public class DefaultApiController implements DefaultApi {
 
 		Link operatorUrl = new Link();
 		try {
-			operatorUrl.setHref(new URI("http://www.eurac.edu"));
+			operatorUrl.setHref(new URI(providerUrl));
 		} catch (URISyntaxException e) {
+			log.error("the url provided is not valid: " + providerUrl);
 		}
 		operatorUrl.setTitle("Homepage of the service provider");
 		operatorUrl.setType("text/html");
@@ -157,6 +165,7 @@ public class DefaultApiController implements DefaultApi {
 		try {
 			billingPlan.setUrl(new URI(openEOEndpoint));
 		} catch (URISyntaxException e1) {
+			log.error("the url provided is not valid: " + openEOEndpoint);
 		}
 		billing.addPlansItem(billingPlan);
 		capabilities.setBilling(billing);
@@ -165,6 +174,7 @@ public class DefaultApiController implements DefaultApi {
 		try {
 			openEOUrl.setHref(new URI(this.openEOEndpoint));
 		} catch (URISyntaxException e) {
+			log.error("the url provided is not valid: " + openEOEndpoint);
 		}
 		openEOUrl.setTitle("url to openeo api service");
 		openEOUrl.setType("text/html");
