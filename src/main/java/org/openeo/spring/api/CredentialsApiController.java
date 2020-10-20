@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 
+import org.openeo.spring.model.Link;
 import org.openeo.spring.model.OpenIDProvider;
 import org.openeo.spring.model.OpenIDProviders;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,9 @@ public class CredentialsApiController implements CredentialsApi {
     
     @Value("${org.openeo.oidc.configuration.endpoint}")
 	private String oidcEndpoint;
+    
+    @Value("{keycloak.auth-server-url}")
+    private String oidcProvider;
 
     @org.springframework.beans.factory.annotation.Autowired
     public CredentialsApiController(NativeWebRequest request) {
@@ -47,9 +51,17 @@ public class CredentialsApiController implements CredentialsApi {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+    	
+    	Link providerUrl = new Link();
+		try {
+			providerUrl.setHref(new URI(oidcProvider));
+		} catch (URISyntaxException e) {
+		}
+		provider.addLinksItem(providerUrl);
     	provider.setTitle("Eurac EDP Keycloak");
     	provider.setDescription("Keycloak server linking to the eurac active directory. This service can be used with Eurac and general MS accounts");
     	providers.addProvidersItem(provider);
+    	
     	return new ResponseEntity<OpenIDProviders>(providers, HttpStatus.OK);
     }
 
