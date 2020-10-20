@@ -152,6 +152,7 @@ public class JobsApiController implements JobsApi {
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
 		job.setStatus(JobStates.CREATED);
+		job.setPlan("free");
 		job.setCreated(OffsetDateTime.now());
 		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
