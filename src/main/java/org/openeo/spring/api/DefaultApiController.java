@@ -37,6 +37,9 @@ public class DefaultApiController implements DefaultApi {
 
 	@Value("${org.openeo.public.endpoint}")
 	private String openEOEndpoint;
+	
+	@Value("${org.openeo.wcps.provider.url}")
+	private String providerUrl;
 
 	@org.springframework.beans.factory.annotation.Autowired
 	public DefaultApiController(NativeWebRequest request) {
@@ -144,8 +147,9 @@ public class DefaultApiController implements DefaultApi {
 
 		Link operatorUrl = new Link();
 		try {
-			operatorUrl.setHref(new URI("http://www.eurac.edu"));
+			operatorUrl.setHref(new URI(providerUrl));
 		} catch (URISyntaxException e) {
+			log.error("the url provided is not valid: " + providerUrl);
 		}
 		operatorUrl.setTitle("Homepage of the service provider");
 		operatorUrl.setType("text/html");
