@@ -3580,39 +3580,36 @@
     }
 },
 {
-    "id": "sum",
-    "summary": "Compute the sum by adding up numbers",
-    "description": "Sums up all elements in a sequential array of numbers and returns the computed sum.\n\nBy default no-data values are ignored. Setting `ignore_nodata` to `false` considers no-data values so that `null` is returned if any element is such a value.\n\nThe computations follow [IEEE Standard 754](https://ieeexplore.ieee.org/document/8766229) whenever the processing environment supports it.",
+    "id": "add",
+    "summary": "Addition of two numbers",
+    "description": "Sums up the two numbers `x` and `y` (*x + y*) and returns the computed sum.\n\nNo-data values are taken into account so that `null` is returned if any element is such a value.\n\nThe computations follow [IEEE Standard 754](https://ieeexplore.ieee.org/document/8766229) whenever the processing environment supports it.",
     "categories": [
-        "math",
-        "reducer"
+        "math"
     ],
     "parameters": [
         {
-            "name": "data",
-            "description": "An array of numbers.",
+            "name": "x",
+            "description": "The first summand.",
             "schema": {
-                "type": "array",
-                "items": {
-                    "type": [
-                        "number",
-                        "null"
-                    ]
-                }
+                "type": [
+                    "number",
+                    "null"
+                ]
             }
         },
         {
-            "name": "ignore_nodata",
-            "description": "Indicates whether no-data values are ignored or not. Ignores them by default. Setting this flag to `false` considers no-data values so that `null` is returned if any value is such a value.",
+            "name": "y",
+            "description": "The second summand.",
             "schema": {
-                "type": "boolean"
-            },
-            "default": true,
-            "optional": true
+                "type": [
+                    "number",
+                    "null"
+                ]
+            }
         }
     ],
     "returns": {
-        "description": "The computed sum of the sequence of numbers.",
+        "description": "The computed sum of the two numbers.",
         "schema": {
             "type": [
                 "number",
@@ -3623,53 +3620,22 @@
     "examples": [
         {
             "arguments": {
-                "data": [
-                    5,
-                    1
-                ]
+                "x": 5,
+                "y": 2.5
             },
-            "returns": 6
+            "returns": 7.5
         },
         {
             "arguments": {
-                "data": [
-                    -2,
-                    4,
-                    2.5
-                ]
+                "x": -2,
+                "y": -4
             },
-            "returns": 4.5
+            "returns": -6
         },
         {
             "arguments": {
-                "data": [
-                    1,
-                    null
-                ],
-                "ignore_nodata": false
-            },
-            "returns": null
-        },
-        {
-            "arguments": {
-                "data": [
-                    100
-                ]
-            },
-            "returns": 100
-        },
-        {
-            "arguments": {
-                "data": [
-                    null
-                ],
-                "ignore_nodata": false
-            },
-            "returns": null
-        },
-        {
-            "arguments": {
-                "data": []
+                "x": 1,
+                "y": null
             },
             "returns": null
         }
@@ -3685,7 +3651,24 @@
             "href": "https://ieeexplore.ieee.org/document/8766229",
             "title": "IEEE Standard 754-2019 for Floating-Point Arithmetic"
         }
-    ]
+    ],
+    "process_graph": {
+        "sum": {
+            "process_id": "sum",
+            "arguments": {
+                "data": [
+                    {
+                        "from_parameter": "x"
+                    },
+                    {
+                        "from_parameter": "y"
+                    }
+                ],
+                "ignore_nodata": false
+            },
+            "result": true
+        }
+    }
 },
 {
     "id": "divide",
@@ -3758,6 +3741,80 @@
             "rel": "about",
             "href": "http://mathworld.wolfram.com/Division.html",
             "title": "Division explained by Wolfram MathWorld"
+        },
+        {
+            "rel": "about",
+            "href": "https://ieeexplore.ieee.org/document/8766229",
+            "title": "IEEE Standard 754-2019 for Floating-Point Arithmetic"
+        }
+    ]
+},
+{
+    "id": "subtract",
+    "summary": "Subtraction of two numbers",
+    "description": "Subtracts argument `y` from the argument `x` (*x - y*) and returns the computed result.\n\nNo-data values are taken into account so that `null` is returned if any element is such a value.\n\nThe computations follow [IEEE Standard 754](https://ieeexplore.ieee.org/document/8766229) whenever the processing environment supports it.",
+    "categories": [
+        "math"
+    ],
+    "parameters": [
+        {
+            "name": "x",
+            "description": "The minuend.",
+            "schema": {
+                "type": [
+                    "number",
+                    "null"
+                ]
+            }
+        },
+        {
+            "name": "y",
+            "description": "The subtrahend.",
+            "schema": {
+                "type": [
+                    "number",
+                    "null"
+                ]
+            }
+        }
+    ],
+    "returns": {
+        "description": "The computed result.",
+        "schema": {
+            "type": [
+                "number",
+                "null"
+            ]
+        }
+    },
+    "examples": [
+        {
+            "arguments": {
+                "x": 5,
+                "y": 2.5
+            },
+            "returns": 2.5
+        },
+        {
+            "arguments": {
+                "x": -2,
+                "y": 4
+            },
+            "returns": -6
+        },
+        {
+            "arguments": {
+                "x": 1,
+                "y": null
+            },
+            "returns": null
+        }
+    ],
+    "links": [
+        {
+            "rel": "about",
+            "href": "http://mathworld.wolfram.com/Subtraction.html",
+            "title": "Subtraction explained by Wolfram MathWorld"
         },
         {
             "rel": "about",
