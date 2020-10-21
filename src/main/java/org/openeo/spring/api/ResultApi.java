@@ -50,7 +50,7 @@ public interface ResultApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.POST)
-    default ResponseEntity<Void> computeResult(@Parameter(description = "" ,required=true )  @Valid @RequestBody Job synchronousResultRequest) {
+    default ResponseEntity<?> computeResult(@Parameter(description = "" ,required=true )  @Valid @RequestBody Job synchronousResultRequest) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }
