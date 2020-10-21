@@ -6,6 +6,7 @@ import org.keycloak.adapters.springsecurity.KeycloakConfiguration;
 import org.keycloak.adapters.springsecurity.KeycloakSecurityComponents;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider;
 import org.keycloak.adapters.springsecurity.config.KeycloakWebSecurityConfigurerAdapter;
+import org.keycloak.adapters.springsecurity.filter.KeycloakAuthenticationProcessingFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -51,7 +52,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		super.configure(http);
-		http.authorizeRequests().antMatchers("/h2-console/**").permitAll()
+		http.addFilterBefore(new TokenInterceptorFilter(), KeycloakAuthenticationProcessingFilter.class).authorizeRequests().antMatchers("/**").permitAll()
 /*			.antMatchers("/collections/{collection_id}").hasRole("eurac")
 			.antMatchers("/collections").hasRole("public")*/
 			.anyRequest().permitAll().and().csrf().disable();
