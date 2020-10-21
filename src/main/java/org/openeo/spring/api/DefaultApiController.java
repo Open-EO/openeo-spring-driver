@@ -79,6 +79,11 @@ public class DefaultApiController implements DefaultApi {
 		wellKnownEndPoint.setPath("/.well-known/openeo");
 		wellKnownEndPoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(wellKnownEndPoint);
+		
+		Endpoint meEndPoint = new Endpoint();
+		meEndPoint.setPath("/me");
+		meEndPoint.addMethodsItem(MethodsEnum.GET);
+		capabilities.addEndpointsItem(meEndPoint);
 
 		Endpoint resultEndPoint = new Endpoint();
 		resultEndPoint.setPath("/result");

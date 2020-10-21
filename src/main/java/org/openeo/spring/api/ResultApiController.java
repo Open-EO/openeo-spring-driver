@@ -27,7 +27,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -38,7 +37,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import springfox.documentation.spring.web.scanners.MediaTypeReader;
 
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Component
@@ -77,7 +75,7 @@ public class ResultApiController implements ResultApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/result", produces = { "*" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
-	public ResponseEntity computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
+	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
 		String backend = job.getProcess().getDescription();
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
 		if (backend != null && backend.contains("ODC")) {
@@ -125,6 +123,7 @@ public class ResultApiController implements ResultApi {
 						+ URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 				conn.setRequestMethod("GET");
+				//TODO pipe error stream message from rasdaman into error return here
 				byte[] response = IOUtils.toByteArray(conn.getInputStream());
 				log.info("Job successfully executed: " + job.toString());
 //				.contentType(new MediaType(ConvenienceHelper.getMimeTypeFromRasName(wcpsFactory.getOutputFormat())))
