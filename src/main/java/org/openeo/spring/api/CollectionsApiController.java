@@ -361,10 +361,16 @@ public class CollectionsApiController implements CollectionsApi {
 				}catch(Exception e) {
 				}
 				try {
-					description = metadataElement.getChildText("Description", gmlNS);
-					currentCollection.setDescription(description);
+					description = metadataElement.getChildText("Description", gmlNS);					
 				}catch(Exception e) {
+					
 				}
+				log.debug("Description : "+description);
+				if(description==null) {
+					description = "No Information Available";
+				}
+				log.debug("Description : "+description);
+				currentCollection.setDescription(description);
 				
 				List<String> keywords = new ArrayList<String>();
 				keywords.add("");
@@ -916,14 +922,18 @@ public class CollectionsApiController implements CollectionsApi {
 				title = metadataElement.getChildText("Title", gmlNS);
 				currentCollection.setTitle(title);
 			}catch(Exception e) {
-				//		    	log.warn("Error in parsing Project Name :" + e.getMessage());
 			}
 			try {
-				description = metadataElement.getChildText("Description", gmlNS);
-				currentCollection.setDescription(description);
+				description = metadataElement.getChildText("Description", gmlNS);				
 			}catch(Exception e) {
-				//            	log.warn("Error in parsing Title :" + e.getMessage());
+				
 			}
+			log.debug("Description : "+description);
+			if(description==null) {
+				description = "No Information Available";
+			}
+			log.debug("Description : "+description);
+			currentCollection.setDescription(description);
 			
 			Set<String> stacExtensions = new HashSet<String>();
 			stacExtensions.add("datacube");
