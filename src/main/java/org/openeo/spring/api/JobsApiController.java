@@ -172,7 +172,17 @@ public class JobsApiController implements JobsApi {
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 			log.debug("verified retrieved job: " + verifiedSave.toString());
 			//return new ResponseEntity<Job>(job, HttpStatus.OK);
-			return ResponseEntity.ok().header("OpenEO-Identifier", job.getId().toString()).body(job);
+			URI jobUrl;
+			try {
+				jobUrl = new URI(openEOPublicEndpoint + "/jobs/" + job.getId().toString());
+				return ResponseEntity.created(jobUrl).header("OpenEO-Identifier", job.getId().toString()).body(job);
+			} catch (URISyntaxException e) {
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage("The submitted job " + job.toString() + " has an invalid URI");
+				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+			
 		} else {
 			Error error = new Error();
 			error.setCode("500");
