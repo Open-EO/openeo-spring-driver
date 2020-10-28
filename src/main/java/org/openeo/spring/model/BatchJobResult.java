@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class BatchJobResult implements Serializable {
 	@JsonProperty("stac_extensions")
 	@Valid
 	@Embedded
-	private Set<String> stacExtensions = null;
+	private Set<String> stacExtensions = new HashSet<String>();
 	
 	@Id
 	@JsonProperty("id")
