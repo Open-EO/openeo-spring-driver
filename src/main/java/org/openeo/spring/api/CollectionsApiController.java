@@ -881,6 +881,15 @@ public class CollectionsApiController implements CollectionsApi {
 						cubeColonDimensions.put(axis[a], dimensionYspatial);
 					}
 					if(axis[a].equals("DATE")  || axis[a].equals("TIME") || axis[a].equals("ANSI") || axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time") || axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")){
+						boolean isDate = true;
+						try {
+							Integer isDateInteger = Integer.parseInt(minValues[a].replaceAll("\"", ""));
+							isDate = false;
+						}
+						catch(Exception e) {
+							
+						}
+						if (isDate) {
 						List<String> temporalExtent = new ArrayList<String>();
 						temporalExtent.add(0, minValues[a].replaceAll("\"", ""));
 						temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
@@ -895,8 +904,29 @@ public class CollectionsApiController implements CollectionsApi {
 					    }catch(Exception e) {
 					    	log.warn("Irregular Axis :" + e.getMessage());
 					    	dimensionTemporal.setStep(JsonNullable.of(0));
-					    }						
+					    }
 						cubeColonDimensions.put(axis[a], dimensionTemporal);
+						}
+						else {
+							AdditionalDimension additionalDimension = new AdditionalDimension();
+							additionalDimension.setType(TypeEnum.TEMPORAL);
+							List<Integer> temporalExtent = new ArrayList<Integer>();
+							temporalExtent.add(0, Integer.parseInt(minValues[a].replaceAll("\"", "")));
+							temporalExtent.add(1, Integer.parseInt(maxValues[a].replaceAll("\"", "")));
+							startTime = minValues[a].replaceAll("\"", "");
+							endTime = maxValues[a].replaceAll("\"", "");
+							additionalDimension.setExtent(temporalExtent);
+							String[] taxis = null;
+							try {
+								List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+								taxis = tList.get(a).getValue().split(" ");
+								additionalDimension.setStep(JsonNullable.of(Integer.parseInt(taxis[0])));
+						    }catch(Exception e) {
+						    	log.warn("Irregular Axis :" + e.getMessage());
+						    	additionalDimension.setStep(JsonNullable.of(0));
+						    }
+							cubeColonDimensions.put(axis[a], additionalDimension);
+						}
 					}
 			    }
 //				log.debug(srsDescription);
