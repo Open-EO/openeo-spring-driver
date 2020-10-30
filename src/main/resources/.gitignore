@@ -4,3 +4,4 @@
 /openssl.cnf
 /private.key
 /selfsigned.crt
+/keycloak_self.crt

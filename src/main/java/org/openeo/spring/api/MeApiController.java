@@ -5,19 +5,15 @@ import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.keycloak.KeycloakPrincipal;
-import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.keycloak.representations.AccessToken;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.UserData;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.NativeWebRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -86,7 +82,9 @@ public class MeApiController implements MeApi {
         AccessToken accessToken = keycloakAuthenticationToken.getAccount().getKeycloakSecurityContext().getToken();
 		if(principal != null) {
 			userData.setUserId(principal.getName());
+			log.debug("registered user id: " + principal.getName());
 			userData.setName(accessToken.getName());
+			log.debug("registered user name: " + accessToken.getName());
 		}else {
 			Error error = new Error();
 			error.setCode("500");
