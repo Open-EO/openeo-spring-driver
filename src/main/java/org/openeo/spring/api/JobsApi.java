@@ -5,6 +5,7 @@
  */
 package org.openeo.spring.api;
 
+import java.security.Principal;
 import java.util.Optional;
 
 import javax.validation.Valid;
@@ -75,7 +76,7 @@ public interface JobsApi {
 	@RequestMapping(value = "/jobs", produces = { "application/json" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
 	default ResponseEntity<?> createJob(
-			@Parameter(description = "", required = true) @Valid @RequestBody Job storeBatchJobRequest) {
+			@Parameter(description = "", required = true) @Valid @RequestBody Job storeBatchJobRequest, Principal principal) {
 		return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
 	}
