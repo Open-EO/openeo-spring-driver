@@ -33,6 +33,7 @@ import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
 import org.json.JSONObject;
 import org.json.JSONArray;
+import org.openeo.spring.model.AdditionalDimension;
 import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.CollectionExtent;
@@ -254,16 +255,19 @@ public class CollectionsApiController implements CollectionsApi {
 				bbox1.add(new BigDecimal(c2[0]));
 				bbox.add(bbox1);
 				spatialExtent.setBbox(bbox);
-				extent.setSpatial(spatialExtent);					
+				extent.setSpatial(spatialExtent);
 
 				try {
 					interval1.add(OffsetDateTime.parse(startTime));
-					interval1.add(OffsetDateTime.parse(endTime));
-					interval.add(interval1);
-					temporalExtent.setInterval(interval);
-					extent.setTemporal(temporalExtent);
+					interval1.add(OffsetDateTime.parse(endTime));					
 				}catch(Exception e) {
+					interval1.add(null);
+					interval1.add(null);
 				}
+				log.debug("Interval : " + interval1);
+				interval.add(interval1);
+				temporalExtent.setInterval(interval);
+				extent.setTemporal(temporalExtent);
 				currentCollection.setExtent(extent);
 				}
 				
@@ -332,13 +336,16 @@ public class CollectionsApiController implements CollectionsApi {
 
 					try {
 						interval1.add(OffsetDateTime.parse(startTime));
-						interval1.add(OffsetDateTime.parse(endTime));
-						interval.add(interval1);
-						temporalExtent.setInterval(interval);
-						extent.setTemporal(temporalExtent);
+						interval1.add(OffsetDateTime.parse(endTime));					
 					}catch(Exception e) {
+						interval1.add(null);
+						interval1.add(null);
 					}
-					currentCollection.setExtent(extent);				
+					log.debug("Interval : " + interval1);
+					interval.add(interval1);
+					temporalExtent.setInterval(interval);
+					extent.setTemporal(temporalExtent);					
+					currentCollection.setExtent(extent);
 				}
 
 				Link link1 = new Link();
@@ -361,10 +368,16 @@ public class CollectionsApiController implements CollectionsApi {
 				}catch(Exception e) {
 				}
 				try {
-					description = metadataElement.getChildText("Description", gmlNS);
-					currentCollection.setDescription(description);
+					description = metadataElement.getChildText("Description", gmlNS);					
 				}catch(Exception e) {
+					
 				}
+				log.debug("Description : "+description);
+				if(description==null) {
+					description = "No Information Available";
+				}
+				log.debug("Description : "+description);
+				currentCollection.setDescription(description);
 				
 				List<String> keywords = new ArrayList<String>();
 				keywords.add("");
@@ -565,7 +578,7 @@ public class CollectionsApiController implements CollectionsApi {
 		    Map<String, Dimension> cubeColonDimensions = new HashMap<String, Dimension>();
 			DimensionBands dimensionbands = new DimensionBands();
 			dimensionbands.setType(TypeEnum.BANDS);
-//			log.debug("number of bands found: " + bandsListSwe.size());			
+//			log.debug("number of bands found: " + bandsListSwe.size());
 			DimensionSpatial dimensionXspatial = new DimensionSpatial();
 			dimensionXspatial.setType(TypeEnum.SPATIAL);
 			DimensionSpatial dimensionYspatial = new DimensionSpatial();
@@ -672,6 +685,16 @@ public class CollectionsApiController implements CollectionsApi {
 					cubeColonDimensions.put(axis[a], dimensionYspatial);
 				}
 				if(axis[a].equals("DATE")  || axis[a].equals("TIME") || axis[a].equals("ANSI") || axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time") || axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")){
+					
+					boolean isDate = true;
+					try {
+						Integer isDateInteger = Integer.parseInt(minValues[a].replaceAll("\"", ""));
+						isDate = false;
+					}
+					catch(Exception e) {
+						
+					}
+					if (isDate) {
 					List<String> temporalExtent = new ArrayList<String>();
 					temporalExtent.add(0, minValues[a].replaceAll("\"", ""));
 					temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
@@ -682,12 +705,33 @@ public class CollectionsApiController implements CollectionsApi {
 					try {
 						List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
 						taxis = tList.get(a).getValue().split(" ");
-						dimensionTemporal.setStep(JsonNullable.of(taxis[0]));
+						dimensionTemporal.setStep(JsonNullable.of(Integer.parseInt(taxis[0])));
 				    }catch(Exception e) {
 				    	log.warn("Irregular Axis :" + e.getMessage());
-				    	dimensionTemporal.setStep(JsonNullable.of("0"));
+				    	dimensionTemporal.setStep(JsonNullable.of(0));
 				    }
 					cubeColonDimensions.put(axis[a], dimensionTemporal);
+					}
+					else {
+						AdditionalDimension additionalDimension = new AdditionalDimension();
+						additionalDimension.setType(TypeEnum.TEMPORAL);
+						List<Integer> temporalExtent = new ArrayList<Integer>();
+						temporalExtent.add(0, Integer.parseInt(minValues[a].replaceAll("\"", "")));
+						temporalExtent.add(1, Integer.parseInt(maxValues[a].replaceAll("\"", "")));
+						startTime = minValues[a].replaceAll("\"", "");
+						endTime = maxValues[a].replaceAll("\"", "");
+						additionalDimension.setExtent(temporalExtent);
+						String[] taxis = null;
+						try {
+							List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+							taxis = tList.get(a).getValue().split(" ");
+							additionalDimension.setStep(JsonNullable.of(Integer.parseInt(taxis[0])));
+					    }catch(Exception e) {
+					    	log.warn("Irregular Axis :" + e.getMessage());
+					    	additionalDimension.setStep(JsonNullable.of(0));
+					    }
+						cubeColonDimensions.put(axis[a], additionalDimension);
+					}
 				}
 		    }
 //			log.debug(srsDescription);
@@ -720,12 +764,15 @@ public class CollectionsApiController implements CollectionsApi {
 			
 			try {
 				interval1.add(OffsetDateTime.parse(startTime));
-				interval1.add(OffsetDateTime.parse(endTime));
-				interval.add(interval1);
-				temporalExtent.setInterval(interval);
-				extent.setTemporal(temporalExtent);
+				interval1.add(OffsetDateTime.parse(endTime));					
 			}catch(Exception e) {
+				interval1.add(null);
+				interval1.add(null);
 			}
+			log.debug("Interval : " + interval1);
+			interval.add(interval1);
+			temporalExtent.setInterval(interval);
+			extent.setTemporal(temporalExtent);					
 			currentCollection.setExtent(extent);
 			}
 			
@@ -834,6 +881,15 @@ public class CollectionsApiController implements CollectionsApi {
 						cubeColonDimensions.put(axis[a], dimensionYspatial);
 					}
 					if(axis[a].equals("DATE")  || axis[a].equals("TIME") || axis[a].equals("ANSI") || axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time") || axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")){
+						boolean isDate = true;
+						try {
+							Integer isDateInteger = Integer.parseInt(minValues[a].replaceAll("\"", ""));
+							isDate = false;
+						}
+						catch(Exception e) {
+							
+						}
+						if (isDate) {
 						List<String> temporalExtent = new ArrayList<String>();
 						temporalExtent.add(0, minValues[a].replaceAll("\"", ""));
 						temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
@@ -844,12 +900,33 @@ public class CollectionsApiController implements CollectionsApi {
 						try {
 							List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
 							taxis = tList.get(a).getValue().split(" ");
-							dimensionTemporal.setStep(JsonNullable.of(taxis[0]));
+							dimensionTemporal.setStep(JsonNullable.of(Integer.parseInt(taxis[0])));
 					    }catch(Exception e) {
 					    	log.warn("Irregular Axis :" + e.getMessage());
-					    	dimensionTemporal.setStep(JsonNullable.of("0"));
-					    }						
+					    	dimensionTemporal.setStep(JsonNullable.of(0));
+					    }
 						cubeColonDimensions.put(axis[a], dimensionTemporal);
+						}
+						else {
+							AdditionalDimension additionalDimension = new AdditionalDimension();
+							additionalDimension.setType(TypeEnum.TEMPORAL);
+							List<Integer> temporalExtent = new ArrayList<Integer>();
+							temporalExtent.add(0, Integer.parseInt(minValues[a].replaceAll("\"", "")));
+							temporalExtent.add(1, Integer.parseInt(maxValues[a].replaceAll("\"", "")));
+							startTime = minValues[a].replaceAll("\"", "");
+							endTime = maxValues[a].replaceAll("\"", "");
+							additionalDimension.setExtent(temporalExtent);
+							String[] taxis = null;
+							try {
+								List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+								taxis = tList.get(a).getValue().split(" ");
+								additionalDimension.setStep(JsonNullable.of(Integer.parseInt(taxis[0])));
+						    }catch(Exception e) {
+						    	log.warn("Irregular Axis :" + e.getMessage());
+						    	additionalDimension.setStep(JsonNullable.of(0));
+						    }
+							cubeColonDimensions.put(axis[a], additionalDimension);
+						}
 					}
 			    }
 //				log.debug(srsDescription);
@@ -882,12 +959,15 @@ public class CollectionsApiController implements CollectionsApi {
 				
 				try {
 					interval1.add(OffsetDateTime.parse(startTime));
-					interval1.add(OffsetDateTime.parse(endTime));
-					interval.add(interval1);
-					temporalExtent.setInterval(interval);
-					extent.setTemporal(temporalExtent);
+					interval1.add(OffsetDateTime.parse(endTime));					
 				}catch(Exception e) {
+					interval1.add(null);
+					interval1.add(null);
 				}
+				log.debug("Interval : " + interval1);
+				interval.add(interval1);
+				temporalExtent.setInterval(interval);
+				extent.setTemporal(temporalExtent);					
 				currentCollection.setExtent(extent);
 			}
 			
@@ -916,14 +996,18 @@ public class CollectionsApiController implements CollectionsApi {
 				title = metadataElement.getChildText("Title", gmlNS);
 				currentCollection.setTitle(title);
 			}catch(Exception e) {
-				//		    	log.warn("Error in parsing Project Name :" + e.getMessage());
 			}
 			try {
-				description = metadataElement.getChildText("Description", gmlNS);
-				currentCollection.setDescription(description);
+				description = metadataElement.getChildText("Description", gmlNS);				
 			}catch(Exception e) {
-				//            	log.warn("Error in parsing Title :" + e.getMessage());
+				
 			}
+			log.debug("Description : "+description);
+			if(description==null) {
+				description = "No Information Available";
+			}
+			log.debug("Description : "+description);
+			currentCollection.setDescription(description);
 			
 			Set<String> stacExtensions = new HashSet<String>();
 			stacExtensions.add("datacube");

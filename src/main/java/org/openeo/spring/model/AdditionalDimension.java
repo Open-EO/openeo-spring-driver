@@ -19,18 +19,18 @@ import io.swagger.annotations.ApiModelProperty;
  * AdditionalDimension
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class AdditionalDimension   {
+public class AdditionalDimension  extends Dimension {
 
   @JsonProperty("extent")
   @Valid
-  private List<BigDecimal> extent = null;
+  private List<Integer> extent = null;
 
   @JsonProperty("values")
   @Valid
   private List<String> values = null;
 
   @JsonProperty("step")
-  private JsonNullable<BigDecimal> step = JsonNullable.undefined();
+  private JsonNullable<Integer> step = JsonNullable.undefined();
 
   @JsonProperty("unit")
   private String unit;
@@ -38,12 +38,12 @@ public class AdditionalDimension   {
   @JsonProperty("reference_system")
   private String referenceSystem;
 
-  public AdditionalDimension extent(List<BigDecimal> extent) {
+  public AdditionalDimension extent(List<Integer> extent) {
     this.extent = extent;
     return this;
   }
 
-  public AdditionalDimension addExtentItem(BigDecimal extentItem) {
+  public AdditionalDimension addExtentItem(Integer extentItem) {
     if (this.extent == null) {
       this.extent = new ArrayList<>();
     }
@@ -59,11 +59,11 @@ public class AdditionalDimension   {
 
   @Valid
 @Size(min=2,max=2) 
-  public List<BigDecimal> getExtent() {
+  public List<Integer> getExtent() {
     return extent;
   }
 
-  public void setExtent(List<BigDecimal> extent) {
+  public void setExtent(List<Integer> extent) {
     this.extent = extent;
   }
 
@@ -96,7 +96,7 @@ public class AdditionalDimension   {
     this.values = values;
   }
 
-  public AdditionalDimension step(BigDecimal step) {
+  public AdditionalDimension step(Integer step) {
     this.step = JsonNullable.of(step);
     return this;
   }
@@ -109,11 +109,11 @@ public class AdditionalDimension   {
 
   @Valid
 
-  public JsonNullable<BigDecimal> getStep() {
+  public JsonNullable<Integer> getStep() {
     return step;
   }
 
-  public void setStep(JsonNullable<BigDecimal> step) {
+  public void setStep(JsonNullable<Integer> step) {
     this.step = step;
   }
 

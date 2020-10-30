@@ -1,32 +1,33 @@
-package org.openeo.spring.api;
+package org.openeo.spring;
 
 import java.io.IOException;
+import java.util.Enumeration;
 
-import javax.servlet.Filter;
 import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-import org.springframework.http.HttpStatus;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
-@Order(1)
-public class ApiFilter implements Filter {
+public class ApiFilter extends OncePerRequestFilter {
 	
 	private final Logger log = LogManager.getLogger(ApiFilter.class);
 	@Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) 
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) 
     		throws IOException, ServletException {
         HttpServletResponse res = (HttpServletResponse) response;
         HttpServletRequest req = (HttpServletRequest) request;
         log.debug("Filter: URL" + " called: "+req.getRequestURL().toString());
+        Enumeration<String> headerEnum = req.getHeaderNames();
+        while(headerEnum.hasMoreElements()) {
+        	String headerName = headerEnum.nextElement();
+        	log.trace(headerName + " = " + req.getHeader(headerName));
+        }
         String clientIp = req.getHeader("Origin");
         if(clientIp == null) {
         	clientIp = req.getHeader("X-Forwarded-For");
@@ -47,7 +48,4 @@ public class ApiFilter implements Filter {
         chain.doFilter(request, response);
     }
 
-    public void destroy() {}
-
-    public void init(FilterConfig filterConfig) throws ServletException {}
 }
