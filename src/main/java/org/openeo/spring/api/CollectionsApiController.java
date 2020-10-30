@@ -10,6 +10,7 @@ import java.net.URL;
 import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -367,22 +368,42 @@ public class CollectionsApiController implements CollectionsApi {
 					currentCollection.setTitle(title);
 				}catch(Exception e) {
 				}
+				if(title==null) {
+					title = "No Title Available";
+				}
+				
 				try {
 					description = metadataElement.getChildText("Description", gmlNS);					
 				}catch(Exception e) {
 					
-				}
-				log.debug("Description : "+description);
+				}				
 				if(description==null) {
-					description = "No Information Available";
+					description = "No Description Available";
 				}
-				log.debug("Description : "+description);
+				
 				currentCollection.setDescription(description);
 				
 				List<String> keywords = new ArrayList<String>();
-				keywords.add("");
+				
+				try {
+					keywords = Arrays.asList(metadataElement.getChildText("Keywords", gmlNS).split(", "));					
+				}catch(Exception e) {
+				}
+				log.debug("Keywords : " + keywords);
+				if(keywords.isEmpty()) {
+					keywords.add("No Keywords Available");
+				}
  				currentCollection.setKeywords(keywords);
- 				currentCollection.setLicense("proprietary");
+ 				
+ 				String license = null;				
+				try {
+					license = metadataElement.getChildText("License", gmlNS);					
+				}catch(Exception e) {
+				}
+				if(license==null) {
+					license = "No License Information Available";
+				}
+ 				currentCollection.setLicense(license);
  				
  				Link linkItemsCollection = new Link();
  				List<Link> linksCollections = new ArrayList<Link>();
@@ -398,11 +419,10 @@ public class CollectionsApiController implements CollectionsApi {
  				linksCollections.add(linkItemsCollection);
  				currentCollection.setLinks(linksCollections);
 				
-//				JSONArray provider = new JSONArray();
-//				Object provider1 = new Object();
-//				
-//				provider.put(provider1);
-//				currentCollection.addProvidersItem(provider);
+ 				List<Object> providers = new ArrayList<Object>();
+// 				Object provider1 = new Object(); 				
+// 				providers.add(0, provider1);
+ 				currentCollection.setProviders(providers); 				
 
 			collectionsList.addCollectionsItem(currentCollection);
 			}
@@ -984,11 +1004,18 @@ public class CollectionsApiController implements CollectionsApi {
 			}
 			links.add(0, link1);
 			currentCollection.setLinks(links);
+			
 			currentCollection.setVersion("v1");
-			currentCollection.setLicense("proprietary");
-			List<String> keywords = new ArrayList<String>();
-			keywords.add("");
-			currentCollection.setKeywords(keywords);
+			
+			String license = null;				
+			try {
+				license = metadataElement.getChildText("License", gmlNS);					
+			}catch(Exception e) {
+			}
+			if(license==null) {
+				license = "No License Information Available";
+			}
+			currentCollection.setLicense(license);
 			
 			String title = null;
 			String description = null;
@@ -997,17 +1024,32 @@ public class CollectionsApiController implements CollectionsApi {
 				currentCollection.setTitle(title);
 			}catch(Exception e) {
 			}
+			if(title==null) {
+				title = "No Title Available";
+			}
+			
 			try {
-				description = metadataElement.getChildText("Description", gmlNS);				
+				description = metadataElement.getChildText("Description", gmlNS);					
 			}catch(Exception e) {
 				
-			}
-			log.debug("Description : "+description);
+			}				
 			if(description==null) {
-				description = "No Information Available";
+				description = "No Description Available";
 			}
-			log.debug("Description : "+description);
+			
 			currentCollection.setDescription(description);
+			
+			List<String> keywords = new ArrayList<String>();
+			
+			try {
+				keywords = Arrays.asList(metadataElement.getChildText("Keywords", gmlNS).split(", "));					
+			}catch(Exception e) {
+			}
+			log.debug("Keywords : " + keywords);
+			if(keywords.isEmpty()) {
+				keywords.add("No Keywords Available");
+			}
+			currentCollection.setKeywords(keywords);
 			
 			Set<String> stacExtensions = new HashSet<String>();
 			stacExtensions.add("datacube");
@@ -1043,7 +1085,7 @@ public class CollectionsApiController implements CollectionsApi {
 			List<Object> providers = new ArrayList<Object>();
 //			Object provider1 = new Object();
 //			providers.add(0, provider1);
-			currentCollection.setProviders(providers);	
+			currentCollection.setProviders(providers);
 			
 			currentCollection.setSummaries(summaries);
 			currentCollection.setAssets(assets);
