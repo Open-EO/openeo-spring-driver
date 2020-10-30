@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
+import org.keycloak.representations.AccessToken;
 import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.BatchJobEstimate;
@@ -46,6 +48,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
 
@@ -85,6 +88,9 @@ public class JobsApiController implements JobsApi {
 
 	@Autowired
 	private JobScheduler jobScheduler;
+	
+	@Autowired
+	private AuthzService authzService;
 
 	JobDAO jobDAO;
 
@@ -117,7 +123,7 @@ public class JobsApiController implements JobsApi {
 	 * from one or more (chained) processes at the back-end. Processing the data
 	 * doesn&#39;t start yet. The job status gets initialized as &#x60;created&#x60;
 	 * by default.
-	 *
+	 * @param Principal 
 	 * @param storeBatchJobRequest (required)
 	 * @return The batch job has been created successfully. (status code 201) or The
 	 *         request can&#39;t be fulfilled due to an error on client-side, i.e.
@@ -148,9 +154,12 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/jobs", produces = { "application/json" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
-	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
+	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
+		ResponseEntity<?> respEnty;
+		AccessToken token = TokenUtil.getAccessToken(principal); 
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
+		job.setOwnerPrincipal(token.getPreferredUsername());
 		job.setStatus(JobStates.CREATED);
 		job.setPlan("free");
 		job.setCreated(OffsetDateTime.now());
@@ -169,6 +178,7 @@ public class JobsApiController implements JobsApi {
 		}
 		Job verifiedSave = jobDAO.findOne(job.getId());
 		if (verifiedSave != null) {
+			authzService.createProtectedResource(job);
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 			log.debug("verified retrieved job: " + verifiedSave.toString());
 			//return new ResponseEntity<Job>(job, HttpStatus.OK);
