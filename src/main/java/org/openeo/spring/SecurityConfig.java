@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -20,7 +21,7 @@ import org.springframework.security.web.authentication.session.RegisterSessionAu
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 
 @Configuration
-@EnableWebSecurity
+@EnableWebSecurity(debug = true)
 @ComponentScan(basePackageClasses = KeycloakSecurityComponents.class)
 @KeycloakConfiguration
 public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
@@ -40,6 +41,15 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 	protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {
 		return new RegisterSessionAuthenticationStrategy(new SessionRegistryImpl());
 	}
+	
+	@Bean
+    @Primary
+    @Override
+    protected KeycloakAuthenticationProcessingFilter keycloakAuthenticationProcessingFilter() throws Exception {
+        KeycloakAuthenticationProcessingFilter filter = new OpenEOKeycloakAuthenticationProcessingFilter(authenticationManagerBean());
+        filter.setSessionAuthenticationStrategy(sessionAuthenticationStrategy());
+        return filter;
+    }
 
 // Configure Keycloak for Spring Boot
 // in this way we can tell Adopter to look at "properties" for configuration instead Keycloak.JSON
@@ -48,14 +58,18 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 	public KeycloakConfigResolver keycloakConfigResolver() {
 		return new KeycloakSpringBootConfigResolver();
 	}
+	
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		super.configure(http);
-		http.addFilterBefore(new TokenInterceptorFilter(), KeycloakAuthenticationProcessingFilter.class).authorizeRequests().antMatchers("/**").permitAll()
-/*			.antMatchers("/collections/{collection_id}").hasRole("eurac")
-			.antMatchers("/collections").hasRole("public")*/
-			.anyRequest().permitAll().and().csrf().disable();
+		http.
+		authorizeRequests().
+		antMatchers("/**").
+		permitAll().
+		anyRequest().
+		permitAll().
+		and().csrf().disable();
 		http.headers().frameOptions().disable();
 	}
 }
