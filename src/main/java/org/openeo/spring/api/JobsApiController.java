@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
+import org.keycloak.representations.AccessToken;
 import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.BatchJobEstimate;
@@ -46,6 +48,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
 
@@ -85,6 +88,11 @@ public class JobsApiController implements JobsApi {
 
 	@Autowired
 	private JobScheduler jobScheduler;
+	
+	//I added
+	@Autowired
+	private AuthzService authzService;
+	
 
 	JobDAO jobDAO;
 
@@ -117,6 +125,7 @@ public class JobsApiController implements JobsApi {
 	 * from one or more (chained) processes at the back-end. Processing the data
 	 * doesn&#39;t start yet. The job status gets initialized as &#x60;created&#x60;
 	 * by default.
+	 * @param Principal 
 	 *
 	 * @param storeBatchJobRequest (required)
 	 * @return The batch job has been created successfully. (status code 201) or The
@@ -148,9 +157,12 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/jobs", produces = { "application/json" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
-	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
+		public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
+		ResponseEntity<?> respEnty;
+		AccessToken token = TokenUtil.getAccessToken(principal); 
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
+		job.setOwnerPrincipal(token.getPreferredUsername());
 		job.setStatus(JobStates.CREATED);
 		job.setCreated(OffsetDateTime.now());
 		job.setUpdated(OffsetDateTime.now());
@@ -171,13 +183,20 @@ public class JobsApiController implements JobsApi {
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 			log.debug("verified retrieved job: " + verifiedSave.toString());
 			//return new ResponseEntity<Job>(job, HttpStatus.OK);
-			return ResponseEntity.ok().header("OpenEO-Identifier", job.getId().toString()).body(job);
+			//return ResponseEntity.ok().header("OpenEO-Identifier", job.getId().toString()).body(job);
+			respEnty = ResponseEntity.ok().header("OpenEO-Identifier", job.getId().toString()).body(job);
+			
 		} else {
 			Error error = new Error();
 			error.setCode("500");
 			error.setMessage("The submitted job " + job.toString() + " was not saved persistently");
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			//return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			respEnty = new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+		
+		authzService.createProtectedResource(job);
+		
+		return respEnty;
 	}
 
 	/**
@@ -294,6 +313,7 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs/{job_id}", produces = { "application/json" }, method = RequestMethod.DELETE)
 	public ResponseEntity<?> deleteJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
+		ResponseEntity<?> responseEntity;
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			BatchJobResult jobResult = resultDAO.findOne(UUID.fromString(jobId));
@@ -314,13 +334,18 @@ public class JobsApiController implements JobsApi {
 			}
 			jobDAO.delete(job);
 			log.debug("The job " + jobId + " was successfully deleted.");
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+			//return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+			responseEntity = ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			//return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			responseEntity = new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
+		
+		authzService.deleteProtectedResource(job);
+		return responseEntity;
 
 	}
 
