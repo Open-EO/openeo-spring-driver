@@ -1,11 +1,14 @@
 package org.openeo.spring.api;
 
+import java.security.Principal;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
+import org.keycloak.representations.AccessToken;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.UserData;
 import org.springframework.http.HttpStatus;
@@ -77,10 +80,13 @@ public class MeApiController implements MeApi {
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@GetMapping(value = "/me", produces = { "application/json" })
-	public ResponseEntity<?> describeAccount(KeycloakPrincipal<KeycloakSecurityContext> principal) {
+	public ResponseEntity<?> describeAccount(Principal principal) {
 		UserData userData = new UserData();
+		KeycloakAuthenticationToken keycloakAuthenticationToken = (KeycloakAuthenticationToken) principal;
+        AccessToken accessToken = keycloakAuthenticationToken.getAccount().getKeycloakSecurityContext().getToken();
 		if(principal != null) {
 			userData.setUserId(principal.getName());
+			userData.setName(accessToken.getName());
 		}else {
 			Error error = new Error();
 			error.setCode("500");
