@@ -13,6 +13,34 @@
     	<AppenderRef ref="STDOUT"/>
 		<AppenderRef ref="FILE"/>
     </Logger>
+    <Logger name="org.openeo.wcps.WCPSQueryFactory" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps.HyperCubeFactory" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps.JobScheduler" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps.UDFFactory" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps.JobResultScheduler" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps.JobResultDeletion" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.spring.api.ApiFilter" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
     <Logger name="org.openeo.spring.dao" level="debug" additivity="false">
     	<AppenderRef ref="STDOUT"/>
 		<AppenderRef ref="FILE"/>
