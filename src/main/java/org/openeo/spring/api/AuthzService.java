@@ -4,6 +4,7 @@ import java.util.HashSet;
 
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.resource.ProtectedResource;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -23,7 +24,7 @@ public class AuthzService {
     static final String SCOPE_DELETE = "urn:openEO:scopes:delete";
     
     
-    public ResponseEntity<?> createProtectedResource(Job job) {
+    public ResponseEntity<?> createProtectedResource(Job job, AccessToken token) {
     	
     	try {
     		//create a list and add defined keycloak's scopes in it
@@ -40,8 +41,8 @@ public class AuthzService {
             
           //set resource Owner
             ResourceOwnerRepresentation resourceOwner = new ResourceOwnerRepresentation();
-//            resourceOwner.setId(picture.getOwner().getId());
-            resourceOwner.setName(job.getOwnerPrincipal());
+            resourceOwner.setId(token.getSubject());
+                  
             
           //set Owner in keycloak
             resourceRepresentation.setOwner(resourceOwner);

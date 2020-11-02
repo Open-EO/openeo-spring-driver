@@ -155,7 +155,6 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs", produces = { "application/json" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
-		ResponseEntity<?> respEnty;
 		AccessToken token = TokenUtil.getAccessToken(principal); 
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
@@ -178,7 +177,7 @@ public class JobsApiController implements JobsApi {
 		}
 		Job verifiedSave = jobDAO.findOne(job.getId());
 		if (verifiedSave != null) {
-			authzService.createProtectedResource(job);
+			authzService.createProtectedResource(job, token);
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 			log.debug("verified retrieved job: " + verifiedSave.toString());
 			//return new ResponseEntity<Job>(job, HttpStatus.OK);
@@ -315,6 +314,7 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs/{job_id}", produces = { "application/json" }, method = RequestMethod.DELETE)
 	public ResponseEntity<?> deleteJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
+		    ResponseEntity<?> responseEntity;
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			BatchJobResult jobResult = resultDAO.findOne(UUID.fromString(jobId));
@@ -335,13 +335,20 @@ public class JobsApiController implements JobsApi {
 			}
 			jobDAO.delete(job);
 			log.debug("The job " + jobId + " was successfully deleted.");
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+			//return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+			responseEntity = ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			//return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			responseEntity = new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
+		
+		//Delete resource from Keycloak
+		authzService.deleteProtectedResource(job);
+		
+		return responseEntity;
 
 	}
 
