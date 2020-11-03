@@ -314,7 +314,6 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs/{job_id}", produces = { "application/json" }, method = RequestMethod.DELETE)
 	public ResponseEntity<?> deleteJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
-		    ResponseEntity<?> responseEntity;
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			BatchJobResult jobResult = resultDAO.findOne(UUID.fromString(jobId));
@@ -334,22 +333,18 @@ public class JobsApiController implements JobsApi {
 				log.debug("The job result " + jobId + " was successfully deleted.");
 			}
 			jobDAO.delete(job);
-			log.debug("The job " + jobId + " was successfully deleted.");
-			//return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-			responseEntity = ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+			log.debug("The job " + jobId + " was successfully deleted from Job database.");
+			authzService.deleteProtectedResource(job);
+			log.debug("The job " + jobId + " was successfully deleted from Keycloak.");
+
+
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
-			//return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
-			responseEntity = new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
-		
-		//Delete resource from Keycloak
-		authzService.deleteProtectedResource(job);
-		
-		return responseEntity;
-
 	}
 
 	/**
