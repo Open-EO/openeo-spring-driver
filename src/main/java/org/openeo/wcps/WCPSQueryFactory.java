@@ -224,7 +224,7 @@ public class WCPSQueryFactory {
 				
 				try {
 					templower = temporal.get(0).toString();					
-				}			
+				}
 				catch (JSONException e) {
 					collDims2D = true;
 					log.error("An error occured: " + e.getMessage());					
@@ -260,7 +260,14 @@ public class WCPSQueryFactory {
 				JSONArray mergeNodesArray = new JSONArray();					
 				JSONArray endMergeNodeAsArray = new JSONArray();
 				JSONObject processArguments =  processGraph.getJSONObject(nodeKeyOfCurrentProcess).getJSONObject("arguments");
-				JSONObject mergeProcess = processArguments.getJSONObject("overlap_resolver").getJSONObject("process_graph");
+				
+				JSONObject mergeProcess = null;
+				try {
+				mergeProcess = processArguments.getJSONObject("overlap_resolver").getJSONObject("process_graph");
+				}
+				catch (Exception e) {
+					
+				}
 				
 				for (String mergeProcessKey : mergeProcess.keySet()) {
 					JSONObject mergeProcessID =  mergeProcess.getJSONObject(mergeProcessKey);
@@ -4465,7 +4472,7 @@ public class WCPSQueryFactory {
 			stretchBuilder.append("avg(" + payLoad + ")");    	    
 			stretchString = stretchBuilder.toString();
 		}
-		else if (dimension.equals("temporal") || dimension.contentEquals(temporalAxis)) {
+		else if (dimension.equals("t") || dimension.contentEquals(temporalAxis)) {
 			String tempAxis = null;
 			for (int f = 0; f < filters.size(); f++) {
 				Filter filter = filters.get(f);
@@ -4529,7 +4536,7 @@ public class WCPSQueryFactory {
 			stretchBuilder.append("max(" + payLoad + ")");    	    
 			stretchString = stretchBuilder.toString();
 		}
-		else if (dimension.equals("temporal") || dimension.contentEquals(temporalAxis)) {
+		else if (dimension.equals("t") || dimension.contentEquals(temporalAxis)) {
 			log.debug("Reduce Dimension : " + temporalAxis);
 			log.debug(payLoad);
 			String tempAxis = null;
@@ -4600,7 +4607,7 @@ public class WCPSQueryFactory {
 			stretchBuilder.append("min(" + payLoad + ")");
 			stretchString = stretchBuilder.toString();
 		}
-		else if (dimension.equals("temporal") || dimension.contentEquals(temporalAxis)) {
+		else if (dimension.equals("t") || dimension.contentEquals(temporalAxis)) {
 			String tempAxis = null;
 			for (int f = 0; f < filters.size(); f++) {
 				Filter filter = filters.get(f);
@@ -5839,7 +5846,7 @@ public class WCPSQueryFactory {
 					temporalAxis = tempAxis1;
 				}
 			}
-			if (dimension.equals("temporal") || dimension.contentEquals(temporalAxis)) {
+			if (dimension.equals("t") || dimension.contentEquals(temporalAxis)) {
 				JSONObject reducer = processNode.getJSONObject("arguments").getJSONObject("reducer").getJSONObject("process_graph");
 				for (String nodeKey : reducer.keySet()) {					
 					String processName = reducer.getJSONObject(nodeKey).getString("process_id");
@@ -5995,7 +6002,7 @@ public class WCPSQueryFactory {
 		String toDate = null;
 		JSONObject extent;
 		String wcps_endpoint = openEOEndpoint;
-				
+		
 		if (tempNull) {
 			JSONObject jsonresp = null;
 			try {
@@ -6025,8 +6032,7 @@ public class WCPSQueryFactory {
 				tempupper = temporal.get(1).toString();
 			}			
 			catch (JSONException e) {
-				log.error("An error occured: " + e.getMessage());
-				
+				log.error("An error occured: " + e.getMessage());				
 			}
 			log.debug("Temporal Extent is: ");
 			log.debug(temporal);
@@ -6038,6 +6044,18 @@ public class WCPSQueryFactory {
 					log.debug("Dates are identical. To date is set to null!");
 				}
 				Filter dateFilter = null;
+				DateFormat toDateNewFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+				Date toDateNew;
+				if (tempupper != null) {try {
+					toDateNew = toDateNewFormat.parse(tempupper);
+					toDateNew.setTime(toDateNew.getTime() - 1);
+					tempupper = toDateNewFormat.format(toDateNew);
+					log.debug("To Date :"+tempupper);
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				}
 				for (Filter filter : this.filters) {
 					String axisUpperCase = filter.getAxis().replace("_"+ collectionID, "").toUpperCase();
 					if (axisUpperCase.equals("DATE") || axisUpperCase.equals("TIME") || axisUpperCase.equals("ANSI") || axisUpperCase.equals("UNIX")) {
@@ -6094,17 +6112,6 @@ public class WCPSQueryFactory {
 			}
 			else {
 				toDate = extentArray.get(1).toString();
-//				DateFormat toDateNewFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-//				Date toDateNew;			
-//				try {
-//					toDateNew = toDateNewFormat.parse(toDate);
-//					toDateNew.setTime(toDateNew.getTime() - 1);
-//					toDate = toDateNewFormat.format(toDateNew);
-//					log.debug("To Date"+toDate);
-//				} catch (ParseException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
 			}
 			if (fromDate != null && toDate != null) {
 				log.debug("Temporal Extent is: |" + fromDate + "|:|" + toDate + "|");
@@ -6113,6 +6120,19 @@ public class WCPSQueryFactory {
 					log.debug("Dates are identical. To date is set to null!");
 				}
 				Filter dateFilter = null;
+				DateFormat toDateNewFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+				Date toDateNew;
+				if (toDate != null) {
+				try {
+					toDateNew = toDateNewFormat.parse(toDate);
+					toDateNew.setTime(toDateNew.getTime() - 1);
+					toDate = toDateNewFormat.format(toDateNew);
+					log.debug("To Date :"+toDate);
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				}
 				for (Filter filter : this.filters) {
 					String axisUpperCase = filter.getAxis().replace("_"+ collectionID, "").toUpperCase();
 					if (axisUpperCase.equals("DATE") || axisUpperCase.equals("TIME") || axisUpperCase.equals("ANSI") || axisUpperCase.equals("UNIX")) {
@@ -6127,7 +6147,7 @@ public class WCPSQueryFactory {
 						tempAxis = tempAxis1;
 					}
 				}
-				log.debug("To Date  "+toDate);
+				log.debug("To Date : "+toDate);
 				this.filters.add(new Filter(tempAxis+"_"+collectionID, fromDate, toDate));
 				
 			}

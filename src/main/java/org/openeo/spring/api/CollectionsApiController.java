@@ -676,105 +676,105 @@ public class CollectionsApiController implements CollectionsApi {
     	try {
     		currentCollection.setId(collectionId);
     		
-    		JSONObject odcSTACMetdata = null;
-    		boolean odcDatacube = false;
-			try {
-				odcSTACMetdata = readJsonFromUrl(odcCollEndpoint + collectionId);
-				odcDatacube = true;
-			} catch (JSONException e) {
-				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-				StringBuilder builderODC = new StringBuilder();
-				for( StackTraceElement element: e.getStackTrace()) {
-					builderODC.append(element.toString()+"\n");
-				}
-				log.error(builderODC.toString());
-			} catch (IOException e) {
-				log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-				StringBuilder builderODC = new StringBuilder();
-				for( StackTraceElement element: e.getStackTrace()) {
-					builderODC.append(element.toString()+"\n");
-				}
-				log.error(builderODC.toString());
-			}
+//    		JSONObject odcSTACMetdata = null;
+//    		boolean odcDatacube = false;
+//			try {
+//				odcSTACMetdata = readJsonFromUrl(odcCollEndpoint + collectionId);
+//				odcDatacube = true;
+//			} catch (JSONException e) {
+//				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
+//				StringBuilder builderODC = new StringBuilder();
+//				for( StackTraceElement element: e.getStackTrace()) {
+//					builderODC.append(element.toString()+"\n");
+//				}
+//				log.error(builderODC.toString());
+//			} catch (IOException e) {
+//				log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
+//				StringBuilder builderODC = new StringBuilder();
+//				for( StackTraceElement element: e.getStackTrace()) {
+//					builderODC.append(element.toString()+"\n");
+//				}
+//				log.error(builderODC.toString());
+//			}
 			
-			if (odcDatacube) {
-			JSONObject odcCollection = odcSTACMetdata.getJSONObject("collections").getJSONObject(collectionId);
-			
-			currentCollection.setId(collectionId);			
-			try {
-				currentCollection.setDescription(odcCollection.getString("description"));
-			}catch(Exception e) {
-				currentCollection.setDescription("No Description available");
-			}
-			
-			try {
-				currentCollection.setTitle(odcCollection.getString("title"));
-			}catch(Exception e) {
-				currentCollection.setTitle("No Title available");
-			}
-			
-			try {
-				currentCollection.setStacVersion(odcCollection.getString("stac_version"));
-			}catch(Exception e) {
-				currentCollection.setStacVersion("No Stac Version Information available");
-			}
-			
-			try {
-				currentCollection.setLicense(odcCollection.getString("license"));
-			}catch(Exception e) {
-				currentCollection.setLicense("No License Information available");
-			}
-			
-			CollectionExtent extent = new CollectionExtent();
-			CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
-			List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
-			List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
-			CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
-			List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
-			List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
-			try {
-				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(0));
-				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(1));
-				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(2));
-				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(3));
-			}catch(Exception e) {
-				bbox1.add(null);
-				bbox1.add(null);
-				bbox1.add(null);
-				bbox1.add(null);
-			}
-			bbox.add(bbox1);
-			spatialExtent.setBbox(bbox);
-			extent.setSpatial(spatialExtent);
-							
-			try {
-				interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(0)));
-				interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(1)));					
-			}catch(Exception e) {
-				interval1.add(null);
-				interval1.add(null);
-			}
-			interval.add(interval1);
-			temporalExtent.setInterval(interval);
-			extent.setTemporal(temporalExtent);
-			currentCollection.setExtent(extent);
-			
-			Link linkItemsCollection = new Link();
-				List<Link> linksCollections = new ArrayList<Link>();
-				linkItemsCollection.setRel("licence");
-				try {
-					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
-				} catch (URISyntaxException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				linkItemsCollection.setTitle("License Link");
-				linkItemsCollection.setType("text/html");
-				linksCollections.add(linkItemsCollection);
-				currentCollection.setLinks(linksCollections);
-    		}
+//			if (odcDatacube) {
+//			JSONObject odcCollection = odcSTACMetdata.getJSONObject("collections").getJSONObject(collectionId);
+//			
+//			currentCollection.setId(collectionId);			
+//			try {
+//				currentCollection.setDescription(odcCollection.getString("description"));
+//			}catch(Exception e) {
+//				currentCollection.setDescription("No Description available");
+//			}
+//			
+//			try {
+//				currentCollection.setTitle(odcCollection.getString("title"));
+//			}catch(Exception e) {
+//				currentCollection.setTitle("No Title available");
+//			}
+//			
+//			try {
+//				currentCollection.setStacVersion(odcCollection.getString("stac_version"));
+//			}catch(Exception e) {
+//				currentCollection.setStacVersion("No Stac Version Information available");
+//			}
+//			
+//			try {
+//				currentCollection.setLicense(odcCollection.getString("license"));
+//			}catch(Exception e) {
+//				currentCollection.setLicense("No License Information available");
+//			}
+//			
+//			CollectionExtent extent = new CollectionExtent();
+//			CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
+//			List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
+//			List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
+//			CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
+//			List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
+//			List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
+//			try {
+//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(0));
+//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(1));
+//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(2));
+//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(3));
+//			}catch(Exception e) {
+//				bbox1.add(null);
+//				bbox1.add(null);
+//				bbox1.add(null);
+//				bbox1.add(null);
+//			}
+//			bbox.add(bbox1);
+//			spatialExtent.setBbox(bbox);
+//			extent.setSpatial(spatialExtent);
+//							
+//			try {
+//				interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(0)));
+//				interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(1)));					
+//			}catch(Exception e) {
+//				interval1.add(null);
+//				interval1.add(null);
+//			}
+//			interval.add(interval1);
+//			temporalExtent.setInterval(interval);
+//			extent.setTemporal(temporalExtent);
+//			currentCollection.setExtent(extent);
+//			
+//			Link linkItemsCollection = new Link();
+//				List<Link> linksCollections = new ArrayList<Link>();
+//				linkItemsCollection.setRel("licence");
+//				try {
+//					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
+//				} catch (URISyntaxException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//				linkItemsCollection.setTitle("License Link");
+//				linkItemsCollection.setType("text/html");
+//				linksCollections.add(linkItemsCollection);
+//				currentCollection.setLinks(linksCollections);
+//    		}
     		
-			else {
+			
     		currentCollection.setStacVersion("0.9.0");
 			url = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionId);
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -1513,7 +1513,7 @@ public class CollectionsApiController implements CollectionsApi {
 //						
 //			other_properties.put("eo:platform", pltfrmvalues);
 //			other_properties.put("eo:epsg", epsgvalues);
-			}
+			
 
 			return  new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
         }
