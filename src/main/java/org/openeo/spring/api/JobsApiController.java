@@ -156,10 +156,14 @@ public class JobsApiController implements JobsApi {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
 		ResponseEntity<?> respEnty;
-		AccessToken token = TokenUtil.getAccessToken(principal); 
+		AccessToken token = null;
+		if(principal != null) {
+			token = TokenUtil.getAccessToken(principal);
+			job.setOwnerPrincipal(token.getPreferredUsername());
+		}
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
-		job.setOwnerPrincipal(token.getPreferredUsername());
+		
 		job.setStatus(JobStates.CREATED);
 		job.setPlan("free");
 		job.setCreated(OffsetDateTime.now());
@@ -178,7 +182,9 @@ public class JobsApiController implements JobsApi {
 		}
 		Job verifiedSave = jobDAO.findOne(job.getId());
 		if (verifiedSave != null) {
-			authzService.createProtectedResource(job);
+			if(token != null) {
+				authzService.createProtectedResource(job);
+			}
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 			log.debug("verified retrieved job: " + verifiedSave.toString());
 			//return new ResponseEntity<Job>(job, HttpStatus.OK);
