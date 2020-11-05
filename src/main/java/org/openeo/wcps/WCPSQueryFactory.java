@@ -1153,7 +1153,7 @@ public class WCPSQueryFactory {
 					}
 					log.error(builder.toString());
 				}
-				String resSource = ((JSONObject) collectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).getString("step");
+				String resSource = ((JSONObject) collectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).get("step").toString();
 				
 				JSONObject targetCollectionSTACMetdata = null;
 				try {
@@ -1174,7 +1174,7 @@ public class WCPSQueryFactory {
 					}
 					log.error(builder.toString());
 				}
-				String resTarget = ((JSONObject) targetCollectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).getString("step");
+				String resTarget = ((JSONObject) targetCollectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).get("step").toString();
 				
 				wcpsResamplepayLoad.append(createResampleTemporalCubeWCPSString(nodeKeyOfCurrentProcess, payLoad, resSource, resTarget, xAxis, xLow, xHigh, yAxis, yLow, yHigh, tempAxis, tempLow, tempHigh, temporalStartCube1, temporalEndCube1));
 				wcpsPayLoad=wcpsResamplepayLoad;
@@ -1270,12 +1270,11 @@ public class WCPSQueryFactory {
 					}
 					log.error(builder.toString());
 				}
-				String resSource = ((JSONObject) collectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).getString("step");
+				String resSource = ((JSONObject) collectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).get("step").toString();
 				
 				JSONObject targetCollectionSTACMetdata = null;
 				try {
-					targetCollectionSTACMetdata = readJsonFromUrl(
-							ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + targetCollectionID);
+					targetCollectionSTACMetdata = readJsonFromUrl(openEOEndpoint + "/collections/" + targetCollectionID);
 				} catch (JSONException e) {
 					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -1291,7 +1290,7 @@ public class WCPSQueryFactory {
 					}
 					log.error(builder.toString());
 				}
-				String resTarget = ((JSONObject) targetCollectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).getString("step");
+				String resTarget = ((JSONObject) targetCollectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).get("step").toString();
 								
 				wcpsResamplepayLoad.append(createResampleSpatialCubeWCPSString(nodeKeyOfCurrentProcess, payLoad, resSource, resTarget, xAxis, xLow, xHigh, yAxis, yLow, yHigh, tempAxis, temporalStartCube1, temporalEndCube1));
 				wcpsPayLoad=wcpsResamplepayLoad;
