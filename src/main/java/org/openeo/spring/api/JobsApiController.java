@@ -156,10 +156,13 @@ public class JobsApiController implements JobsApi {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
 		ResponseEntity<?> respEnty;
-		AccessToken token = TokenUtil.getAccessToken(principal); 
+		if(principal != null) {
+			AccessToken token = TokenUtil.getAccessToken(principal);
+			job.setOwnerPrincipal(token.getPreferredUsername());
+		}
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
-		job.setOwnerPrincipal(token.getPreferredUsername());
+		
 		job.setStatus(JobStates.CREATED);
 		job.setPlan("free");
 		job.setCreated(OffsetDateTime.now());
