@@ -198,12 +198,15 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				if (runtime.toLowerCase().equals("python") && version.toLowerCase().equals("openeo")) {
 					runtime = "python";
 					service_url = pythonEndpoint;
+					log.debug("service URL for UDF processing: " + pythonEndpoint);
 				} else if (runtime.toLowerCase().equals("python") && version.toLowerCase().equals("candela")) {
 					runtime = "python";
 					service_url = candelaEndpoint;
+					log.debug("service URL for UDF processing: " + candelaEndpoint);
 				} else if (runtime.toLowerCase().equals("r")) {
 					runtime = "r";
 					service_url = REndpoint;
+					log.debug("service URL for UDF processing: " + REndpoint);
 				} else {
 					log.error("The requested runtime is not available!");
 				}
@@ -574,7 +577,12 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	private String getSaveNode() {
 		for (String processNodeKey : processGraphJSON.keySet()) {
 			JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
-			String processID = processNode.getString("process_id");
+			String processID = null;
+			try {
+				 processID = processNode.getString("process_id");
+			}catch(JSONException e) {
+				log.error("process_id not found!");
+			}
 			if (processID.equals("save_result")) {
 				log.debug("Save Process Node key found is: " + processNodeKey);
 				return processNodeKey;
