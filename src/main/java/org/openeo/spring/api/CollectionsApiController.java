@@ -1,12 +1,17 @@
 package org.openeo.spring.api;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -34,6 +39,7 @@ import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
 import org.json.JSONObject;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.openeo.spring.model.AdditionalDimension;
 import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.Collection;
@@ -73,6 +79,8 @@ public class CollectionsApiController implements CollectionsApi {
     private final NativeWebRequest request;
     @Value("${org.openeo.wcps.endpoint}")
     private String wcpsEndpoint;
+    @Value("${org.openeo.odc.collectionsEndpoint}")
+    private String odcCollEndpoint;
     private final Logger log = LogManager.getLogger(CollectionsApiController.class);
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -105,10 +113,10 @@ public class CollectionsApiController implements CollectionsApi {
     	Collections collectionsList = new Collections();
     	
     	try {
-			URL url;
-			url = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCapabilities");
+			URL urlWCPS;
+			urlWCPS = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCapabilities");
     	
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			HttpURLConnection conn = (HttpURLConnection) urlWCPS.openConnection();
 			conn.setRequestMethod("GET");
 			SAXBuilder builder = new SAXBuilder();
 			Document capabilititesDoc = builder.build(conn.getInputStream());
@@ -117,7 +125,7 @@ public class CollectionsApiController implements CollectionsApi {
 //			log.debug("root node info: " + rootNode.getName());
 			List<Element> coverageList = rootNodeCollectionsList.getChildren("Contents", defaultNSCollectionsList).get(0).getChildren("CoverageSummary", defaultNSCollectionsList);
 			
-			for(int collection = 0; collection < coverageList.size(); collection++) {				
+			for(int collection = 0; collection < coverageList.size(); collection++) {
 				Collection currentCollection = new Collection();
 				Element coverage = coverageList.get(collection);
 //				log.debug("root node info: " + coverage.getName() + ":" + coverage.getChildText("CoverageId", defaultNS));		
@@ -250,10 +258,17 @@ public class CollectionsApiController implements CollectionsApi {
 				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
 				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
 
-				bbox1.add(new BigDecimal(c1[1]));
-				bbox1.add(new BigDecimal(c1[0]));
-				bbox1.add(new BigDecimal(c2[1]));
-				bbox1.add(new BigDecimal(c2[0]));
+				try {
+					bbox1.add(new BigDecimal(c1[1]));
+					bbox1.add(new BigDecimal(c1[0]));
+					bbox1.add(new BigDecimal(c2[1]));
+					bbox1.add(new BigDecimal(c2[0]));
+				}catch(Exception e) {
+					bbox1.add(null);
+					bbox1.add(null);
+					bbox1.add(null);
+					bbox1.add(null);
+				}
 				bbox.add(bbox1);
 				spatialExtent.setBbox(bbox);
 				extent.setSpatial(spatialExtent);
@@ -327,10 +342,17 @@ public class CollectionsApiController implements CollectionsApi {
 					List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
 					List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
 
-					bbox1.add(new BigDecimal(minValues[j]));
-					bbox1.add(new BigDecimal(minValues[j+1]));
-					bbox1.add(new BigDecimal(maxValues[j]));
-					bbox1.add(new BigDecimal(maxValues[j+1]));
+					try {
+						bbox1.add(new BigDecimal(minValues[j]));
+						bbox1.add(new BigDecimal(minValues[j+1]));
+						bbox1.add(new BigDecimal(maxValues[j]));
+						bbox1.add(new BigDecimal(maxValues[j+1]));
+					}catch(Exception e) {
+						bbox1.add(null);
+						bbox1.add(null);
+						bbox1.add(null);
+						bbox1.add(null);
+					}
 					bbox.add(bbox1);
 					spatialExtent.setBbox(bbox);
 					extent.setSpatial(spatialExtent);
@@ -409,13 +431,13 @@ public class CollectionsApiController implements CollectionsApi {
  				List<Link> linksCollections = new ArrayList<Link>();
  				linkItemsCollection.setRel("licence");
  				try {
- 					linkItemsCollection.setHref(new URI (""));
+ 					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
  				} catch (URISyntaxException e) {
  					// TODO Auto-generated catch block
  					e.printStackTrace();
  				}
  				linkItemsCollection.setTitle("License Link");
- 				linkItemsCollection.setType("");
+ 				linkItemsCollection.setType("text/html");
  				linksCollections.add(linkItemsCollection);
  				currentCollection.setLinks(linksCollections);
 				
@@ -438,6 +460,113 @@ public class CollectionsApiController implements CollectionsApi {
 			linkItems.setTitle("openEO STAC Catalog (STAC Version 0.9.0)");
 			collectionsList.addLinksItem(linkItems);
 
+			
+			
+			JSONObject odcSTACMetdata = null;
+			try {
+				odcSTACMetdata = readJsonFromUrl(odcCollEndpoint);
+			} catch (JSONException e) {
+				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
+				StringBuilder builderODC = new StringBuilder();
+				for( StackTraceElement element: e.getStackTrace()) {
+					builderODC.append(element.toString()+"\n");
+				}
+				log.error(builderODC.toString());
+			} catch (IOException e) {
+				log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
+				StringBuilder builderODC = new StringBuilder();
+				for( StackTraceElement element: e.getStackTrace()) {
+					builderODC.append(element.toString()+"\n");
+				}
+				log.error(builderODC.toString());
+			}
+			
+			JSONObject odcCollections = odcSTACMetdata.getJSONObject("collections");
+			
+			for (String argumentKey : odcCollections.keySet()) {
+				JSONObject odcCollection= odcCollections.getJSONObject(argumentKey);
+				Collection currentCollection = new Collection();
+				
+				try {
+					currentCollection.setId(odcCollection.getString("id"));
+				}catch(Exception e) {
+					currentCollection.setId("No Collection ID available");
+				}
+				
+				try {
+					currentCollection.setDescription(odcCollection.getString("description"));
+				}catch(Exception e) {
+					currentCollection.setDescription("No Description available");
+				}
+				
+				try {
+					currentCollection.setTitle(odcCollection.getString("title"));
+				}catch(Exception e) {
+					currentCollection.setTitle("No Title available");
+				}
+				
+				try {
+					currentCollection.setStacVersion(odcCollection.getString("stac_version"));
+				}catch(Exception e) {
+					currentCollection.setStacVersion("No Stac Version Information available");
+				}
+				
+				try {
+					currentCollection.setLicense(odcCollection.getString("license"));
+				}catch(Exception e) {
+					currentCollection.setLicense("No License Information available");
+				}
+				
+				CollectionExtent extent = new CollectionExtent();
+				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
+				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
+				List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
+				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
+				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
+				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
+				try {
+					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(0));
+					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(1));
+					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(2));
+					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(3));
+				}catch(Exception e) {
+					bbox1.add(null);
+					bbox1.add(null);
+					bbox1.add(null);
+					bbox1.add(null);
+				}
+				bbox.add(bbox1);
+				spatialExtent.setBbox(bbox);
+				extent.setSpatial(spatialExtent);
+								
+				try {
+					interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(0)));
+					interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(1)));					
+				}catch(Exception e) {
+					interval1.add(null);
+					interval1.add(null);
+				}
+				interval.add(interval1);
+				temporalExtent.setInterval(interval);
+				extent.setTemporal(temporalExtent);
+				currentCollection.setExtent(extent);
+				
+				Link linkItemsCollection = new Link();
+ 				List<Link> linksCollections = new ArrayList<Link>();
+ 				linkItemsCollection.setRel("licence");
+ 				try {
+ 					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
+ 				} catch (URISyntaxException e) {
+ 					// TODO Auto-generated catch block
+ 					e.printStackTrace();
+ 				}
+ 				linkItemsCollection.setTitle("License Link");
+ 				linkItemsCollection.setType("text/html");
+ 				linksCollections.add(linkItemsCollection);
+ 				currentCollection.setLinks(linksCollections);
+ 				
+				collectionsList.addCollectionsItem(currentCollection);
+			}
 
 //			getRequest().ifPresent(request -> {
 //				for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
@@ -487,8 +616,32 @@ public class CollectionsApiController implements CollectionsApi {
 //					.entity(new ApiResponseMessage(ApiResponseMessage.ERROR,
 //							"An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage())).build();
 			return  new ResponseEntity<Collections>(collectionsList, HttpStatus.BAD_REQUEST);
-		}        
+		}
     }
+    
+    
+    private String readAll(Reader rd) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		int cp;
+		while ((cp = rd.read()) != -1) {
+			sb.append((char) cp);
+		}
+		return sb.toString();
+	}
+
+	private JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
+		log.debug("Trying to read JSON from the following URL : ");
+		log.debug(url);
+		InputStream is = new URL(url).openStream();
+		try {
+			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+			String jsonText = readAll(rd);
+			JSONObject json = new JSONObject(jsonText);
+			return json;
+		} finally {
+			is.close();
+		}
+	}
     
     /**
      * GET /collections/{collection_id} : Full metadata for a specific dataset
@@ -500,14 +653,14 @@ public class CollectionsApiController implements CollectionsApi {
      *         or The request can&#39;t be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 500)
      */
     @Operation(summary = "Full metadata for a specific dataset", operationId = "describeCollecion", description = "Lists **all** information about a specific collection specified by the identifier `collection_id`.  This endpoint is compatible with [STAC 0.9.0](https://stacspec.org) and [OGC API - Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features / extensions and [STAC extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions) can be implemented in addition to what is documented here.", tags={ "EO Data Discovery", })
-    @ApiResponses(value = { 
+    @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "JSON object with the full collection metadata."),
         @ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
         @ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
     @GetMapping(value = "/collections/{collection_id}", produces = { "application/json" })
     @Override
     public ResponseEntity<Collection> describeCollection(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId, Principal principal) {
-    	    	
+    	
 //    	log.debug("The following user is authenticated: " + principal.getName());
 //    	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 //    	if (!(authentication instanceof AnonymousAuthenticationToken)) {
@@ -519,8 +672,109 @@ public class CollectionsApiController implements CollectionsApi {
     	
     	URL url;
     	Collection currentCollection = new Collection();
+    	
     	try {
     		currentCollection.setId(collectionId);
+    		
+//    		JSONObject odcSTACMetdata = null;
+//    		boolean odcDatacube = false;
+//			try {
+//				odcSTACMetdata = readJsonFromUrl(odcCollEndpoint + collectionId);
+//				odcDatacube = true;
+//			} catch (JSONException e) {
+//				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
+//				StringBuilder builderODC = new StringBuilder();
+//				for( StackTraceElement element: e.getStackTrace()) {
+//					builderODC.append(element.toString()+"\n");
+//				}
+//				log.error(builderODC.toString());
+//			} catch (IOException e) {
+//				log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
+//				StringBuilder builderODC = new StringBuilder();
+//				for( StackTraceElement element: e.getStackTrace()) {
+//					builderODC.append(element.toString()+"\n");
+//				}
+//				log.error(builderODC.toString());
+//			}
+			
+//			if (odcDatacube) {
+//			JSONObject odcCollection = odcSTACMetdata.getJSONObject("collections").getJSONObject(collectionId);
+//			
+//			currentCollection.setId(collectionId);			
+//			try {
+//				currentCollection.setDescription(odcCollection.getString("description"));
+//			}catch(Exception e) {
+//				currentCollection.setDescription("No Description available");
+//			}
+//			
+//			try {
+//				currentCollection.setTitle(odcCollection.getString("title"));
+//			}catch(Exception e) {
+//				currentCollection.setTitle("No Title available");
+//			}
+//			
+//			try {
+//				currentCollection.setStacVersion(odcCollection.getString("stac_version"));
+//			}catch(Exception e) {
+//				currentCollection.setStacVersion("No Stac Version Information available");
+//			}
+//			
+//			try {
+//				currentCollection.setLicense(odcCollection.getString("license"));
+//			}catch(Exception e) {
+//				currentCollection.setLicense("No License Information available");
+//			}
+//			
+//			CollectionExtent extent = new CollectionExtent();
+//			CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
+//			List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
+//			List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
+//			CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
+//			List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
+//			List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
+//			try {
+//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(0));
+//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(1));
+//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(2));
+//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(3));
+//			}catch(Exception e) {
+//				bbox1.add(null);
+//				bbox1.add(null);
+//				bbox1.add(null);
+//				bbox1.add(null);
+//			}
+//			bbox.add(bbox1);
+//			spatialExtent.setBbox(bbox);
+//			extent.setSpatial(spatialExtent);
+//							
+//			try {
+//				interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(0)));
+//				interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(1)));					
+//			}catch(Exception e) {
+//				interval1.add(null);
+//				interval1.add(null);
+//			}
+//			interval.add(interval1);
+//			temporalExtent.setInterval(interval);
+//			extent.setTemporal(temporalExtent);
+//			currentCollection.setExtent(extent);
+//			
+//			Link linkItemsCollection = new Link();
+//				List<Link> linksCollections = new ArrayList<Link>();
+//				linkItemsCollection.setRel("licence");
+//				try {
+//					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
+//				} catch (URISyntaxException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//				linkItemsCollection.setTitle("License Link");
+//				linkItemsCollection.setType("text/html");
+//				linksCollections.add(linkItemsCollection);
+//				currentCollection.setLinks(linksCollections);
+//    		}
+    		
+			
     		currentCollection.setStacVersion("0.9.0");
 			url = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionId);
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -763,10 +1017,17 @@ public class CollectionsApiController implements CollectionsApi {
 			CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
 			List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
 			List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
-			bbox1.add(new BigDecimal(c1[1]));
-			bbox1.add(new BigDecimal(c1[0]));
-			bbox1.add(new BigDecimal(c2[1]));
-			bbox1.add(new BigDecimal(c2[0]));
+			try {
+				bbox1.add(new BigDecimal(c1[1]));
+				bbox1.add(new BigDecimal(c1[0]));
+				bbox1.add(new BigDecimal(c2[1]));
+				bbox1.add(new BigDecimal(c2[0]));
+			}catch(Exception e) {
+				bbox1.add(null);
+				bbox1.add(null);
+				bbox1.add(null);
+				bbox1.add(null);
+			}
 			bbox.add(bbox1);
 			spatialExtent.setBbox(bbox);
 			extent.setSpatial(spatialExtent);			
@@ -958,10 +1219,16 @@ public class CollectionsApiController implements CollectionsApi {
 				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
 				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
 				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
-				bbox1.add(new BigDecimal(minValues[j]));
+				try {bbox1.add(new BigDecimal(minValues[j]));
 				bbox1.add(new BigDecimal(minValues[j+1]));
 				bbox1.add(new BigDecimal(maxValues[j]));
 				bbox1.add(new BigDecimal(maxValues[j+1]));
+				}catch(Exception e) {
+					bbox1.add(null);
+					bbox1.add(null);
+					bbox1.add(null);
+					bbox1.add(null);
+				}
 				bbox.add(bbox1);
 				spatialExtent.setBbox(bbox);
 				extent.setSpatial(spatialExtent);
@@ -1245,10 +1512,11 @@ public class CollectionsApiController implements CollectionsApi {
 //			properties.put("eo:bands", bandArray);
 //						
 //			other_properties.put("eo:platform", pltfrmvalues);
-//			other_properties.put("eo:epsg", epsgvalues);			
+//			other_properties.put("eo:epsg", epsgvalues);
+			
 
-			return  new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);		
-            }
+			return  new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
+        }
     
     	catch (MalformedURLException e) {
 //			log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());
@@ -1289,7 +1557,7 @@ public class CollectionsApiController implements CollectionsApi {
 //							"An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage())).build();
     		return  new ResponseEntity<Collection>(currentCollection, HttpStatus.BAD_REQUEST);
     	}
-
+    	
     }
     
 }
