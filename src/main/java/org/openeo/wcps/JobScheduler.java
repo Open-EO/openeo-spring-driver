@@ -80,7 +80,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	@Value("${org.openeo.udf.dir}")
 	private String tmpDirUDF;
 	
-	@Value("${org.openeo.udfimportscript}")
+	@Value("${org.openeo.udf.importscript}")
 	private String udfimport;
 
 	@Value("{org.openeo.udf.python.endpoint}")
