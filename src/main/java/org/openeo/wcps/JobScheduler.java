@@ -296,7 +296,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 					// Re-import result from UDF in rasdaman using wcst_import tool
 					try {
 						ProcessBuilder importProcessBuilder = new ProcessBuilder();
-						importProcessBuilder.command("bash", "-c", udfimport + netCDFPath);
+						importProcessBuilder.command("bash", "-c", udfimport + " " + netCDFPath);
 						log.debug(netCDFPath);
 						Process importProcess = importProcessBuilder.start();
 						StringBuilder importProcessLogger = new StringBuilder();

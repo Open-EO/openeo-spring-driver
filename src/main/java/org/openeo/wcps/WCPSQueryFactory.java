@@ -6109,18 +6109,18 @@ public class WCPSQueryFactory {
 			log.debug(temporal);
 			if (extentlower.compareTo(templower) < 0) {
 				fromDate = temporal.get(0).toString();
-//				if (fromDate.contentEquals("null")) {
-//					fromDate = null;
-//				}
+				if (fromDate.contentEquals("null")) {
+					fromDate = null;
+				}
 			}
 			else {
 				fromDate = extentArray.get(0).toString();
 			}
 			if (extentupper.compareTo(tempupper) > 0) {
 				toDate = temporal.get(1).toString();
-//				if (toDate.contentEquals("null")) {
-//					toDate = null;
-//				}
+				if (toDate.contentEquals("null")) {
+					toDate = null;
+				}
 			}
 			else {
 				toDate = extentArray.get(1).toString();
