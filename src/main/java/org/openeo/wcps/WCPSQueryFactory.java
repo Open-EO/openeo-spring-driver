@@ -6030,14 +6030,20 @@ public class WCPSQueryFactory {
 			try {
 				templower = temporal.get(0).toString();
 				tempupper = temporal.get(1).toString();
+				log.debug(" TempUpper : "+ tempupper + " TempLower : " + templower);
+				if (templower.contentEquals("null")) {
+					templower = null;
+				}
+				if (tempupper.contentEquals("null")) {
+					tempupper = null;
+				}
 			}			
 			catch (JSONException e) {
-				log.error("An error occured: " + e.getMessage());				
+				log.error("An error occured: " + e.getMessage());
 			}
-			log.debug("Temporal Extent is: ");
-			log.debug(temporal);
+			log.debug("Temporal Extent is: ");			
 			
-			if (templower != null && tempupper != null) {
+			if ((templower != null && tempupper != null)) {
 				log.debug("Temporal Extent is: |" + templower + "|:|" + tempupper + "|");
 				if(LocalDateTime.parse(templower.replace("Z", "")).equals(LocalDateTime.parse(tempupper.replace("Z", "")))) {
 					tempupper = null;
@@ -6103,12 +6109,18 @@ public class WCPSQueryFactory {
 			log.debug(temporal);
 			if (extentlower.compareTo(templower) < 0) {
 				fromDate = temporal.get(0).toString();
+				if (fromDate.contentEquals("null")) {
+					fromDate = null;
+				}
 			}
 			else {
 				fromDate = extentArray.get(0).toString();
 			}
 			if (extentupper.compareTo(tempupper) > 0) {
 				toDate = temporal.get(1).toString();
+				if (toDate.contentEquals("null")) {
+					toDate = null;
+				}
 			}
 			else {
 				toDate = extentArray.get(1).toString();
@@ -6120,7 +6132,7 @@ public class WCPSQueryFactory {
 					log.debug("Dates are identical. To date is set to null!");
 				}
 				Filter dateFilter = null;
-				DateFormat toDateNewFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+				DateFormat toDateNewFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 				Date toDateNew;
 				if (toDate != null) {
 				try {
