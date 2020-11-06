@@ -636,11 +636,32 @@ public class CollectionsApiController implements CollectionsApi {
 		try {
 			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
 			String jsonText = readAll(rd);
+			log.debug(jsonText);
 			JSONObject json = new JSONObject(jsonText);
 			return json;
 		} finally {
 			is.close();
 		}
+	}
+	
+	private static JSONObject readUrl(String urlString) throws IOException, JSONException {
+	    BufferedReader reader = null;
+	    try {
+	        URL url = new URL(urlString);
+	        reader = new BufferedReader(new InputStreamReader(url.openStream()));
+	        StringBuffer buffer = new StringBuffer();
+	        int read;
+	        char[] chars = new char[1024];
+	        while ((read = reader.read(chars)) != -1)
+	            buffer.append(chars, 0, read); 
+
+	        //log.debug(buffer.toString());
+	        JSONObject json = new JSONObject(buffer.toString());
+	        return json;
+	    } finally {
+	        if (reader != null)
+	            reader.close();
+	    }
 	}
     
     /**
@@ -676,11 +697,12 @@ public class CollectionsApiController implements CollectionsApi {
     	try {
     		currentCollection.setId(collectionId);
     		
-//    		JSONObject odcSTACMetdata = null;
-//    		boolean odcDatacube = false;
+    		JSONObject odcSTACMetdata = null;
+    		boolean odcDatacubeID = false;
 //			try {
 //				odcSTACMetdata = readJsonFromUrl(odcCollEndpoint + collectionId);
-//				odcDatacube = true;
+//				//odcSTACMetdata = readJsonFromUrl(odcCollEndpoint + collectionId);
+//				odcDatacubeID = true;
 //			} catch (JSONException e) {
 //				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
 //				StringBuilder builderODC = new StringBuilder();
@@ -696,8 +718,10 @@ public class CollectionsApiController implements CollectionsApi {
 //				}
 //				log.error(builderODC.toString());
 //			}
-			
-//			if (odcDatacube) {
+//			
+//			log.debug("Is ODC Collection : " + odcDatacubeID);
+//			
+//			if (odcDatacubeID == true) {
 //			JSONObject odcCollection = odcSTACMetdata.getJSONObject("collections").getJSONObject(collectionId);
 //			
 //			currentCollection.setId(collectionId);			
@@ -774,7 +798,7 @@ public class CollectionsApiController implements CollectionsApi {
 //				currentCollection.setLinks(linksCollections);
 //    		}
     		
-			
+			if (odcDatacubeID == false) {
     		currentCollection.setStacVersion("0.9.0");
 			url = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionId);
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -1349,7 +1373,7 @@ public class CollectionsApiController implements CollectionsApi {
 				log.warn("Error in parsing Instrument:" + e.getMessage());
 			}
 						
-			List<Object> providers = new ArrayList<Object>();
+			List<Object> providers = new ArrayList<Object>();			
 //			Object provider1 = new Object();
 //			providers.add(0, provider1);
 			currentCollection.setProviders(providers);
@@ -1513,7 +1537,7 @@ public class CollectionsApiController implements CollectionsApi {
 //						
 //			other_properties.put("eo:platform", pltfrmvalues);
 //			other_properties.put("eo:epsg", epsgvalues);
-			
+			}
 
 			return  new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
         }
