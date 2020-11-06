@@ -4472,7 +4472,7 @@ public class WCPSQueryFactory {
 			stretchBuilder.append("avg(" + payLoad + ")");    	    
 			stretchString = stretchBuilder.toString();
 		}
-		else if (dimension.equals("t") || dimension.contentEquals(temporalAxis)) {
+		else if (dimension.equals("t") || dimension.equals("temporal") || dimension.contentEquals(temporalAxis)) {
 			String tempAxis = null;
 			for (int f = 0; f < filters.size(); f++) {
 				Filter filter = filters.get(f);
@@ -4536,7 +4536,7 @@ public class WCPSQueryFactory {
 			stretchBuilder.append("max(" + payLoad + ")");    	    
 			stretchString = stretchBuilder.toString();
 		}
-		else if (dimension.equals("t") || dimension.contentEquals(temporalAxis)) {
+		else if (dimension.equals("t") || dimension.equals("temporal") || dimension.contentEquals(temporalAxis)) {
 			log.debug("Reduce Dimension : " + temporalAxis);
 			log.debug(payLoad);
 			String tempAxis = null;
@@ -4607,7 +4607,7 @@ public class WCPSQueryFactory {
 			stretchBuilder.append("min(" + payLoad + ")");
 			stretchString = stretchBuilder.toString();
 		}
-		else if (dimension.equals("t") || dimension.contentEquals(temporalAxis)) {
+		else if (dimension.equals("t") || dimension.equals("temporal") || dimension.contentEquals(temporalAxis)) {
 			String tempAxis = null;
 			for (int f = 0; f < filters.size(); f++) {
 				Filter filter = filters.get(f);
@@ -5846,7 +5846,7 @@ public class WCPSQueryFactory {
 					temporalAxis = tempAxis1;
 				}
 			}
-			if (dimension.equals("t") || dimension.contentEquals(temporalAxis)) {
+			if (dimension.equals("t") || dimension.equals("temporal") || dimension.contentEquals(temporalAxis)) {
 				JSONObject reducer = processNode.getJSONObject("arguments").getJSONObject("reducer").getJSONObject("process_graph");
 				for (String nodeKey : reducer.keySet()) {					
 					String processName = reducer.getJSONObject(nodeKey).getString("process_id");
@@ -6109,18 +6109,18 @@ public class WCPSQueryFactory {
 			log.debug(temporal);
 			if (extentlower.compareTo(templower) < 0) {
 				fromDate = temporal.get(0).toString();
-				if (fromDate.contentEquals("null")) {
-					fromDate = null;
-				}
+//				if (fromDate.contentEquals("null")) {
+//					fromDate = null;
+//				}
 			}
 			else {
 				fromDate = extentArray.get(0).toString();
 			}
 			if (extentupper.compareTo(tempupper) > 0) {
 				toDate = temporal.get(1).toString();
-				if (toDate.contentEquals("null")) {
-					toDate = null;
-				}
+//				if (toDate.contentEquals("null")) {
+//					toDate = null;
+//				}
 			}
 			else {
 				toDate = extentArray.get(1).toString();
