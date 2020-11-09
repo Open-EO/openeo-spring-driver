@@ -223,12 +223,15 @@ public class WCPSQueryFactory {
 				String templower = null;
 				
 				try {
-					templower = temporal.get(0).toString();					
+					templower = temporal.get(0).toString();
 				}
-				catch (JSONException e) {
-					collDims2D = true;
+				catch (JSONException e) {					
 					log.error("An error occured: " + e.getMessage());					
-				}				
+				}
+				
+				if (templower.contentEquals("null")) {
+					collDims2D = true;
+				}
 				
 				wcpsPayLoad.append(createFilteredCollectionString("$"+collectionID+nodeKeyOfCurrentProcess, collectionID));
 				log.debug("Initial PayLoad WCPS is: ");
@@ -260,15 +263,10 @@ public class WCPSQueryFactory {
 				JSONArray mergeNodesArray = new JSONArray();					
 				JSONArray endMergeNodeAsArray = new JSONArray();
 				JSONObject processArguments =  processGraph.getJSONObject(nodeKeyOfCurrentProcess).getJSONObject("arguments");
-				
+				String overlapResolver = null;
 				JSONObject mergeProcess = null;
 				try {
 				mergeProcess = processArguments.getJSONObject("overlap_resolver").getJSONObject("process_graph");
-				}
-				catch (Exception e) {
-					
-				}
-				
 				for (String mergeProcessKey : mergeProcess.keySet()) {
 					JSONObject mergeProcessID =  mergeProcess.getJSONObject(mergeProcessKey);
 					for (String applierField : mergeProcessID.keySet()) {
@@ -311,6 +309,11 @@ public class WCPSQueryFactory {
 							log.debug(payLoad2);
 						}
 					}
+				}
+				
+				overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
+				}
+				catch (Exception e) {					
 				}
 				
 				int noOfDimsCube1 = 0;
@@ -386,7 +389,7 @@ public class WCPSQueryFactory {
 					log.debug("Time Series Cubes");
 					log.debug("Cube1 : " + payLoad1);
 					log.debug("Cube2 : " + payLoad2);
-					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
+					
 					if (overlapResolver.equals( "add")) {
 						wcpsMergepayLoad.append("(("+payLoad1+")"+"+"+"("+payLoad2+"))");
 					}
@@ -410,7 +413,7 @@ public class WCPSQueryFactory {
 					log.debug("Time Series Cubes");
 					log.debug("Cube1 : " + payLoad1);
 					log.debug("Cube2 : " + payLoad2);
-					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
+					
 					if (overlapResolver.equals( "add")) {
 						wcpsMergepayLoad.append("(("+payLoad1+")"+"+"+"("+payLoad2+"))");
 					}
@@ -456,7 +459,7 @@ public class WCPSQueryFactory {
 					log.debug(payLoad2Merge);
 					log.debug("Cube1 : " + payLoad1);
 					log.debug("Cube2 : " + payLoad2);
-					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
+					
 					if (overlapResolver.equals( "add")) {
 						if (dimsXY) {
 							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
@@ -522,7 +525,7 @@ public class WCPSQueryFactory {
 					log.debug(payLoad2Merge);
 					log.debug("Cube1 : " + payLoad1);
 					log.debug("Cube2 : " + payLoad2);
-					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
+					
 					if (overlapResolver.equals( "add")) {
 						if (dimsXY) {
 							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
@@ -566,7 +569,7 @@ public class WCPSQueryFactory {
 					log.debug("Cubes are of same dimension after condensing too");
 					log.debug("Cube1 : " + payLoad1);
 					log.debug("Cube2 : " + payLoad2);
-					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
+					
 					if (overlapResolver.equals( "add")) {
 						wcpsMergepayLoad.append("(("+payLoad1+")"+"+"+"("+payLoad2+"))");
 					}
@@ -590,7 +593,7 @@ public class WCPSQueryFactory {
 					log.debug("Cubes are of same dimension after condensing too");
 					log.debug("Cube1 : " + payLoad1);
 					log.debug("Cube2 : " + payLoad2);
-					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
+					
 					if (overlapResolver.equals( "add")) {
 						wcpsMergepayLoad.append("(("+payLoad1+")"+"+"+"("+payLoad2+"))");
 					}
@@ -634,7 +637,7 @@ public class WCPSQueryFactory {
 					log.debug(payLoad2Merge);
 					log.debug("Cube1 : " + payLoad1);
 					log.debug("Cube2 : " + payLoad2);
-					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
+					
 					if (overlapResolver.equals( "add")) {
 						if (dimsXY) {
 							wcpsMergepayLoad.append(" coverage merge" + nodeKeyOfCurrentProcess + " over $T" + nodeKeyOfCurrentProcess + " t(imageCrsDomain(" +timeImageCrsDomain+ ", DATE)), $X" + nodeKeyOfCurrentProcess + " x(imageCrsDomain("+XImageCrsDomain+", X)), $Y" + nodeKeyOfCurrentProcess + " y(imageCrsDomain(" +YImageCrsDomain+ ", Y)) values (" + payLoad1Merge + "+" + "("+payLoad2Merge+"))");
@@ -680,7 +683,7 @@ public class WCPSQueryFactory {
 					log.debug(payLoad2Merge);
 					log.debug("Cube1 : " + payLoad1);
 					log.debug("Cube2 : " + payLoad2);
-					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
+					
 					if (overlapResolver.equals( "add")) {
 						if (dimsXY) {
 							wcpsMergepayLoad.append("" + payLoad1 + "+("+payLoad2Merge+")");
@@ -724,7 +727,7 @@ public class WCPSQueryFactory {
 					log.debug("Time Series Cubes");
 					log.debug("Cube1 : " + payLoad1);
 					log.debug("Cube2 : " + payLoad2);
-					String overlapResolver =  mergeProcess.getJSONObject(endMergeNode).getString("process_id");
+					
 					if (overlapResolver.equals( "add")) {
 						wcpsMergepayLoad.append("(("+payLoad1+")"+"+"+"("+payLoad2+"))");
 					}
