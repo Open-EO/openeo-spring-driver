@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
@@ -42,9 +43,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.openeo.spring.model.AdditionalDimension;
 import org.openeo.spring.model.Asset;
+import org.openeo.spring.model.BandSummary;
 import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.CollectionExtent;
 import org.openeo.spring.model.CollectionSpatialExtent;
+import org.openeo.spring.model.CollectionSummaries;
 import org.openeo.spring.model.CollectionSummaryStats;
 import org.openeo.spring.model.CollectionTemporalExtent;
 import org.openeo.spring.model.Collections;
@@ -55,6 +58,7 @@ import org.openeo.spring.model.DimensionSpatial;
 import org.openeo.spring.model.DimensionSpatial.AxisEnum;
 import org.openeo.spring.model.DimensionTemporal;
 import org.openeo.spring.model.Link;
+import org.openeo.spring.model.Providers;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -162,7 +166,7 @@ public class CollectionsApiController implements CollectionsApi {
 					}
 				}			
 				log.debug("root node info: " + rootNode.getName());		
-						
+				
 				Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
 				Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
 				Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
@@ -441,26 +445,26 @@ public class CollectionsApiController implements CollectionsApi {
  				linksCollections.add(linkItemsCollection);
  				currentCollection.setLinks(linksCollections);
 				
- 				List<Object> providers = new ArrayList<Object>();
-// 				Object provider1 = new Object(); 				
-// 				providers.add(0, provider1);
- 				currentCollection.setProviders(providers); 				
+ 				List<Providers> providers = new ArrayList<Providers>();
+				Providers provider1 = new Providers();
+				List<String> roles = new ArrayList<String>();
+				provider1.setName("Eurac EO WCS");
+				roles.add("producer");
+				roles.add("host");
+				provider1.setRoles(roles);
+				try {
+					provider1.setUrl(new URI ("http://www.eurac.edu"));
+				} catch (URISyntaxException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				providers.add(0, provider1);
+				currentCollection.setProviders(providers);
 
 			collectionsList.addCollectionsItem(currentCollection);
 			}
-			Link linkItems = new Link();
-			linkItems.setType("text/gml");
-			linkItems.setRel("alternate");
-			try {
-				linkItems.setHref(new URI ("http://saocompute.eurac.edu/rasdaman/ows"));
-			} catch (URISyntaxException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			linkItems.setTitle("openEO STAC Catalog (STAC Version 0.9.0)");
-			collectionsList.addLinksItem(linkItems);
-
-			
+					
 			
 			JSONObject odcSTACMetdata = null;
 			try {
@@ -565,7 +569,36 @@ public class CollectionsApiController implements CollectionsApi {
  				linksCollections.add(linkItemsCollection);
  				currentCollection.setLinks(linksCollections);
  				
+ 				List<Providers> providers = new ArrayList<Providers>();
+ 				Providers provider1 = new Providers();
+ 				List<String> roles = new ArrayList<String>();
+ 				provider1.setName("Eurac EO ODC");
+ 				roles.add("producer");
+				roles.add("host");
+ 				provider1.setRoles(roles);
+ 				try {
+ 					provider1.setUrl(new URI ("http://www.eurac.edu"));
+ 				} catch (URISyntaxException e) {
+ 					// TODO Auto-generated catch block
+ 					e.printStackTrace();
+ 				}
+ 				
+ 				providers.add(0, provider1);
+ 				currentCollection.setProviders(providers);
+ 				
 				collectionsList.addCollectionsItem(currentCollection);
+				
+				Link linkItems = new Link();
+				linkItems.setType("text/gml");
+				linkItems.setRel("alternate");
+				try {
+					linkItems.setHref(new URI ("http://saocompute.eurac.edu/rasdaman/ows"));
+				} catch (URISyntaxException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				linkItems.setTitle("openEO STAC Catalog (STAC Version 0.9.0)");
+				collectionsList.addLinksItem(linkItems);
 			}
 
 //			getRequest().ifPresent(request -> {
@@ -796,6 +829,23 @@ public class CollectionsApiController implements CollectionsApi {
 //				linkItemsCollection.setType("text/html");
 //				linksCollections.add(linkItemsCollection);
 //				currentCollection.setLinks(linksCollections);
+    		
+//    		List<Providers> providers = new ArrayList<Providers>();
+//				Providers provider1 = new Providers();
+//				List<String> roles = new ArrayList<String>();
+//				provider1.setName("Eurac EO ODC");
+//				roles.add("producer");
+//				roles.add("host");
+//				provider1.setRoles(roles);
+//				try {
+//					provider1.setUrl(new URI ("http://www.eurac.edu"));
+//				} catch (URISyntaxException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//				
+//				providers.add(0, provider1);
+//				currentCollection.setProviders(providers);
 //    		}
     		
 			if (odcDatacubeID == false) {
@@ -844,9 +894,7 @@ public class CollectionsApiController implements CollectionsApi {
 //			String metadataString3 = metadataString2.replaceAll("\"\"","\"");
 //			metadataObj = new JSONObject(metadataString3);
 //			JSONArray slices = metadataObj.getJSONArray("slices");
-			Map<String, CollectionSummaryStats[]> summaries = new HashMap<String, CollectionSummaryStats[]>();
-			Map<String, Asset> assets = new HashMap<String, Asset>();
-			
+						
 			String srsDescription = boundingBoxElement.getAttributeValue("srsName");
 			if (srsDescription.contains("EPSG")) {
 			try {
@@ -857,6 +905,10 @@ public class CollectionsApiController implements CollectionsApi {
 				srsDescription = srsDescription.substring(srsDescription.indexOf("EPSG")).replace("/0/", ":");
 				srsDescription = srsDescription.replaceAll("EPSG:","");							
 			}			
+			
+			CollectionSummaryStats epsg = new CollectionSummaryStats();
+			epsg.setMin(Double.parseDouble(srsDescription));
+			epsg.setMax(Double.parseDouble(srsDescription));
 			
 			SpatialReference src = new SpatialReference();
 			src.ImportFromEPSG(Integer.parseInt(srsDescription));
@@ -1082,7 +1134,10 @@ public class CollectionsApiController implements CollectionsApi {
 			}
 			
 			else {
-				srsDescription = "0";				
+				srsDescription = "0";
+				CollectionSummaryStats epsg = new CollectionSummaryStats();
+				epsg.setMin(Double.parseDouble(srsDescription));
+				epsg.setMax(Double.parseDouble(srsDescription));
 				
 				String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
 				String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");							    
@@ -1282,8 +1337,9 @@ public class CollectionsApiController implements CollectionsApi {
 				currentCollection.setExtent(extent);
 			}
 			
-			Link link1 = new Link();
+			
 			List<Link> links = new ArrayList<Link>();
+			Link link1 = new Link();
 			link1.setRel("license");
 			link1.setType("text/html");
 			link1.setTitle("License Link");
@@ -1344,41 +1400,183 @@ public class CollectionsApiController implements CollectionsApi {
 			
 			Set<String> stacExtensions = new HashSet<String>();
 			stacExtensions.add("datacube");
-			currentCollection.setStacExtensions(stacExtensions);
-			
-			String platform = null;
-			String citation = null;
-			String constellation = null;
-			String intruments = null;
+			currentCollection.setStacExtensions(stacExtensions);		
+						
+			List<Providers> providers = new ArrayList<Providers>();
+			Providers provider1 = new Providers();
+			List<String> roles = new ArrayList<String>();
+			provider1.setName("Eurac EO WCS");
+			roles.add("producer");
+			roles.add("host");
+			provider1.setRoles(roles);
 			try {
-				platform = metadataElement.getChildText("Platform", gmlNS);
+				provider1.setUrl(new URI ("http://www.eurac.edu"));
+			} catch (URISyntaxException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			providers.add(0, provider1);
+			currentCollection.setProviders(providers);
+			
+			CollectionSummaries summaries = new CollectionSummaries();
+			List<String> platform = new ArrayList<String>();
+			List<String> constellation = new ArrayList<String>();
+			List<Double> gsd = new ArrayList<Double>();
+			List<String> instruments = new ArrayList<String>();
+			BandSummary bands = new BandSummary();
+			CollectionSummaryStats cloudCover = new CollectionSummaryStats();
+			
+			List<Element> slicesList= null;
+			JSONArray cloudCovArray = new JSONArray();	
+			
+			try {
+				platform.add( metadataElement.getChildText("Platform", gmlNS));
 			}catch(Exception e) {
 			    	log.warn("Error in parsing Platform Name :" + e.getMessage());
-			    }
+			}
+			
 			try {
-				citation = metadataElement.getChildText("Citation", gmlNS);
+				slicesList = metadataElement.getChild("slices", gmlNS).getChildren();
+				for(int c = 0; c < slicesList.size(); c++) {
+					try {					
+						platform.add(slicesList.get(c).getChildText("DATATAKE_1_SPACECRAFT_NAME"));
+						platform = platform.stream().distinct().collect(Collectors.toList());
+					}catch(Exception e) {
+						log.warn("Error in parsing Platforms:" + e.getMessage());
+					}
+				}
+			}catch(Exception e) {
+				log.warn("Error in parsing metadata slice :" + e.getMessage());
+			}
+			
+			if(platform.get(0)==null) {
+				platform.set(0, "No Platform Information Available");				
+			}
+//			try {
+//				citation = metadataElement.getChildText("Citation", gmlNS);
+//			}catch(Exception e) {
+//				log.warn("Error in parsing Constellation:" + e.getMessage());
+//			}
+
+			try {
+				constellation.add(metadataElement.getChildText("Constellation", gmlNS));
 			}catch(Exception e) {
 				log.warn("Error in parsing Constellation:" + e.getMessage());
 			}
-
-			try {
-				constellation = metadataElement.getChildText("Constellation", gmlNS);
-			}catch(Exception e) {
-				log.warn("Error in parsing Constellation:" + e.getMessage());
+			if(constellation.get(0)==null) {
+				constellation.set(0, "No Constellation Information Available");				
 			}
 
 			try {				
-				intruments = metadataElement.getChildText("Instrument", gmlNS);
+				instruments.add(metadataElement.getChildText("Instrument", gmlNS));
 			}catch(Exception e) {
 				log.warn("Error in parsing Instrument:" + e.getMessage());
 			}
+			if(instruments.get(0)==null) {
+				instruments.set(0, "No Instrument Information Available");				
+			}			
 						
-			List<Object> providers = new ArrayList<Object>();			
-//			Object provider1 = new Object();
-//			providers.add(0, provider1);
-			currentCollection.setProviders(providers);
+			try {
+				slicesList = metadataElement.getChild("slices", gmlNS).getChildren();
+				for(int c = 0; c < slicesList.size(); c++) {
+				try {
+					double cloudCov = Double.parseDouble(slicesList.get(c).getChildText("CLOUD_COVERAGE_ASSESSMENT"));
+					cloudCovArray.put(cloudCov);					
+				}catch(Exception e) {
+					log.warn("Error in parsing Cloud Coverage:" + e.getMessage());
+				}				
+			}
+			}catch(Exception e) {
+				log.warn("Error in parsing metadata slice :" + e.getMessage());
+			}
+			
+			double maxCCValue = 0;
+			double minCCValue = 0;	
+			Boolean cloudCoverFlag = false;
+			try {
+				maxCCValue = cloudCovArray.getDouble(0);
+				minCCValue = cloudCovArray.getDouble(0);
+				cloudCoverFlag = true;
+		    }catch(Exception e) {
+		    	log.warn("Error in parsing cloud cover Extents :" + e.getMessage());
+		    }
+			
+			if (cloudCoverFlag) {
+				for(int i=1;i < cloudCovArray.length();i++){
+					if(cloudCovArray.getDouble(i) > maxCCValue){
+						maxCCValue = cloudCovArray.getDouble(i); 
+					}
+					if(cloudCovArray.getDouble(i) < minCCValue){
+						minCCValue = cloudCovArray.getDouble(i);
+					}
+				}
+			}
+			
+			cloudCover.setMin(minCCValue);
+			cloudCover.setMax(maxCCValue);
+			
+			List<Element> bandsList = null;
+			List<Element> bandsListSwe = null;
+			Boolean bandsMeta = false;
+			try {
+				bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
+				bandsMeta = true;
+			}catch(Exception e) {
+			}
+			try {
+				bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
+			}catch(Exception e) {
+			}
+			if (bandsMeta) {
+				try {
+					for(int c = 0; c < bandsList.size(); c++) {
+						Element band = bandsList.get(c);
+						String bandWave = null;
+						String bandCommonName = null;
+						String bandGSD = null;						
+						String bandId = band.getName();
+						try {
+							bandWave = band.getChildText("WAVELENGTH");
+						}catch(Exception e) {
+							log.warn("Error in parsing band wave-lenght:" + e.getMessage());
+						}
+						try {
+							bandCommonName = band.getChildText("common_name");
+						}catch(Exception e) {
+							log.warn("Error in parsing band common name:" + e.getMessage());
+						}
+						try {
+							bandGSD = band.getChildText("gsd");
+							gsd.add(Double.parseDouble(bandGSD));
+							gsd = gsd.stream().distinct().collect(Collectors.toList());
+						}catch(Exception e) {
+							log.warn("Error in parsing band gsd:" + e.getMessage());
+						}
+					}
+				}catch(Exception e) {
+					log.warn("Error in parsing bands :" + e.getMessage());
+				}
+			}
+			else {
+				for(int c = 0; c < bandsListSwe.size(); c++) {
+					String bandId = bandsListSwe.get(c).getAttributeValue("name");					
+				}
+			}
+			
+			summaries.setPlatform(platform);
+			summaries.setConstellation(constellation);
+			summaries.setInstruments(instruments);
+			summaries.setCloudCover(cloudCover);
+			summaries.setGsd(gsd);
+//			summaries.setEpsg(epsg);
+			summaries.setBands(bands);
+			
 			
 			currentCollection.setSummaries(summaries);
+			
+			Map<String, Asset> assets = new HashMap<String, Asset>();
+			
 			currentCollection.setAssets(assets);
 			
 //			JSONArray links = new JSONArray();			

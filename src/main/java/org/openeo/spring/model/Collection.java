@@ -54,7 +54,7 @@ public class Collection   {
 
   @JsonProperty("providers")
   @Valid
-  private List<Object> providers = null;
+  private List<Providers> providers = null;
 
   @JsonProperty("extent")
   private CollectionExtent extent;
@@ -69,7 +69,7 @@ public class Collection   {
 
   @JsonProperty("summaries")
   @Valid
-  private Map<String, CollectionSummaryStats[]> summaries = null;
+  private CollectionSummaries summaries = null;
 
   @JsonProperty("assets")
   @Valid
@@ -276,12 +276,12 @@ public class Collection   {
     this.license = license;
   }
 
-  public Collection providers(List<Object> providers) {
+  public Collection providers(List<Providers> providers) {
     this.providers = providers;
     return this;
   }
 
-  public Collection addProvidersItem(Object providersItem) {
+  public Collection addProvidersItem(Providers providersItem) {
     if (this.providers == null) {
       this.providers = new ArrayList<>();
     }
@@ -296,11 +296,11 @@ public class Collection   {
   @ApiModelProperty(value = "A list of providers, which may include all organizations capturing or processing the data or the hosting provider. Providers should be listed in chronological order with the most recent provider being the last element of the list.")
 
 
-  public List<Object> getProviders() {
+  public List<Providers> getProviders() {
     return providers;
   }
 
-  public void setProviders(List<Object> providers) {
+  public void setProviders(List<Providers> providers) {
     this.providers = providers;
   }
 
@@ -382,18 +382,18 @@ public class Collection   {
     this.cubeColonDimensions = cubeColonDimensions;
   }
 
-  public Collection summaries(Map<String, CollectionSummaryStats[]> summaries) {
+  public Collection summaries(CollectionSummaries summaries) {
     this.summaries = summaries;
     return this;
   }
 
-  public Collection putSummariesItem(String key, CollectionSummaryStats[] summariesItem) {
-    if (this.summaries == null) {
-      this.summaries = new HashMap<>();
-    }
-    this.summaries.put(key, summariesItem);
-    return this;
-  }
+//  public Collection putSummariesItem(String key, CollectionSummaries summariesItem) {
+//    if (this.summaries == null) {
+//      this.summaries = new HashMap<>();
+//    }
+//    this.summaries.put(key, summariesItem);
+//    return this;
+//  }
 
   /**
    * Collection properties from STAC extensions (e.g. EO, SAR, Satellite or Scientific) or even custom extensions.  Summaries are either a unique set of all available values *or* statistics. Statistics by default only specify the range (minimum and maximum values), but can optionally be accompanied by additional statistical values. The range can specify the potential range of values, but it is recommended to be as precise as possible. The set of values must contain at least one element and it is strongly recommended to list all values. It is recommended to list as many properties as reasonable so that consumers get a full overview of the Collection. Properties that are covered by the Collection specification (e.g. `providers` and `license`) may not be repeated in the summaries.  Potential fields for the summaries can be found here:  * **[STAC Common Metadata](https://github.com/radiantearth/stac-spec/tree/v0.9.0/item-spec/common-metadata.md)**:   A list of commonly used fields throughout all domains * **[Content Extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions/README.md#list-of-content-extensions)**:   Domain-specific fields for domains such as EO, SAR and point clouds. * **Custom Properties**:   It is generally allowed to add custom fields.
@@ -403,11 +403,11 @@ public class Collection   {
 
   @Valid
 
-  public Map<String, CollectionSummaryStats[]> getSummaries() {
+  public CollectionSummaries getSummaries() {
     return summaries;
   }
 
-  public void setSummaries(Map<String, CollectionSummaryStats[]> summaries) {
+  public void setSummaries(CollectionSummaries summaries) {
     this.summaries = summaries;
   }
 

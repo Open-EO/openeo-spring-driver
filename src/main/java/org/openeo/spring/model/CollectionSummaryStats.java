@@ -1,5 +1,6 @@
 package org.openeo.spring.model;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 import javax.validation.Valid;
@@ -17,12 +18,12 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class CollectionSummaryStats   {
   @JsonProperty("min")
-  private String min = null;
+  private double min = 0;
 
   @JsonProperty("max")
-  private String max = null;
+  private double max = 0;
 
-  public CollectionSummaryStats min(String min) {
+  public CollectionSummaryStats min(double min) {
     this.min = min;
     return this;
   }
@@ -36,15 +37,15 @@ public class CollectionSummaryStats   {
 
   @Valid
 
-  public String getMin() {
+  public double getMin() {
     return min;
   }
 
-  public void setMin(String min) {
+  public void setMin(double min) {
     this.min = min;
   }
 
-  public CollectionSummaryStats max(String max) {
+  public CollectionSummaryStats max(double max) {
     this.max = max;
     return this;
   }
@@ -62,7 +63,7 @@ public class CollectionSummaryStats   {
     return max;
   }
 
-  public void setMax(String max) {
+  public void setMax(double max) {
     this.max = max;
   }
 
