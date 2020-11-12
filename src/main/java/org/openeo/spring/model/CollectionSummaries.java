@@ -43,7 +43,7 @@ public class CollectionSummaries   {
 	private CollectionSummaryStats epsg;
 
 	@JsonProperty("eo:bands")
-	private BandSummary bands;
+	private List<BandSummary> bands;
 
 	public CollectionSummaries constellation(List<String> constellation) {
 		this.constellation = constellation;
@@ -57,7 +57,7 @@ public class CollectionSummaries   {
 	@ApiModelProperty(example = "related", required = true, value = "Relationship between the current document and the linked document. SHOULD be a [registered link relation type](https://www.iana.org/assignments/link-relations/link-relations.xml) whenever feasible.")
 	@NotNull
 
-	@Valid
+	
 
 	public List<String> getConstellation() {
 		return constellation;
@@ -199,7 +199,7 @@ public class CollectionSummaries   {
 		this.instruments = instruments;
 	}
 
-	public CollectionSummaries bands(BandSummary bands) {
+	public CollectionSummaries bands(List<BandSummary> bands) {
 		this.bands = bands;
 		return this;
 	}
@@ -213,11 +213,11 @@ public class CollectionSummaries   {
 
 	@Valid
 
-	public BandSummary getBands() {
+	public List<BandSummary> getBands() {
 		return bands;
 	}
 
-	public void setBands(BandSummary bands) {
+	public void setBands(List<BandSummary> bands) {
 		this.bands = bands;
 	}
 

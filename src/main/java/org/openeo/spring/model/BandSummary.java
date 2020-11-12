@@ -21,20 +21,20 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BandSummary   {
-  @JsonProperty("rel")
-  private String rel;
+  @JsonProperty("name")
+  private String name;
 
-  @JsonProperty("href")
-  private URI href;
+  @JsonProperty("common_name")
+  private String commonname;
 
-  @JsonProperty("type")
-  private String type;
+  @JsonProperty("center_wavelength")
+  private double centerwavelength;
 
-  @JsonProperty("title")
-  private String title;
+  @JsonProperty("gsd")
+  private double gsd;
 
-  public BandSummary rel(String rel) {
-    this.rel = rel;
+  public BandSummary name(String name) {
+    this.name = name;
     return this;
   }
 
@@ -42,20 +42,20 @@ public class BandSummary   {
    * Relationship between the current document and the linked document. SHOULD be a [registered link relation type](https://www.iana.org/assignments/link-relations/link-relations.xml) whenever feasible.
    * @return rel
   */
-  @ApiModelProperty(example = "related", required = true, value = "Relationship between the current document and the linked document. SHOULD be a [registered link relation type](https://www.iana.org/assignments/link-relations/link-relations.xml) whenever feasible.")
+  @ApiModelProperty(example = "name", required = true, value = "Relationship between the current document and the linked document. SHOULD be a [registered link relation type](https://www.iana.org/assignments/link-relations/link-relations.xml) whenever feasible.")
   @NotNull
 
 
-  public String getRel() {
-    return rel;
+  public String getName() {
+    return name;
   }
 
-  public void setRel(String rel) {
-    this.rel = rel;
+  public void setName(String name) {
+    this.name = name;
   }
 
-  public BandSummary href(URI href) {
-    this.href = href;
+  public BandSummary commonname(String commonname) {
+    this.commonname = commonname;
     return this;
   }
 
@@ -63,21 +63,21 @@ public class BandSummary   {
    * The value MUST be a valid URL.
    * @return href
   */
-  @ApiModelProperty(example = "https://example.openeo.org", required = true, value = "The value MUST be a valid URL.")
+  @ApiModelProperty(example = "Red", required = true, value = "The value MUST be a valid common name.")
   @NotNull
 
   @Valid
 
-  public URI getHref() {
-    return href;
+  public String getCommonname() {
+    return commonname;
   }
 
-  public void setHref(URI href) {
-    this.href = href;
+  public void setCommonname(String commonname) {
+    this.commonname = commonname;
   }
 
-  public BandSummary type(String type) {
-    this.type = type;
+  public BandSummary centerwavelength(double centerwavelength) {
+    this.centerwavelength = centerwavelength;
     return this;
   }
 
@@ -85,19 +85,19 @@ public class BandSummary   {
    * The value MUST be a string that hints at the format used to represent data at the provided URI, preferably a media (MIME) type.
    * @return type
   */
-  @ApiModelProperty(example = "text/html", value = "The value MUST be a string that hints at the format used to represent data at the provided URI, preferably a media (MIME) type.")
+  @ApiModelProperty(example = "0.773", value = "The value MUST be a value that hints at the format used to represent data at the provided URI, preferably a media (MIME) type.")
 
 
-  public String getType() {
-    return type;
+  public double getCenterwavelength() {
+    return centerwavelength;
   }
 
-  public void setType(String type) {
-    this.type = type;
+  public void setCenterwavelength(double centerwavelength) {
+    this.centerwavelength = centerwavelength;
   }
 
-  public BandSummary title(String title) {
-    this.title = title;
+  public BandSummary gsd(double gsd) {
+    this.gsd = gsd;
     return this;
   }
 
@@ -105,15 +105,15 @@ public class BandSummary   {
    * Used as a human-readable label for a link.
    * @return title
   */
-  @ApiModelProperty(example = "openEO", value = "Used as a human-readable label for a link.")
+  @ApiModelProperty(example = "10.11", value = "The value MUST be a valid Number.")
 
 
-  public String getTitle() {
-    return title;
+  public double getGsd() {
+    return gsd;
   }
 
-  public void setTitle(String title) {
-    this.title = title;
+  public void setGsd(double gsd) {
+    this.gsd = gsd;
   }
 
 
@@ -126,15 +126,15 @@ public class BandSummary   {
       return false;
     }
     BandSummary bandsummary = (BandSummary) o;
-    return Objects.equals(this.rel, bandsummary.rel) &&
-        Objects.equals(this.href, bandsummary.href) &&
-        Objects.equals(this.type, bandsummary.type) &&
-        Objects.equals(this.title, bandsummary.title);
+    return Objects.equals(this.name, bandsummary.name) &&
+        Objects.equals(this.commonname, bandsummary.commonname) &&
+        Objects.equals(this.centerwavelength, bandsummary.centerwavelength) &&
+        Objects.equals(this.gsd, bandsummary.gsd);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(rel, href, type, title);
+    return Objects.hash(name, commonname, centerwavelength, gsd);
   }
 
   @Override
@@ -142,10 +142,10 @@ public class BandSummary   {
     StringBuilder sb = new StringBuilder();
     sb.append("class Link {\n");
     
-    sb.append("    rel: ").append(toIndentedString(rel)).append("\n");
-    sb.append("    href: ").append(toIndentedString(href)).append("\n");
-    sb.append("    type: ").append(toIndentedString(type)).append("\n");
-    sb.append("    title: ").append(toIndentedString(title)).append("\n");
+    sb.append("    name: ").append(toIndentedString(name)).append("\n");
+    sb.append("    common_name: ").append(toIndentedString(commonname)).append("\n");
+    sb.append("    center_wavelength: ").append(toIndentedString(centerwavelength)).append("\n");
+    sb.append("    gsd: ").append(toIndentedString(gsd)).append("\n");
     sb.append("}");
     return sb.toString();
   }

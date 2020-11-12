@@ -960,7 +960,7 @@ public class CollectionsApiController implements CollectionsApi {
 						String bandId = band.getName();
 						dimensionbands.addValuesItem(bandId);
 						try {
-							bandWave = band.getChildText("WAVELENGTH");
+							bandWave = band.getChildText("center_wavelength");
 						}catch(Exception e) {
 //							log.warn("Error in parsing band wave-lenght:" + e.getMessage());
 						}
@@ -1178,7 +1178,7 @@ public class CollectionsApiController implements CollectionsApi {
 							String bandId = band.getName();
 							dimensionbands.addValuesItem(bandId);
 							try {
-								bandWave = band.getChildText("WAVELENGTH");
+								bandWave = band.getChildText("center_wavelength");
 							}catch(Exception e) {
 //								log.warn("Error in parsing band wave-lenght:" + e.getMessage());
 							}
@@ -1424,7 +1424,7 @@ public class CollectionsApiController implements CollectionsApi {
 			List<String> constellation = new ArrayList<String>();
 			List<Double> gsd = new ArrayList<Double>();
 			List<String> instruments = new ArrayList<String>();
-			BandSummary bands = new BandSummary();
+			List<BandSummary> bandsSummary = new ArrayList<BandSummary>();			
 			CollectionSummaryStats cloudCover = new CollectionSummaryStats();
 			
 			List<Element> slicesList= null;
@@ -1520,7 +1520,7 @@ public class CollectionsApiController implements CollectionsApi {
 			List<Element> bandsListSwe = null;
 			Boolean bandsMeta = false;
 			try {
-				bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
+				bandsList = metadataElement.getChild("bands", gmlNS).getChildren();				
 				bandsMeta = true;
 			}catch(Exception e) {
 			}
@@ -1531,28 +1531,40 @@ public class CollectionsApiController implements CollectionsApi {
 			if (bandsMeta) {
 				try {
 					for(int c = 0; c < bandsList.size(); c++) {
-						Element band = bandsList.get(c);
-						String bandWave = null;
-						String bandCommonName = null;
-						String bandGSD = null;						
-						String bandId = band.getName();
-						try {
-							bandWave = band.getChildText("WAVELENGTH");
-						}catch(Exception e) {
-							log.warn("Error in parsing band wave-lenght:" + e.getMessage());
-						}
-						try {
-							bandCommonName = band.getChildText("common_name");
-						}catch(Exception e) {
-							log.warn("Error in parsing band common name:" + e.getMessage());
-						}
+						BandSummary bandsSummaryList = new BandSummary();
+						Element band = bandsList.get(c);						
+						String bandWave = "0";
+						String bandCommonName = "No Band Common Name found";
+						String bandGSD = "0";
+						String bandId = "No Band Name found";
+						
+						bandId = band.getName();
+						bandsSummaryList.setName(bandId);
+						
 						try {
 							bandGSD = band.getChildText("gsd");
 							gsd.add(Double.parseDouble(bandGSD));
 							gsd = gsd.stream().distinct().collect(Collectors.toList());
+							bandsSummaryList.setGsd(Double.parseDouble(bandGSD));
 						}catch(Exception e) {
 							log.warn("Error in parsing band gsd:" + e.getMessage());
 						}
+						
+						try {
+							bandCommonName = band.getChildText("common_name");
+							bandsSummaryList.setCommonname(bandCommonName);
+						}catch(Exception e) {
+							log.warn("Error in parsing band common name:" + e.getMessage());
+						}
+						
+						try {
+							bandWave = band.getChildText("center_wavelength");
+							bandsSummaryList.setCenterwavelength(Double.parseDouble(bandWave));
+						}catch(Exception e) {
+							log.warn("Error in parsing band wave-lenght:" + e.getMessage());
+						}
+						
+						bandsSummary.add(c, bandsSummaryList);
 					}
 				}catch(Exception e) {
 					log.warn("Error in parsing bands :" + e.getMessage());
@@ -1560,7 +1572,10 @@ public class CollectionsApiController implements CollectionsApi {
 			}
 			else {
 				for(int c = 0; c < bandsListSwe.size(); c++) {
-					String bandId = bandsListSwe.get(c).getAttributeValue("name");					
+					BandSummary bandsSummaryList = new BandSummary();
+					String bandId = bandsListSwe.get(c).getAttributeValue("name");
+					bandsSummaryList.setName(bandId);
+					bandsSummary.add(c, bandsSummaryList);
 				}
 			}
 			
@@ -1570,7 +1585,7 @@ public class CollectionsApiController implements CollectionsApi {
 			summaries.setCloudCover(cloudCover);
 			summaries.setGsd(gsd);
 //			summaries.setEpsg(epsg);
-			summaries.setBands(bands);
+			summaries.setBands(bandsSummary);
 			
 			
 			currentCollection.setSummaries(summaries);
