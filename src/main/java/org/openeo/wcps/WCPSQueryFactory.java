@@ -93,7 +93,7 @@ public class WCPSQueryFactory {
 		
 		for (int c = 1; c <= collectionIDs.size(); c++) {
 			String collectionID = processGraph.getJSONObject(collectionIDs.get(c - 1).getName()).getJSONObject("arguments").getString("id");
-			basicWCPS.append("$" + collectionID + collectionIDs.get(c - 1).getName() + " in (" + collectionID + ")");
+			basicWCPS.append("$cube" + collectionID + collectionIDs.get(c - 1).getName() + " in (" + collectionID + ")");
 			if (c < collectionIDs.size()) {
 				basicWCPS.append(", ");
 			}
@@ -118,7 +118,7 @@ public class WCPSQueryFactory {
 //		for (int c = 1; c <= collectionIDs.size(); c++) {
 //			log.debug(collectionIDs.get(c - 1).getName());
 //			String collectionID = processGraph.getJSONObject(collectionIDs.get(c - 1).getName()).getJSONObject("arguments").getString("id");
-//			wcpsStringBuilder.append("$" + collectionID + collectionIDs.get(c - 1).getName() + " in (" + collectionID + ")");
+//			wcpsStringBuilder.append("$cube" + collectionID + collectionIDs.get(c - 1).getName() + " in (" + collectionID + ")");
 //			if (c < collectionIDs.size()) {
 //				wcpsStringBuilder.append(", ");
 //			}
@@ -233,7 +233,7 @@ public class WCPSQueryFactory {
 					collDims2D = true;
 				}
 				
-				wcpsPayLoad.append(createFilteredCollectionString("$"+collectionID+nodeKeyOfCurrentProcess, collectionID));
+				wcpsPayLoad.append(createFilteredCollectionString("$cube"+collectionID+nodeKeyOfCurrentProcess, collectionID));
 				log.debug("Initial PayLoad WCPS is: ");
 				log.debug(wcpsPayLoad);
 				wcpsStringBuilder.append(wcpsPayLoad.toString());
@@ -292,7 +292,7 @@ public class WCPSQueryFactory {
 							temporalEndCube1 = processGraph.getJSONObject(getFilterCollectionNode(dataNode)).getJSONObject("arguments").getJSONArray("temporal_extent").getString(1);
 							cube1 = processGraph.getJSONObject(getFilterCollectionNode(dataNode)).getJSONObject("arguments").getString("id");
 							payLoad1 = storedPayLoads.getString(dataNode);
-							payLoadCRS = createFilteredCollectionString("$"+cube1+getFilterCollectionNode(dataNode), cube1);
+							payLoadCRS = createFilteredCollectionString("$cube"+cube1+getFilterCollectionNode(dataNode), cube1);
 							log.debug(payLoad1);
 						}
 					}
@@ -775,7 +775,7 @@ public class WCPSQueryFactory {
 							temporalEndCube1 = processGraph.getJSONObject(getFilterCollectionNode(dataNode)).getJSONObject("arguments").getJSONArray("temporal_extent").getString(1);
 							cube1 = processGraph.getJSONObject(getFilterCollectionNode(dataNode)).getJSONObject("arguments").getString("id");
 							payLoad1 = storedPayLoads.getString(dataNode);
-							payLoadCRS = createFilteredCollectionString("$"+cube1+getFilterCollectionNode(dataNode), cube1);
+							payLoadCRS = createFilteredCollectionString("$cube"+cube1+getFilterCollectionNode(dataNode), cube1);
 							log.debug(payLoad1);
 						}
 					}
@@ -922,9 +922,12 @@ public class WCPSQueryFactory {
 					log.debug("Mask Process PayLoad is : ");
 				}
 				else if (noOfDimsCube1==noOfDimsCube2 && !temporalStartCube1.equals(temporalEndCube1) && !temporalStartCube2.equals(temporalEndCube2) && !payLoad2.contains("condense") && payLoad1.contains("coverage") && payLoad1.contains("condense")) {
+					log.debug(payLoad2);
+					String payLoad2MergeMask = payLoad2.replaceAll("\\$pm", "\\$pm" + nodeKeyOfCurrentProcess).replaceAll("\\$T", "\\$T" + nodeKeyOfCurrentProcess).replaceAll("\\$Y", "\\$Y" + nodeKeyOfCurrentProcess).replaceAll("\\$X", "\\$X" + nodeKeyOfCurrentProcess).replaceAll("\\$N", "\\$N" + nodeKeyOfCurrentProcess).replaceAll("\\$E", "\\$E" + nodeKeyOfCurrentProcess);
+					
 					try {
 						replacement = processArguments.getDouble("replacement");
-						wcpsMaskpayLoad.append("(" + payLoad1 + "*" + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2.replaceAll("\\$pm", "\\$pm" + nodeKeyOfCurrentProcess).replaceAll("\\$T", "\\$T" + nodeKeyOfCurrentProcess).replaceAll("\\$Y", "\\$Y" + nodeKeyOfCurrentProcess).replaceAll("\\$X", "\\$X" + nodeKeyOfCurrentProcess).replaceAll("\\$N", "\\$N" + nodeKeyOfCurrentProcess).replaceAll("\\$E", "\\$E" + nodeKeyOfCurrentProcess).replaceAll("\\sY"+"\\(.*?\\)", " Y\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)")+"*"+replacement+"))");
+						wcpsMaskpayLoad.append("(" + payLoad1 + "*" + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2MergeMask+")"+"*"+replacement+"))");
 						wcpsPayLoad=wcpsMaskpayLoad;
 					}catch(Exception e) {
 						wcpsMaskpayLoad.append("(" + payLoad1 + "*" + "(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")");
@@ -939,7 +942,7 @@ public class WCPSQueryFactory {
 				else if (noOfDimsCube1==noOfDimsCube2 && !temporalStartCube1.equals(temporalEndCube1) && !temporalStartCube2.equals(temporalEndCube2) && !payLoad2.contains("condense") && payLoad1.contains("coverage") && !payLoad1.contains("condense")) {
 					try {
 						replacement = processArguments.getDouble("replacement");
-						wcpsMaskpayLoad.append("(" + payLoad1 + "*(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2.replaceAll("\\$pm", "\\$pm" + nodeKeyOfCurrentProcess).replaceAll("\\$T", "\\$T" + nodeKeyOfCurrentProcess).replaceAll("\\$Y", "\\$Y" + nodeKeyOfCurrentProcess).replaceAll("\\$X", "\\$X" + nodeKeyOfCurrentProcess).replaceAll("\\$N", "\\$N" + nodeKeyOfCurrentProcess).replaceAll("\\$E", "\\$E" + nodeKeyOfCurrentProcess).replaceAll("\\sY"+"\\(.*?\\)", " Y\\(\\$Y" + nodeKeyOfCurrentProcess + "\\)")+")"+"*"+replacement+"))");
+						wcpsMaskpayLoad.append("(" + payLoad1 + "*(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")" + " + " + "(("+payLoad2.replaceAll("\\$pm", "\\$pm" + nodeKeyOfCurrentProcess).replaceAll("\\$T", "\\$T" + nodeKeyOfCurrentProcess).replaceAll("\\$Y", "\\$Y" + nodeKeyOfCurrentProcess).replaceAll("\\$X", "\\$X" + nodeKeyOfCurrentProcess).replaceAll("\\$N", "\\$N" + nodeKeyOfCurrentProcess).replaceAll("\\$E", "\\$E" + nodeKeyOfCurrentProcess)+")"+"*"+replacement+"))");
 						wcpsPayLoad=wcpsMaskpayLoad;
 					}catch(Exception e) {
 						wcpsMaskpayLoad.append("(" + payLoad1 + "*(not("+payLoad2.replaceAll("\\$pm", "\\$rm")+")"+")");
@@ -1101,7 +1104,7 @@ public class WCPSQueryFactory {
 							String dataNode = processArguments.getJSONObject("data").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNode);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
 							payLoad = storedPayLoads.getString(dataNode);
 						}
 					}
@@ -1220,7 +1223,7 @@ public class WCPSQueryFactory {
 							String dataNode = processArguments.getJSONObject("data").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNode);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
 							payLoad = storedPayLoads.getString(dataNode);
 						}
 					}
@@ -1265,47 +1268,196 @@ public class WCPSQueryFactory {
 						}
 					}
 				}
-				JSONObject collectionSTACMetdata = null;
-				try {
-					collectionSTACMetdata = readJsonFromUrl(
-							openEOEndpoint + "/collections/" + collectionID);
-				} catch (JSONException e) {
-					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-					StringBuilder builder = new StringBuilder();
-					for( StackTraceElement element: e.getStackTrace()) {
-						builder.append(element.toString()+"\n");
-					}
-					log.error(builder.toString());
-				} catch (IOException e) {
-					log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-					StringBuilder builder = new StringBuilder();
-					for( StackTraceElement element: e.getStackTrace()) {
-						builder.append(element.toString()+"\n");
-					}
-					log.error(builder.toString());
-				}
-				String resSource = ((JSONObject) collectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).get("step").toString();
+//				JSONObject collectionSTACMetdata = null;
+//				try {
+//					collectionSTACMetdata = readJsonFromUrl(
+//							openEOEndpoint + "/collections/" + collectionID);
+//				} catch (JSONException e) {
+//					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
+//					StringBuilder builder = new StringBuilder();
+//					for( StackTraceElement element: e.getStackTrace()) {
+//						builder.append(element.toString()+"\n");
+//					}
+//					log.error(builder.toString());
+//				} catch (IOException e) {
+//					log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
+//					StringBuilder builder = new StringBuilder();
+//					for( StackTraceElement element: e.getStackTrace()) {
+//						builder.append(element.toString()+"\n");
+//					}
+//					log.error(builder.toString());
+//				}
+//				String resSource = ((JSONObject) collectionSTACMetdata).getJSONObject("cube:dimensions")getJSONObject(tempAxis).get("step").toString();
+//				
+//				JSONObject targetCollectionSTACMetdata = null;
+//				try {
+//					targetCollectionSTACMetdata = readJsonFromUrl(openEOEndpoint + "/collections/" + targetCollectionID);
+//				} catch (JSONException e) {
+//					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
+//					StringBuilder builder = new StringBuilder();
+//					for( StackTraceElement element: e.getStackTrace()) {
+//						builder.append(element.toString()+"\n");
+//					}
+//					log.error(builder.toString());
+//				} catch (IOException e) {
+//					log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
+//					StringBuilder builder = new StringBuilder();
+//					for( StackTraceElement element: e.getStackTrace()) {
+//						builder.append(element.toString()+"\n");
+//					}
+//					log.error(builder.toString());
+//				}
+//				String resTarget = ((JSONObject) targetCollectionSTACMetdata).getJSONObject("cube:dimensions")getJSONObject(tempAxis).get("step").toString();
+//				
+				String resSource = null;
 				
-				JSONObject targetCollectionSTACMetdata = null;
 				try {
-					targetCollectionSTACMetdata = readJsonFromUrl(openEOEndpoint + "/collections/" + targetCollectionID);
-				} catch (JSONException e) {
-					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-					StringBuilder builder = new StringBuilder();
-					for( StackTraceElement element: e.getStackTrace()) {
-						builder.append(element.toString()+"\n");
+					URL url = new URL(wcpsEndpoint
+							+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionID);
+
+					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+					conn.setRequestMethod("GET");
+					SAXBuilder builder = new SAXBuilder();
+					Document capabilititesDoc = builder.build(conn.getInputStream());
+					List<Namespace> namespaces = capabilititesDoc.getNamespacesIntroduced();
+					Element rootNode = capabilititesDoc.getRootElement();
+					Namespace defaultNS = rootNode.getNamespace();
+					Namespace gmlNS = null;
+					Namespace sweNS = null;
+					Namespace gmlCovNS =  null;
+					Namespace gmlrgridNS = null;
+					for (int n = 0; n < namespaces.size(); n++) {
+						Namespace current = namespaces.get(n);
+						if(current.getPrefix().equals("swe")) {
+							sweNS = current;
+						}
+						if(current.getPrefix().equals("gmlcov")) {
+							gmlCovNS = current;
+						}
+						if(current.getPrefix().equals("gml")) {
+							gmlNS = current;
+						}
+						if(current.getPrefix().equals("gmlrgrid")) {
+							gmlrgridNS = current;
+						}
+					}					
+					log.debug("root node info: " + rootNode.getName());
+
+					Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
+					Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
+					Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
+					Boolean bandsMeta = false;
+					Element metadataElement = null;
+					try {
+						metadataElement = rootNode.getChild("CoverageDescription", defaultNS).getChild("metadata", gmlNS).getChild("Extension", gmlNS).getChild("covMetadata", gmlNS);
+					}catch(Exception e) {
 					}
-					log.error(builder.toString());
-				} catch (IOException e) {
-					log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-					StringBuilder builder = new StringBuilder();
-					for( StackTraceElement element: e.getStackTrace()) {
-						builder.append(element.toString()+"\n");
+					List<Element> bandsList = null;
+					List<Element> bandsListSwe = null;
+					try {
+						bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
+						bandsMeta = true;
+					}catch(Exception e) {
 					}
-					log.error(builder.toString());
+					try {
+						bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
+					}catch(Exception e) {
+					}
+					if (bandsMeta) {
+						try {
+							for(int c = 0; c < bandsList.size(); c++) {						
+								Element band = bandsList.get(c);					
+								try {
+									resSource = band.getChildText("gsd");
+								}catch(Exception e) {
+								}
+							}
+						}catch(Exception e) {
+						}
+					}
 				}
-				String resTarget = ((JSONObject) targetCollectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).get("step").toString();
-								
+				catch (MalformedURLException e) {
+					log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
+				} catch (IOException e) {
+					log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
+				} catch (JDOMException e) {
+					log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());		
+				}
+				
+				String resTarget = null;
+				try {
+					URL url = new URL(wcpsEndpoint
+							+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + targetCollectionID);
+
+					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+					conn.setRequestMethod("GET");
+					SAXBuilder builder = new SAXBuilder();
+					Document capabilititesDoc = builder.build(conn.getInputStream());
+					List<Namespace> namespaces = capabilititesDoc.getNamespacesIntroduced();
+					Element rootNode = capabilititesDoc.getRootElement();
+					Namespace defaultNS = rootNode.getNamespace();
+					Namespace gmlNS = null;
+					Namespace sweNS = null;
+					Namespace gmlCovNS =  null;
+					Namespace gmlrgridNS = null;
+					for (int n = 0; n < namespaces.size(); n++) {
+						Namespace current = namespaces.get(n);
+						if(current.getPrefix().equals("swe")) {
+							sweNS = current;
+						}
+						if(current.getPrefix().equals("gmlcov")) {
+							gmlCovNS = current;
+						}
+						if(current.getPrefix().equals("gml")) {
+							gmlNS = current;
+						}
+						if(current.getPrefix().equals("gmlrgrid")) {
+							gmlrgridNS = current;
+						}
+					}					
+					log.debug("root node info: " + rootNode.getName());
+
+					Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
+					Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
+					Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
+					Boolean bandsMeta = false;
+					Element metadataElement = null;
+					try {
+						metadataElement = rootNode.getChild("CoverageDescription", defaultNS).getChild("metadata", gmlNS).getChild("Extension", gmlNS).getChild("covMetadata", gmlNS);
+					}catch(Exception e) {
+					}
+					List<Element> bandsList = null;
+					List<Element> bandsListSwe = null;
+					try {
+						bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
+						bandsMeta = true;
+					}catch(Exception e) {
+					}
+					try {
+						bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS).getChild("DataRecord", sweNS).getChildren("field", sweNS);
+					}catch(Exception e) {
+					}
+					if (bandsMeta) {
+						try {
+							for(int c = 0; c < bandsList.size(); c++) {						
+								Element band = bandsList.get(c);					
+								try {
+									resTarget = band.getChildText("gsd");
+								}catch(Exception e) {
+								}
+							}
+						}catch(Exception e) {
+						}
+					}
+				}
+				catch (MalformedURLException e) {
+					log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
+				} catch (IOException e) {
+					log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
+				} catch (JDOMException e) {
+					log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());		
+				}
+				
 				wcpsResamplepayLoad.append(createResampleSpatialCubeWCPSString(nodeKeyOfCurrentProcess, payLoad, resSource, resTarget, xAxis, xLow, xHigh, yAxis, yLow, yHigh, tempAxis, temporalStartCube1, temporalEndCube1));
 				wcpsPayLoad=wcpsResamplepayLoad;
 				wcpsStringBuilder = wcpsStringBuilderResample.append(wcpsResamplepayLoad.toString());
@@ -1464,7 +1616,7 @@ public class WCPSQueryFactory {
 							String dataNode = processArguments.getJSONObject("data").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNode);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
 							payLoad = storedPayLoads.getString(dataNode);
 						}
 					}
@@ -1754,7 +1906,7 @@ public class WCPSQueryFactory {
 							String dataNode = processArguments.getJSONObject("data").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNode);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
 							payLoad = storedPayLoads.getString(dataNode);							
 						}
 					}
@@ -1855,7 +2007,7 @@ public class WCPSQueryFactory {
 							String dataNode = processArguments.getJSONObject("data").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNode);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
 							payLoad = storedPayLoads.getString(dataNode);
 						}
 					}
@@ -1907,7 +2059,7 @@ public class WCPSQueryFactory {
 							String dataNodeX = processArguments.getJSONObject("x").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNodeX);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("x").getString("from_node"));							
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("x").getString("from_node"));							
 							String ltPayLoadX = storedPayLoads.getString(dataNodeX);
 							x = ltPayLoadX;
 						}						
@@ -1925,7 +2077,7 @@ public class WCPSQueryFactory {
 							String dataNodeY = processArguments.getJSONObject("y").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNodeY);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("y").getString("from_node"));
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("y").getString("from_node"));
 							String ltPayLoadY = storedPayLoads.getString(dataNodeY);
 							y = ltPayLoadY;
 						}						
@@ -1962,7 +2114,7 @@ public class WCPSQueryFactory {
 							String dataNodeX = processArguments.getJSONObject("x").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNodeX);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("x").getString("from_node"));							
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("x").getString("from_node"));							
 							String ltPayLoadX = storedPayLoads.getString(dataNodeX);
 							x = ltPayLoadX;
 						}						
@@ -1980,7 +2132,7 @@ public class WCPSQueryFactory {
 							String dataNodeY = processArguments.getJSONObject("y").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNodeY);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("y").getString("from_node"));
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("y").getString("from_node"));
 							String ltPayLoadY = storedPayLoads.getString(dataNodeY);
 							y = ltPayLoadY;
 						}						
@@ -2015,7 +2167,7 @@ public class WCPSQueryFactory {
 							String dataNode = processArguments.getJSONObject("data").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNode);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
 							payLoad = storedPayLoads.getString(dataNode);							
 						}
 					}
@@ -2049,7 +2201,7 @@ public class WCPSQueryFactory {
 							String dataNode = processArguments.getJSONObject("data").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNode);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
 							payLoad = storedPayLoads.getString(dataNode);							
 						}
 					}
@@ -2131,7 +2283,7 @@ public class WCPSQueryFactory {
 							String dataNode = processArguments.getJSONObject("data").getString("from_node");
 							String collectionNodeKey = getFilterCollectionNode(dataNode);
 							collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-							collectionVar = "$"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
+							collectionVar = "$cube"+collectionID+getFilterCollectionNode(currentProcessArguments.getJSONObject("data").getString("from_node"));
 							payLoad = storedPayLoads.getString(dataNode);
 						}
 					}
@@ -2874,7 +3026,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = andArguments.getJSONObject("y").getString("from_node");
-							String andPayLoad = applyPayLoads.getString(dataNode);
+							String andPayLoad = applyPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							andArrayreturn.put(andPayLoad);
 						}			
 					}
@@ -2957,7 +3109,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = xorArguments.getJSONObject("y").getString("from_node");
-							String xorPayLoad = applyPayLoads.getString(dataNode);
+							String xorPayLoad = applyPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							xorArrayreturn.put(xorPayLoad);
 						}
 					}
@@ -2982,7 +3134,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = productArguments.getJSONObject("x").getString("from_node");
-							String productPayLoad = applyPayLoads.getString(dataNode);
+							String productPayLoad = applyPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							productArrayreturn.put(productPayLoad);
 						}			
 					}
@@ -3039,7 +3191,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = sumArguments.getJSONObject("y").getString("from_node");
-							String sumPayLoad = applyPayLoads.getString(dataNode);
+							String sumPayLoad = applyPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							sumArrayreturn.put(sumPayLoad);
 						}
 					}
@@ -3064,7 +3216,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = subtractArguments.getJSONObject("x").getString("from_node");
-							String subtractPayLoad = applyPayLoads.getString(dataNode);
+							String subtractPayLoad = applyPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							subtractArrayreturn.put(subtractPayLoad);
 						}			
 					}
@@ -3121,7 +3273,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = divideArguments.getJSONObject("y").getString("from_node");
-							String dividePayLoad = applyPayLoads.getString(dataNode);
+							String dividePayLoad = applyPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							divideArrayreturn.put(dividePayLoad);
 						}
 					}
@@ -3388,7 +3540,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = andArguments.getJSONObject("y").getString("from_node");
-							String andPayLoad = reducerPayLoads.getString(dataNode);
+							String andPayLoad = reducerPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							andArrayreturn.put(andPayLoad);
 						}
 					}
@@ -3471,7 +3623,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = xorArguments.getJSONObject("y").getString("from_node");
-							String xorPayLoad = reducerPayLoads.getString(dataNode);
+							String xorPayLoad = reducerPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							xorArrayreturn.put(xorPayLoad);
 						}
 					}
@@ -3512,7 +3664,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = productArguments.getJSONObject("y").getString("from_node");
-							String productPayLoad = reducerPayLoads.getString(dataNode);
+							String productPayLoad = reducerPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							productArrayreturn.put(productPayLoad);
 						}
 					}
@@ -3553,7 +3705,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = sumArguments.getJSONObject("y").getString("from_node");
-							String sumPayLoad = reducerPayLoads.getString(dataNode);
+							String sumPayLoad = reducerPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							sumArrayreturn.put(sumPayLoad);
 						}
 					}
@@ -3594,7 +3746,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = subtractArguments.getJSONObject("y").getString("from_node");
-							String subtractPayLoad = reducerPayLoads.getString(dataNode);
+							String subtractPayLoad = reducerPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							subtractArrayreturn.put(subtractPayLoad);
 						}
 					}
@@ -3635,7 +3787,7 @@ public class WCPSQueryFactory {
 						}
 						else if (fromType.equals("from_node")) {
 							String dataNode = divideArguments.getJSONObject("y").getString("from_node");
-							String dividePayLoad = reducerPayLoads.getString(dataNode);
+							String dividePayLoad = reducerPayLoads.getString(dataNode).replaceAll("\\$pm", "\\$pm" + nodeKey).replaceAll("\\$T", "\\$T" + nodeKey).replaceAll("\\$Y", "\\$Y" + nodeKey).replaceAll("\\$X", "\\$X" + nodeKey).replaceAll("\\$N", "\\$N" + nodeKey).replaceAll("\\$E", "\\$E" + nodeKey);
 							divideArrayreturn.put(dividePayLoad);
 						}
 					}
@@ -4954,11 +5106,11 @@ public class WCPSQueryFactory {
 				String low = filter.getLowerBound();
 				String high = filter.getUpperBound();
 				stringBuilder.append(" " + axis + "(");
-				if ((axisUpperCase.contains("DATE") || axisUpperCase.contains("TIME") || axisUpperCase.contains("ANSI") || axisUpperCase.contains("UNIX")) && !low.contains("$")) {
+				if ((axisUpperCase.contains("DATE") || axisUpperCase.contains("TIME") || axisUpperCase.contains("ANSI") || axisUpperCase.contains("UNIX")) && !low.contains("$cube")) {
 					stringBuilder.append("\"");
 				}
 				stringBuilder.append(low);
-				if ((axisUpperCase.contains("DATE") || axisUpperCase.contains("TIME") || axisUpperCase.contains("ANSI") || axisUpperCase.contains("UNIX")) && !low.contains("$")) {
+				if ((axisUpperCase.contains("DATE") || axisUpperCase.contains("TIME") || axisUpperCase.contains("ANSI") || axisUpperCase.contains("UNIX")) && !low.contains("$cube")) {
 					stringBuilder.append("\"");
 				}
 				if (high != null && !(high.equals(low))) {
@@ -5012,11 +5164,11 @@ public class WCPSQueryFactory {
 //			}
 			String high = toDate;
 			stringBuilder.append(" " + axis + "(");
-			if ((axisUpperCase.contains("DATE") || axisUpperCase.contains("TIME") || axisUpperCase.contains("ANSI") || axisUpperCase.contains("UNIX")) && !low.contains("$")) {
+			if ((axisUpperCase.contains("DATE") || axisUpperCase.contains("TIME") || axisUpperCase.contains("ANSI") || axisUpperCase.contains("UNIX")) && !low.contains("$cube")) {
 				stringBuilder.append("\"");
 			}
 			stringBuilder.append(low);
-			if ((axisUpperCase.contains("DATE") || axisUpperCase.contains("TIME") || axisUpperCase.contains("ANSI") || axisUpperCase.contains("UNIX")) && !low.contains("$")) {
+			if ((axisUpperCase.contains("DATE") || axisUpperCase.contains("TIME") || axisUpperCase.contains("ANSI") || axisUpperCase.contains("UNIX")) && !low.contains("$cube")) {
 				stringBuilder.append("\"");
 			}
 			if (high != null && !(high.equals(low))) {
@@ -6340,10 +6492,92 @@ public class WCPSQueryFactory {
 			double[] c2 = null;
 			c1 = tx.TransformPoint(Double.parseDouble(bottom), Double.parseDouble(left));
 			c2 = tx.TransformPoint(Double.parseDouble(top), Double.parseDouble(right));
-			left = Double.toString(c1[0]);
-			bottom = Double.toString(c1[1]);
-			right = Double.toString(c2[0]);
-			top = Double.toString(c2[1]);
+			if (srs==3035) {
+				left = Double.toString(c1[1]);
+				bottom = Double.toString(c1[0]);
+				right = Double.toString(c2[1]);
+				top = Double.toString(c2[0]);
+			}
+			else {
+				left = Double.toString(c1[0]);
+				bottom = Double.toString(c1[1]);
+				right = Double.toString(c2[0]);
+				top = Double.toString(c2[1]);
+			}
+			if (resSource!=0) {
+				try {
+					url = new URL(wcpsEndpoint
+							+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionID);
+					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+					conn.setRequestMethod("GET");
+					SAXBuilder builder = new SAXBuilder();
+					Document capabilititesDoc = builder.build(conn.getInputStream());
+					List<Namespace> namespaces = capabilititesDoc.getNamespacesIntroduced();
+					Element rootNode = capabilititesDoc.getRootElement();
+					Namespace defaultNS = rootNode.getNamespace();
+					Namespace gmlNS = null;
+					Namespace sweNS = null;
+					Namespace gmlCovNS =  null;
+					Namespace gmlrgridNS = null;
+					for (int n = 0; n < namespaces.size(); n++) {
+						Namespace current = namespaces.get(n);
+						if(current.getPrefix().equals("swe")) {
+							sweNS = current;
+						}
+						if(current.getPrefix().equals("gmlcov")) {
+							gmlCovNS = current;
+						}
+						if(current.getPrefix().equals("gml")) {
+							gmlNS = current;
+						}
+						if(current.getPrefix().equals("gmlrgrid")) {
+							gmlrgridNS = current;
+						}
+					}					
+					log.debug("root node info: " + rootNode.getName());
+							
+					Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
+					Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
+					Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
+					String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
+					String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");
+					String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
+					int xIndex = 0;
+				    int yIndex = 0;
+					
+					for(int a = 0; a < axis.length; a++) {
+				    	log.debug(axis[a]);
+						if(axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long")){
+							xIndex = a;
+						}
+						if(axis[a].equals("N") || axis[a].equals("Y") || axis[a].equals("Lat")){
+							yIndex = a;
+						}
+					}
+					log.debug("Left: "+left);
+					log.debug("Right: "+right);
+					log.debug("Bottom: "+bottom);
+					log.debug("Top: "+top);
+					log.debug("MinX: "+minValues[xIndex]);
+					log.debug("MaxX: "+maxValues[xIndex]);
+					log.debug("MinY: "+minValues[yIndex]);
+					log.debug("MaxY: "+maxValues[yIndex]);
+					left = Double.toString(Double.parseDouble(minValues[xIndex]) + resSource*( Math.round(((Double.parseDouble(left) - Double.parseDouble(minValues[xIndex]))/resSource))));
+					right = Double.toString(Double.parseDouble(maxValues[xIndex]) - resSource*(Math.round(((Double.parseDouble(maxValues[xIndex]) - Double.parseDouble(right))/resSource))));
+					bottom = Double.toString(Double.parseDouble(minValues[yIndex]) + resSource*(Math.round(((Double.parseDouble(bottom) - Double.parseDouble(minValues[yIndex]))/resSource))));
+					top = Double.toString(Double.parseDouble(maxValues[yIndex]) - resSource*(Math.round(((Double.parseDouble(maxValues[yIndex]) - Double.parseDouble(top))/resSource))));					
+			}
+			catch (MalformedURLException e) {
+				log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());
+				
+			} catch (IOException e) {
+				log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());
+				
+			} catch (JDOMException e) {
+				log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());
+				
+			}
+			}
 			log.debug("WEST: "+left);
 			log.debug("SOUTH: "+bottom);
 			log.debug("EAST: "+right);
