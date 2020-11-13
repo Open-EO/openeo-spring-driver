@@ -30,7 +30,7 @@ public class DimensionTemporal extends Dimension  {
   private List<String> extent = new ArrayList<>();
 
   @JsonProperty("step")
-  private JsonNullable<Integer> step = JsonNullable.undefined();
+  private String step = null;
 
   public DimensionTemporal values(List<String> values) {
     this.values = values;
@@ -86,8 +86,8 @@ public class DimensionTemporal extends Dimension  {
     this.extent = extent;
   }
 
-  public DimensionTemporal step(Integer step) {
-    this.step = JsonNullable.of(step);
+  public DimensionTemporal step(String step) {
+    this.step = step;
     return this;
   }
 
@@ -98,11 +98,11 @@ public class DimensionTemporal extends Dimension  {
   @ApiModelProperty(value = "The space between the temporal instances as [ISO 8601 duration](https://en.wikipedia.org/wiki/ISO_8601#Durations), e.g. `P1D`. Use `null` for irregularly spaced steps.")
 
 
-  public JsonNullable<Integer> getStep() {
+  public String getStep() {
     return step;
   }
 
-  public void setStep(JsonNullable<Integer> step) {
+  public void setStep(String step) {
     this.step = step;
   }
 

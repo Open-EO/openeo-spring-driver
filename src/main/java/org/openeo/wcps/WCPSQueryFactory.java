@@ -13,6 +13,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -32,13 +33,19 @@ import org.jdom2.input.SAXBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.openapitools.jackson.nullable.JsonNullable;
+
 import java.lang.Math;
 
+import org.openeo.spring.model.AdditionalDimension;
 import org.openeo.spring.model.CollectionSummaryStats;
+import org.openeo.spring.model.Dimension.TypeEnum;
 import org.openeo.wcps.domain.Aggregate;
 import org.openeo.wcps.domain.Collection;
 import org.openeo.wcps.domain.Filter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 public class WCPSQueryFactory {
 
@@ -1093,6 +1100,8 @@ public class WCPSQueryFactory {
 				String collectionVar = null;
 				String temporalStartCube1 = null;
 				String temporalEndCube1 = null;
+				double resSource = 0;
+				double resTarget = 0;
 				if (processArguments.get("data") instanceof JSONObject) {
 					temporalStartCube1 = processGraph.getJSONObject(getFilterCollectionNode(nodeKeyOfCurrentProcess)).getJSONObject("arguments").getJSONArray("temporal_extent").getString(0);
 					temporalEndCube1 = processGraph.getJSONObject(getFilterCollectionNode(nodeKeyOfCurrentProcess)).getJSONObject("arguments").getJSONArray("temporal_extent").getString(1);
@@ -1151,47 +1160,162 @@ public class WCPSQueryFactory {
 						}
 					}
 				}
-				JSONObject collectionSTACMetdata = null;
-				try {
-					collectionSTACMetdata = readJsonFromUrl(
-							openEOEndpoint + "/collections/" + collectionID);
-				} catch (JSONException e) {
-					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-					StringBuilder builder = new StringBuilder();
-					for( StackTraceElement element: e.getStackTrace()) {
-						builder.append(element.toString()+"\n");
-					}
-					log.error(builder.toString());
-				} catch (IOException e) {
-					log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-					StringBuilder builder = new StringBuilder();
-					for( StackTraceElement element: e.getStackTrace()) {
-						builder.append(element.toString()+"\n");
-					}
-					log.error(builder.toString());
-				}
-				String resSource = ((JSONObject) collectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).get("step").toString();
 				
-				JSONObject targetCollectionSTACMetdata = null;
 				try {
-					targetCollectionSTACMetdata = readJsonFromUrl(
-							openEOEndpoint + "/collections/" + targetCollectionID);
-				} catch (JSONException e) {
-					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-					StringBuilder builder = new StringBuilder();
-					for( StackTraceElement element: e.getStackTrace()) {
-						builder.append(element.toString()+"\n");
+					URL url = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionID);
+					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+					conn.setRequestMethod("GET");
+					SAXBuilder builder = new SAXBuilder();
+					Document capabilititesDoc = builder.build(conn.getInputStream());
+					List<Namespace> namespaces = capabilititesDoc.getNamespacesIntroduced();
+					Element rootNode = capabilititesDoc.getRootElement();
+					Namespace defaultNS = rootNode.getNamespace();
+					Namespace gmlNS = null;
+					Namespace sweNS = null;
+					Namespace gmlCovNS =  null;
+					Namespace gmlrgridNS = null;
+					for (int n = 0; n < namespaces.size(); n++) {
+						Namespace current = namespaces.get(n);
+						if(current.getPrefix().equals("swe")) {
+							sweNS = current;
+						}
+						if(current.getPrefix().equals("gmlcov")) {
+							gmlCovNS = current;
+						}
+						if(current.getPrefix().equals("gml")) {
+							gmlNS = current;
+						}
+						if(current.getPrefix().equals("gmlrgrid")) {
+							gmlrgridNS = current;
+						}
 					}
-					log.error(builder.toString());
-				} catch (IOException e) {
-					log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-					StringBuilder builder = new StringBuilder();
-					for( StackTraceElement element: e.getStackTrace()) {
-						builder.append(element.toString()+"\n");
+							
+					Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
+					Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
+					Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
+					String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
+					String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
+					String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");
+					
+					for(int a = 0; a < axis.length; a++) {
+						if(axis[a].equals("DATE")  || axis[a].equals("TIME") || axis[a].equals("ANSI") || axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time") || axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")){
+							boolean isDate = true;
+							try {
+								Integer isDateInteger = Integer.parseInt(minValues[a].replaceAll("\"", ""));
+								isDate = false;
+							}
+							catch(Exception e) {
+								
+							}
+							if (isDate) {
+							String[] taxis = null;
+							try {
+								List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+								taxis = tList.get(a).getValue().split(" ");								
+								resSource = Double.parseDouble(taxis[0]);
+						    }catch(Exception e) {
+						    	log.warn("Irregular Axis :" + e.getMessage());						    	
+						    }
+							}
+							else {								
+								String[] taxis = null;
+								try {
+									List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+									taxis = tList.get(a).getValue().split(" ");
+									//TODO Adjust resolution with the exact unit of Time Dimension
+									resSource = Double.parseDouble(taxis[0]);
+							    }catch(Exception e) {
+							    	log.warn("Irregular Axis :" + e.getMessage());
+							    }
+							}
+						}
 					}
-					log.error(builder.toString());
 				}
-				String resTarget = ((JSONObject) targetCollectionSTACMetdata).getJSONObject("cube:dimensions").getJSONObject(tempAxis).get("step").toString();
+				catch (MalformedURLException e) {
+				} 
+		    	catch (IOException e) {
+		    	}
+		    	    
+		    	catch (JDOMException e) {
+		    	}
+				
+				try {
+					URL url = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + targetCollectionID);
+					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+					conn.setRequestMethod("GET");
+					SAXBuilder builder = new SAXBuilder();
+					Document capabilititesDoc = builder.build(conn.getInputStream());
+					List<Namespace> namespaces = capabilititesDoc.getNamespacesIntroduced();
+					Element rootNode = capabilititesDoc.getRootElement();
+					Namespace defaultNS = rootNode.getNamespace();
+					Namespace gmlNS = null;
+					Namespace sweNS = null;
+					Namespace gmlCovNS =  null;
+					Namespace gmlrgridNS = null;
+					for (int n = 0; n < namespaces.size(); n++) {
+						Namespace current = namespaces.get(n);
+						if(current.getPrefix().equals("swe")) {
+							sweNS = current;
+						}
+						if(current.getPrefix().equals("gmlcov")) {
+							gmlCovNS = current;
+						}
+						if(current.getPrefix().equals("gml")) {
+							gmlNS = current;
+						}
+						if(current.getPrefix().equals("gmlrgrid")) {
+							gmlrgridNS = current;
+						}
+					}
+							
+					Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
+					Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
+					Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
+					String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
+					String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
+					String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");
+					
+					for(int a = 0; a < axis.length; a++) {
+						if(axis[a].equals("DATE")  || axis[a].equals("TIME") || axis[a].equals("ANSI") || axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time") || axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")){
+							boolean isDate = true;
+							try {
+								Integer isDateInteger = Integer.parseInt(minValues[a].replaceAll("\"", ""));
+								isDate = false;
+							}
+							catch(Exception e) {
+								
+							}
+							if (isDate) {
+								String[] taxis = null;
+								try {
+									List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+									taxis = tList.get(a).getValue().split(" ");									
+									resTarget = Double.parseDouble(taxis[0]);
+								}catch(Exception e) {
+									log.warn("Irregular Axis :" + e.getMessage());						    	
+								}
+							}
+							else {								
+								String[] taxis = null;
+								try {
+									List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
+									taxis = tList.get(a).getValue().split(" ");
+									//TODO Adjust resolution with the exact unit of Time Dimension
+									resTarget = Double.parseDouble(taxis[0]);
+								}catch(Exception e) {
+									log.warn("Irregular Axis :" + e.getMessage());
+								}
+							}
+						}
+					}
+				}
+				catch (MalformedURLException e) {
+					log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
+				} catch (IOException e) {
+					log.error("An error occured while describing coverage from WCPS endpoint: " + e.getMessage());		
+				} catch (JDOMException e) {
+					log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());		
+				}
 				
 				wcpsResamplepayLoad.append(createResampleTemporalCubeWCPSString(nodeKeyOfCurrentProcess, payLoad, resSource, resTarget, xAxis, xLow, xHigh, yAxis, yLow, yHigh, tempAxis, tempLow, tempHigh, temporalStartCube1, temporalEndCube1));
 				wcpsPayLoad=wcpsResamplepayLoad;
@@ -1268,49 +1392,8 @@ public class WCPSQueryFactory {
 						}
 					}
 				}
-//				JSONObject collectionSTACMetdata = null;
-//				try {
-//					collectionSTACMetdata = readJsonFromUrl(
-//							openEOEndpoint + "/collections/" + collectionID);
-//				} catch (JSONException e) {
-//					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-//					StringBuilder builder = new StringBuilder();
-//					for( StackTraceElement element: e.getStackTrace()) {
-//						builder.append(element.toString()+"\n");
-//					}
-//					log.error(builder.toString());
-//				} catch (IOException e) {
-//					log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-//					StringBuilder builder = new StringBuilder();
-//					for( StackTraceElement element: e.getStackTrace()) {
-//						builder.append(element.toString()+"\n");
-//					}
-//					log.error(builder.toString());
-//				}
-//				String resSource = ((JSONObject) collectionSTACMetdata).getJSONObject("cube:dimensions")getJSONObject(tempAxis).get("step").toString();
-//				
-//				JSONObject targetCollectionSTACMetdata = null;
-//				try {
-//					targetCollectionSTACMetdata = readJsonFromUrl(openEOEndpoint + "/collections/" + targetCollectionID);
-//				} catch (JSONException e) {
-//					log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-//					StringBuilder builder = new StringBuilder();
-//					for( StackTraceElement element: e.getStackTrace()) {
-//						builder.append(element.toString()+"\n");
-//					}
-//					log.error(builder.toString());
-//				} catch (IOException e) {
-//					log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-//					StringBuilder builder = new StringBuilder();
-//					for( StackTraceElement element: e.getStackTrace()) {
-//						builder.append(element.toString()+"\n");
-//					}
-//					log.error(builder.toString());
-//				}
-//				String resTarget = ((JSONObject) targetCollectionSTACMetdata).getJSONObject("cube:dimensions")getJSONObject(tempAxis).get("step").toString();
-//				
-				String resSource = null;
 				
+				String resSource = null;				
 				try {
 					URL url = new URL(wcpsEndpoint
 							+ "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionID);
@@ -4855,9 +4938,9 @@ public class WCPSQueryFactory {
 				+ "}, {})");
 		return resampleBuilder.toString();
 	}
-	private String createResampleTemporalCubeWCPSString(String resampleNodeKey, String payload, String resSource, String resTarget, String xAxis, String xLow, String xHigh, String yAxis, String yLow, String yHigh, String tempAxis, String tempLow, String tempHigh, String temporalStartCube1, String temporalEndCube1) {
+	private String createResampleTemporalCubeWCPSString(String resampleNodeKey, String payload, double resSource, double resTarget, String xAxis, String xLow, String xHigh, String yAxis, String yLow, String yHigh, String tempAxis, String tempLow, String tempHigh, String temporalStartCube1, String temporalEndCube1) {
 		//TODO Remove the extra adding of half the resolution in the scale range for Dates when the Rasdaman fixes the issue of shifting
-		double res = Double.parseDouble(resSource)/Double.parseDouble(resTarget);
+		double res = resSource/resTarget;
 		DateFormat toDateNewFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 		long tempLowUnix = 0;
 		long tempHighUnix = 0;
@@ -4898,20 +4981,20 @@ public class WCPSQueryFactory {
 		log.debug(tempScaleUnix);
 		log.debug(res);
 		if (res<1) {
-		temporalStartCube1Unix = Math.round(temporalStartCube1Unix - Double.parseDouble(resTarget)/2);
+		temporalStartCube1Unix = Math.round(temporalStartCube1Unix - resTarget/2);
 		Date tempStartCube1date =  new java.util.Date(temporalStartCube1Unix*1000L);
 		temporalStartCube1 = toDateNewFormat.format(tempStartCube1date);
 		
-		temporalEndCube1Unix = Math.round(temporalEndCube1Unix - Double.parseDouble(resTarget)/2);
+		temporalEndCube1Unix = Math.round(temporalEndCube1Unix - resTarget/2);
 		Date tempEndCube1date =  new java.util.Date(temporalEndCube1Unix*1000L);
 		temporalEndCube1 = toDateNewFormat.format(tempEndCube1date);
 		}
 		else if (res>1) {
-			temporalStartCube1Unix = Math.round(temporalStartCube1Unix + Double.parseDouble(resTarget));
+			temporalStartCube1Unix = Math.round(temporalStartCube1Unix + resTarget);
 			Date tempStartCube1date =  new java.util.Date(temporalStartCube1Unix*1000L);
 			temporalStartCube1 = toDateNewFormat.format(tempStartCube1date);
 			
-			temporalEndCube1Unix = Math.round(temporalEndCube1Unix + Double.parseDouble(resTarget));
+			temporalEndCube1Unix = Math.round(temporalEndCube1Unix + resTarget);
 			Date tempEndCube1date =  new java.util.Date(temporalEndCube1Unix*1000L);
 			temporalEndCube1 = toDateNewFormat.format(tempEndCube1date);
 			}

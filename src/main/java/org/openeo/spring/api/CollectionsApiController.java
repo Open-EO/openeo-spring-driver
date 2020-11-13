@@ -887,7 +887,7 @@ public class CollectionsApiController implements CollectionsApi {
 					gmlrgridNS = current;
 				}
 			}
-//			log.debug("root node info: " + rootNode.getName());
+			log.debug("root node info: " + rootNode.getName());
 					
 			Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
 			Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
@@ -896,7 +896,7 @@ public class CollectionsApiController implements CollectionsApi {
 			try {
 			metadataElement = rootNode.getChild("CoverageDescription", defaultNS).getChild("metadata", gmlNS).getChild("Extension", gmlNS).getChild("covMetadata", gmlNS);
 		    }catch(Exception e) {
-//			log.warn("Error in parsing bands :" + e.getMessage());
+			log.warn("Error in parsing bands :" + e.getMessage());
 		    }
 			
 //			metadataObj = new JSONObject(metadataString1);
@@ -904,7 +904,15 @@ public class CollectionsApiController implements CollectionsApi {
 //			String metadataString3 = metadataString2.replaceAll("\"\"","\"");
 //			metadataObj = new JSONObject(metadataString3);
 //			JSONArray slices = metadataObj.getJSONArray("slices");
-						
+			Map<String, Dimension> cubeColonDimensions = new HashMap<String, Dimension>();
+			DimensionBands dimensionbands = new DimensionBands();
+			dimensionbands.setType(TypeEnum.BANDS);		
+			DimensionSpatial dimensionXspatial = new DimensionSpatial();
+			dimensionXspatial.setType(TypeEnum.SPATIAL);
+			DimensionSpatial dimensionYspatial = new DimensionSpatial();
+			dimensionYspatial.setType(TypeEnum.SPATIAL);
+			DimensionTemporal dimensionTemporal = new DimensionTemporal();
+			dimensionTemporal.setType(TypeEnum.TEMPORAL);
 			String srsDescription = boundingBoxElement.getAttributeValue("srsName");
 			if (srsDescription.contains("EPSG")) {
 			try {
@@ -934,18 +942,7 @@ public class CollectionsApiController implements CollectionsApi {
 		    String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
 		    int xIndex = 0;
 		    int yIndex = 0;
-			
-		    Map<String, Dimension> cubeColonDimensions = new HashMap<String, Dimension>();
-			DimensionBands dimensionbands = new DimensionBands();
-			dimensionbands.setType(TypeEnum.BANDS);
-//			log.debug("number of bands found: " + bandsListSwe.size());
-			DimensionSpatial dimensionXspatial = new DimensionSpatial();
-			dimensionXspatial.setType(TypeEnum.SPATIAL);
-			DimensionSpatial dimensionYspatial = new DimensionSpatial();
-			dimensionYspatial.setType(TypeEnum.SPATIAL);
-			DimensionTemporal dimensionTemporal = new DimensionTemporal();
-			dimensionTemporal.setType(TypeEnum.TEMPORAL);
-			
+						
 			List<Element> bandsList = null;
 			List<Element> bandsListSwe = null;
 			Boolean bandsMeta = false;
@@ -1051,8 +1048,7 @@ public class CollectionsApiController implements CollectionsApi {
 						Integer isDateInteger = Integer.parseInt(minValues[a].replaceAll("\"", ""));
 						isDate = false;
 					}
-					catch(Exception e) {
-						
+					catch(Exception e) {						
 					}
 					if (isDate) {
 					List<String> temporalExtent = new ArrayList<String>();
@@ -1060,16 +1056,7 @@ public class CollectionsApiController implements CollectionsApi {
 					temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
 					startTime = minValues[a].replaceAll("\"", "");
 					endTime = maxValues[a].replaceAll("\"", "");
-					dimensionTemporal.setExtent(temporalExtent);
-					String[] taxis = null;
-					try {
-						List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
-						taxis = tList.get(a).getValue().split(" ");
-						dimensionTemporal.setStep(JsonNullable.of(Integer.parseInt(taxis[0])));
-				    }catch(Exception e) {
-				    	log.warn("Irregular Axis :" + e.getMessage());
-				    	dimensionTemporal.setStep(JsonNullable.of(0));
-				    }
+					dimensionTemporal.setExtent(temporalExtent);					
 					cubeColonDimensions.put(axis[a], dimensionTemporal);
 					}
 					else {
@@ -1081,15 +1068,6 @@ public class CollectionsApiController implements CollectionsApi {
 						startTime = minValues[a].replaceAll("\"", "");
 						endTime = maxValues[a].replaceAll("\"", "");
 						additionalDimension.setExtent(temporalExtent);
-						String[] taxis = null;
-						try {
-							List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
-							taxis = tList.get(a).getValue().split(" ");
-							additionalDimension.setStep(JsonNullable.of(Integer.parseInt(taxis[0])));
-					    }catch(Exception e) {
-					    	log.warn("Irregular Axis :" + e.getMessage());
-					    	additionalDimension.setStep(JsonNullable.of(0));
-					    }
 						cubeColonDimensions.put(axis[a], additionalDimension);
 					}
 				}
@@ -1154,18 +1132,7 @@ public class CollectionsApiController implements CollectionsApi {
 			    String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
 			    int xIndex = 0;
 			    int yIndex = 0;
-				
-			    Map<String, Dimension> cubeColonDimensions = new HashMap<String, Dimension>();
-				DimensionBands dimensionbands = new DimensionBands();
-				dimensionbands.setType(TypeEnum.BANDS);
-//				log.debug("number of bands found: " + bandsListSwe.size());			
-				DimensionSpatial dimensionXspatial = new DimensionSpatial();
-				dimensionXspatial.setType(TypeEnum.SPATIAL);
-				DimensionSpatial dimensionYspatial = new DimensionSpatial();
-				dimensionYspatial.setType(TypeEnum.SPATIAL);
-				DimensionTemporal dimensionTemporal = new DimensionTemporal();
-				dimensionTemporal.setType(TypeEnum.TEMPORAL);
-				
+								
 				List<Element> bandsList = null;
 				List<Element> bandsListSwe = null;
 				Boolean bandsMeta = false;
@@ -1265,16 +1232,7 @@ public class CollectionsApiController implements CollectionsApi {
 						temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
 						startTime = minValues[a].replaceAll("\"", "");
 						endTime = maxValues[a].replaceAll("\"", "");
-						dimensionTemporal.setExtent(temporalExtent);
-						String[] taxis = null;
-						try {
-							List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
-							taxis = tList.get(a).getValue().split(" ");
-							dimensionTemporal.setStep(JsonNullable.of(Integer.parseInt(taxis[0])));
-					    }catch(Exception e) {
-					    	log.warn("Irregular Axis :" + e.getMessage());
-					    	dimensionTemporal.setStep(JsonNullable.of(0));
-					    }
+						dimensionTemporal.setExtent(temporalExtent);				
 						cubeColonDimensions.put(axis[a], dimensionTemporal);
 						}
 						else {
@@ -1285,16 +1243,7 @@ public class CollectionsApiController implements CollectionsApi {
 							temporalExtent.add(1, Integer.parseInt(maxValues[a].replaceAll("\"", "")));
 							startTime = minValues[a].replaceAll("\"", "");
 							endTime = maxValues[a].replaceAll("\"", "");
-							additionalDimension.setExtent(temporalExtent);
-							String[] taxis = null;
-							try {
-								List<Element> tList = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChildren("offsetVector", gmlNS);
-								taxis = tList.get(a).getValue().split(" ");
-								additionalDimension.setStep(JsonNullable.of(Integer.parseInt(taxis[0])));
-						    }catch(Exception e) {
-						    	log.warn("Irregular Axis :" + e.getMessage());
-						    	additionalDimension.setStep(JsonNullable.of(0));
-						    }
+							additionalDimension.setExtent(temporalExtent);					
 							cubeColonDimensions.put(axis[a], additionalDimension);
 						}
 					}
@@ -1345,8 +1294,7 @@ public class CollectionsApiController implements CollectionsApi {
 				temporalExtent.setInterval(interval);
 				extent.setTemporal(temporalExtent);					
 				currentCollection.setExtent(extent);
-			}
-			
+			}			
 			
 			List<Link> links = new ArrayList<Link>();
 			Link link1 = new Link();
@@ -1377,6 +1325,7 @@ public class CollectionsApiController implements CollectionsApi {
 			String title = null;
 			String citation = null;
 			String description = null;
+			String tempStep = null;
 			try {
 				title = metadataElement.getChildText("Title", gmlNS);
 				currentCollection.setTitle(title);
@@ -1404,7 +1353,12 @@ public class CollectionsApiController implements CollectionsApi {
 				description = "No Description Available";
 			}
 			
-			currentCollection.setDescription(description);
+			try {
+				tempStep = metadataElement.getChildText("temproral_step", gmlNS);					
+			}catch(Exception e) {
+				
+			}					
+			dimensionTemporal.setStep(tempStep);
 			
 			List<String> keywords = new ArrayList<String>();
 			
