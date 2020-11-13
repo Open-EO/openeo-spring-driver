@@ -51,6 +51,9 @@ public class Collection   {
 
   @JsonProperty("license")
   private String license;
+  
+  @JsonProperty("citation")
+  private String citation;
 
   @JsonProperty("providers")
   @Valid
@@ -275,6 +278,23 @@ public class Collection   {
   public void setLicense(String license) {
     this.license = license;
   }
+  
+  public Collection citation(String citation) {
+	  this.citation = citation;
+	  return this;
+  }
+
+
+  @ApiModelProperty(example = "Copernicus Sentinel Data [2018]", required = false, value = "Citation of the data")
+  @NotNull
+
+  public String getCitation() {
+	  return citation;
+  }
+
+  public void setCitation(String citation) {
+	  this.citation = citation;
+  }
 
   public Collection providers(List<Providers> providers) {
     this.providers = providers;
@@ -459,6 +479,7 @@ public class Collection   {
         Objects.equals(this.version, collection.version) &&
         Objects.equals(this.deprecated, collection.deprecated) &&
         Objects.equals(this.license, collection.license) &&
+        Objects.equals(this.citation, collection.citation) &&
         Objects.equals(this.providers, collection.providers) &&
         Objects.equals(this.extent, collection.extent) &&
         Objects.equals(this.links, collection.links) &&
@@ -469,7 +490,7 @@ public class Collection   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(stacVersion, stacExtensions, id, title, description, keywords, version, deprecated, license, providers, extent, links, cubeColonDimensions, summaries, assets);
+    return Objects.hash(stacVersion, stacExtensions, id, title, description, keywords, version, deprecated, citation, license, providers, extent, links, cubeColonDimensions, summaries, assets);
   }
 
   @Override
@@ -486,6 +507,7 @@ public class Collection   {
     sb.append("    version: ").append(toIndentedString(version)).append("\n");
     sb.append("    deprecated: ").append(toIndentedString(deprecated)).append("\n");
     sb.append("    license: ").append(toIndentedString(license)).append("\n");
+    sb.append("    citation: ").append(toIndentedString(citation)).append("\n");
     sb.append("    providers: ").append(toIndentedString(providers)).append("\n");
     sb.append("    extent: ").append(toIndentedString(extent)).append("\n");
     sb.append("    links: ").append(toIndentedString(links)).append("\n");

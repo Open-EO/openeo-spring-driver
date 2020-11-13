@@ -389,14 +389,24 @@ public class CollectionsApiController implements CollectionsApi {
 
 				String title = null;
 				String description = null;
+				String citation = null;
 				try {
-					title = metadataElement.getChildText("Title", gmlNS);
-					currentCollection.setTitle(title);
+					title = metadataElement.getChildText("Title", gmlNS);					
 				}catch(Exception e) {
 				}
 				if(title==null) {
 					title = "No Title Available";
 				}
+				currentCollection.setTitle(title);
+				
+				try {
+					citation = metadataElement.getChildText("Citation", gmlNS);					
+				}catch(Exception e) {
+				}
+				if(citation==null) {
+					citation = "No Citation Available";
+				}
+				currentCollection.setCitation(citation);
 				
 				try {
 					description = metadataElement.getChildText("Description", gmlNS);					
@@ -1365,6 +1375,7 @@ public class CollectionsApiController implements CollectionsApi {
 			currentCollection.setLicense(license);
 			
 			String title = null;
+			String citation = null;
 			String description = null;
 			try {
 				title = metadataElement.getChildText("Title", gmlNS);
@@ -1374,6 +1385,15 @@ public class CollectionsApiController implements CollectionsApi {
 			if(title==null) {
 				title = "No Title Available";
 			}
+			
+			try {
+				citation = metadataElement.getChildText("Citation", gmlNS);					
+			}catch(Exception e) {
+			}
+			if(citation==null) {
+				citation = "No Citation Available";
+			}
+			currentCollection.setCitation(citation);
 			
 			try {
 				description = metadataElement.getChildText("Description", gmlNS);					
@@ -1707,7 +1727,7 @@ public class CollectionsApiController implements CollectionsApi {
 //					cloudCovArray.put(cloudCov);					
 //				}catch(Exception e) {
 ////					log.warn("Error in parsing Cloud Coverage:" + e.getMessage());
-//				}				
+//				}
 //			}
 //		    }catch(Exception e) {
 ////		    	log.warn("Error in parsing metadata slice :" + e.getMessage());
