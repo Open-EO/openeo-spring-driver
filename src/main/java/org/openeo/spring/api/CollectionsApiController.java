@@ -415,8 +415,7 @@ public class CollectionsApiController implements CollectionsApi {
 				}				
 				if(description==null) {
 					description = "No Description Available";
-				}
-				
+				}				
 				currentCollection.setDescription(description);
 				
 				List<String> keywords = new ArrayList<String>();
@@ -476,140 +475,140 @@ public class CollectionsApiController implements CollectionsApi {
 			}
 					
 			
-			JSONObject odcSTACMetdata = null;
-			try {
-				odcSTACMetdata = readJsonFromUrl(odcCollEndpoint);
-			} catch (JSONException e) {
-				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-				StringBuilder builderODC = new StringBuilder();
-				for( StackTraceElement element: e.getStackTrace()) {
-					builderODC.append(element.toString()+"\n");
-				}
-				log.error(builderODC.toString());
-			} catch (IOException e) {
-				log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-				StringBuilder builderODC = new StringBuilder();
-				for( StackTraceElement element: e.getStackTrace()) {
-					builderODC.append(element.toString()+"\n");
-				}
-				log.error(builderODC.toString());
-			}
-			
-			JSONObject odcCollections = odcSTACMetdata.getJSONObject("collections");
-			
-			for (String argumentKey : odcCollections.keySet()) {
-				JSONObject odcCollection= odcCollections.getJSONObject(argumentKey);
-				Collection currentCollection = new Collection();
-				
-				try {
-					currentCollection.setId(odcCollection.getString("id"));
-				}catch(Exception e) {
-					currentCollection.setId("No Collection ID available");
-				}
-				
-				try {
-					currentCollection.setDescription(odcCollection.getString("description"));
-				}catch(Exception e) {
-					currentCollection.setDescription("No Description available");
-				}
-				
-				try {
-					currentCollection.setTitle(odcCollection.getString("title"));
-				}catch(Exception e) {
-					currentCollection.setTitle("No Title available");
-				}
-				
-				try {
-					currentCollection.setStacVersion(odcCollection.getString("stac_version"));
-				}catch(Exception e) {
-					currentCollection.setStacVersion("No Stac Version Information available");
-				}
-				
-				try {
-					currentCollection.setLicense(odcCollection.getString("license"));
-				}catch(Exception e) {
-					currentCollection.setLicense("No License Information available");
-				}
-				
-				CollectionExtent extent = new CollectionExtent();
-				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
-				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
-				List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
-				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
-				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
-				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
-				try {
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(0));
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(1));
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(2));
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(3));
-				}catch(Exception e) {
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-				}
-				bbox.add(bbox1);
-				spatialExtent.setBbox(bbox);
-				extent.setSpatial(spatialExtent);
-								
-				try {
-					interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(0)));
-					interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(1)));					
-				}catch(Exception e) {
-					interval1.add(null);
-					interval1.add(null);
-				}
-				interval.add(interval1);
-				temporalExtent.setInterval(interval);
-				extent.setTemporal(temporalExtent);
-				currentCollection.setExtent(extent);
-				
-				Link linkItemsCollection = new Link();
- 				List<Link> linksCollections = new ArrayList<Link>();
- 				linkItemsCollection.setRel("licence");
- 				try {
- 					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
- 				} catch (URISyntaxException e) {
- 					// TODO Auto-generated catch block
- 					e.printStackTrace();
- 				}
- 				linkItemsCollection.setTitle("License Link");
- 				linkItemsCollection.setType("text/html");
- 				linksCollections.add(linkItemsCollection);
- 				currentCollection.setLinks(linksCollections);
- 				
- 				List<Providers> providers = new ArrayList<Providers>();
- 				Providers provider1 = new Providers();
- 				List<String> roles = new ArrayList<String>();
- 				provider1.setName("Eurac EO ODC");
- 				roles.add("producer");
-				roles.add("host");
- 				provider1.setRoles(roles);
- 				try {
- 					provider1.setUrl(new URI ("http://www.eurac.edu"));
- 				} catch (URISyntaxException e) {
- 					// TODO Auto-generated catch block
- 					e.printStackTrace();
- 				}
- 				
- 				providers.add(0, provider1);
- 				currentCollection.setProviders(providers);
- 				
-				collectionsList.addCollectionsItem(currentCollection);
-				
-				Link linkItems = new Link();
-				linkItems.setType("text/gml");
-				linkItems.setRel("alternate");
-				try {
-					linkItems.setHref(new URI ("http://saocompute.eurac.edu/rasdaman/ows"));
-				} catch (URISyntaxException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				linkItems.setTitle("openEO STAC Catalog (STAC Version 0.9.0)");
-				collectionsList.addLinksItem(linkItems);
-			}
+//			JSONObject odcSTACMetdata = null;
+//			try {
+//				odcSTACMetdata = readJsonFromUrl(odcCollEndpoint);
+//			} catch (JSONException e) {
+//				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
+//				StringBuilder builderODC = new StringBuilder();
+//				for( StackTraceElement element: e.getStackTrace()) {
+//					builderODC.append(element.toString()+"\n");
+//				}
+//				log.error(builderODC.toString());
+//			} catch (IOException e) {
+//				log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
+//				StringBuilder builderODC = new StringBuilder();
+//				for( StackTraceElement element: e.getStackTrace()) {
+//					builderODC.append(element.toString()+"\n");
+//				}
+//				log.error(builderODC.toString());
+//			}
+//			
+//			JSONObject odcCollections = odcSTACMetdata.getJSONObject("collections");
+//			
+//			for (String argumentKey : odcCollections.keySet()) {
+//				JSONObject odcCollection= odcCollections.getJSONObject(argumentKey);
+//				Collection currentCollection = new Collection();
+//				
+//				try {
+//					currentCollection.setId(odcCollection.getString("id"));
+//				}catch(Exception e) {
+//					currentCollection.setId("No Collection ID available");
+//				}
+//				
+//				try {
+//					currentCollection.setDescription(odcCollection.getString("description"));
+//				}catch(Exception e) {
+//					currentCollection.setDescription("No Description available");
+//				}
+//				
+//				try {
+//					currentCollection.setTitle(odcCollection.getString("title"));
+//				}catch(Exception e) {
+//					currentCollection.setTitle("No Title available");
+//				}
+//				
+//				try {
+//					currentCollection.setStacVersion(odcCollection.getString("stac_version"));
+//				}catch(Exception e) {
+//					currentCollection.setStacVersion("No Stac Version Information available");
+//				}
+//				
+//				try {
+//					currentCollection.setLicense(odcCollection.getString("license"));
+//				}catch(Exception e) {
+//					currentCollection.setLicense("No License Information available");
+//				}
+//				
+//				CollectionExtent extent = new CollectionExtent();
+//				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
+//				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
+//				List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
+//				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
+//				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
+//				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
+//				try {
+//					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(0));
+//					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(1));
+//					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(2));
+//					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(3));
+//				}catch(Exception e) {
+//					bbox1.add(null);
+//					bbox1.add(null);
+//					bbox1.add(null);
+//					bbox1.add(null);
+//				}
+//				bbox.add(bbox1);
+//				spatialExtent.setBbox(bbox);
+//				extent.setSpatial(spatialExtent);
+//								
+//				try {
+//					interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(0)));
+//					interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(1)));					
+//				}catch(Exception e) {
+//					interval1.add(null);
+//					interval1.add(null);
+//				}
+//				interval.add(interval1);
+//				temporalExtent.setInterval(interval);
+//				extent.setTemporal(temporalExtent);
+//				currentCollection.setExtent(extent);
+//				
+//				Link linkItemsCollection = new Link();
+// 				List<Link> linksCollections = new ArrayList<Link>();
+// 				linkItemsCollection.setRel("licence");
+// 				try {
+// 					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
+// 				} catch (URISyntaxException e) {
+// 					// TODO Auto-generated catch block
+// 					e.printStackTrace();
+// 				}
+// 				linkItemsCollection.setTitle("License Link");
+// 				linkItemsCollection.setType("text/html");
+// 				linksCollections.add(linkItemsCollection);
+// 				currentCollection.setLinks(linksCollections);
+// 				
+// 				List<Providers> providers = new ArrayList<Providers>();
+// 				Providers provider1 = new Providers();
+// 				List<String> roles = new ArrayList<String>();
+// 				provider1.setName("Eurac EO ODC");
+// 				roles.add("producer");
+//				roles.add("host");
+// 				provider1.setRoles(roles);
+// 				try {
+// 					provider1.setUrl(new URI ("http://www.eurac.edu"));
+// 				} catch (URISyntaxException e) {
+// 					// TODO Auto-generated catch block
+// 					e.printStackTrace();
+// 				}
+// 				
+// 				providers.add(0, provider1);
+// 				currentCollection.setProviders(providers);
+// 				
+//				collectionsList.addCollectionsItem(currentCollection);
+//				
+//				Link linkItems = new Link();
+//				linkItems.setType("text/gml");
+//				linkItems.setRel("alternate");
+//				try {
+//					linkItems.setHref(new URI ("http://saocompute.eurac.edu/rasdaman/ows"));
+//				} catch (URISyntaxException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//				linkItems.setTitle("openEO STAC Catalog (STAC Version 0.9.0)");
+//				collectionsList.addLinksItem(linkItems);
+//			}
 
 //			getRequest().ifPresent(request -> {
 //				for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
@@ -742,121 +741,121 @@ public class CollectionsApiController implements CollectionsApi {
     		
     		JSONObject odcSTACMetdata = null;
     		boolean odcDatacubeID = false;
-//			try {
-//				odcSTACMetdata = readJsonFromUrl(odcCollEndpoint + collectionId);
-//				//odcSTACMetdata = readJsonFromUrl(odcCollEndpoint + collectionId);
-//				odcDatacubeID = true;
-//			} catch (JSONException e) {
-//				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-//				StringBuilder builderODC = new StringBuilder();
-//				for( StackTraceElement element: e.getStackTrace()) {
-//					builderODC.append(element.toString()+"\n");
-//				}
-//				log.error(builderODC.toString());
-//			} catch (IOException e) {
-//				log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-//				StringBuilder builderODC = new StringBuilder();
-//				for( StackTraceElement element: e.getStackTrace()) {
-//					builderODC.append(element.toString()+"\n");
-//				}
-//				log.error(builderODC.toString());
-//			}
-//			
-//			log.debug("Is ODC Collection : " + odcDatacubeID);
-//			
-//			if (odcDatacubeID == true) {
-//			JSONObject odcCollection = odcSTACMetdata.getJSONObject("collections").getJSONObject(collectionId);
-//			
-//			currentCollection.setId(collectionId);			
-//			try {
-//				currentCollection.setDescription(odcCollection.getString("description"));
-//			}catch(Exception e) {
-//				currentCollection.setDescription("No Description available");
-//			}
-//			
-//			try {
-//				currentCollection.setTitle(odcCollection.getString("title"));
-//			}catch(Exception e) {
-//				currentCollection.setTitle("No Title available");
-//			}
-//			
-//			try {
-//				currentCollection.setStacVersion(odcCollection.getString("stac_version"));
-//			}catch(Exception e) {
-//				currentCollection.setStacVersion("No Stac Version Information available");
-//			}
-//			
-//			try {
-//				currentCollection.setLicense(odcCollection.getString("license"));
-//			}catch(Exception e) {
-//				currentCollection.setLicense("No License Information available");
-//			}
-//			
-//			CollectionExtent extent = new CollectionExtent();
-//			CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
-//			List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
-//			List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
-//			CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
-//			List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
-//			List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
-//			try {
-//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(0));
-//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(1));
-//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(2));
-//				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(3));
-//			}catch(Exception e) {
-//				bbox1.add(null);
-//				bbox1.add(null);
-//				bbox1.add(null);
-//				bbox1.add(null);
-//			}
-//			bbox.add(bbox1);
-//			spatialExtent.setBbox(bbox);
-//			extent.setSpatial(spatialExtent);
-//							
-//			try {
-//				interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(0)));
-//				interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(1)));					
-//			}catch(Exception e) {
-//				interval1.add(null);
-//				interval1.add(null);
-//			}
-//			interval.add(interval1);
-//			temporalExtent.setInterval(interval);
-//			extent.setTemporal(temporalExtent);
-//			currentCollection.setExtent(extent);
-//			
-//			Link linkItemsCollection = new Link();
-//				List<Link> linksCollections = new ArrayList<Link>();
-//				linkItemsCollection.setRel("licence");
-//				try {
-//					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
-//				} catch (URISyntaxException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-//				linkItemsCollection.setTitle("License Link");
-//				linkItemsCollection.setType("text/html");
-//				linksCollections.add(linkItemsCollection);
-//				currentCollection.setLinks(linksCollections);
+			try {
+				odcSTACMetdata = readJsonFromUrl(odcCollEndpoint + collectionId);
+				//odcSTACMetdata = readJsonFromUrl(odcCollEndpoint + collectionId);
+				odcDatacubeID = true;
+			} catch (JSONException e) {
+				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
+				StringBuilder builderODC = new StringBuilder();
+				for( StackTraceElement element: e.getStackTrace()) {
+					builderODC.append(element.toString()+"\n");
+				}
+				log.error(builderODC.toString());
+			} catch (IOException e) {
+				log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
+				StringBuilder builderODC = new StringBuilder();
+				for( StackTraceElement element: e.getStackTrace()) {
+					builderODC.append(element.toString()+"\n");
+				}
+				log.error(builderODC.toString());
+			}
+			
+			log.debug("Is ODC Collection : " + odcDatacubeID);
+			
+			if (odcDatacubeID == true) {
+			JSONObject odcCollection = odcSTACMetdata.getJSONObject("collections").getJSONObject(collectionId);
+			
+			currentCollection.setId(collectionId);			
+			try {
+				currentCollection.setDescription(odcCollection.getString("description"));
+			}catch(Exception e) {
+				currentCollection.setDescription("No Description available");
+			}
+			
+			try {
+				currentCollection.setTitle(odcCollection.getString("title"));
+			}catch(Exception e) {
+				currentCollection.setTitle("No Title available");
+			}
+			
+			try {
+				currentCollection.setStacVersion(odcCollection.getString("stac_version"));
+			}catch(Exception e) {
+				currentCollection.setStacVersion("No Stac Version Information available");
+			}
+			
+			try {
+				currentCollection.setLicense(odcCollection.getString("license"));
+			}catch(Exception e) {
+				currentCollection.setLicense("No License Information available");
+			}
+			
+			CollectionExtent extent = new CollectionExtent();
+			CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
+			List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
+			List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
+			CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
+			List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
+			List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
+			try {
+				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(0));
+				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(1));
+				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(2));
+				bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(3));
+			}catch(Exception e) {
+				bbox1.add(null);
+				bbox1.add(null);
+				bbox1.add(null);
+				bbox1.add(null);
+			}
+			bbox.add(bbox1);
+			spatialExtent.setBbox(bbox);
+			extent.setSpatial(spatialExtent);
+							
+			try {
+				interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(0)));
+				interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(1)));					
+			}catch(Exception e) {
+				interval1.add(null);
+				interval1.add(null);
+			}
+			interval.add(interval1);
+			temporalExtent.setInterval(interval);
+			extent.setTemporal(temporalExtent);
+			currentCollection.setExtent(extent);
+			
+			Link linkItemsCollection = new Link();
+				List<Link> linksCollections = new ArrayList<Link>();
+				linkItemsCollection.setRel("licence");
+				try {
+					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
+				} catch (URISyntaxException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				linkItemsCollection.setTitle("License Link");
+				linkItemsCollection.setType("text/html");
+				linksCollections.add(linkItemsCollection);
+				currentCollection.setLinks(linksCollections);
     		
-//    		List<Providers> providers = new ArrayList<Providers>();
-//				Providers provider1 = new Providers();
-//				List<String> roles = new ArrayList<String>();
-//				provider1.setName("Eurac EO ODC");
-//				roles.add("producer");
-//				roles.add("host");
-//				provider1.setRoles(roles);
-//				try {
-//					provider1.setUrl(new URI ("http://www.eurac.edu"));
-//				} catch (URISyntaxException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-//				
-//				providers.add(0, provider1);
-//				currentCollection.setProviders(providers);
-//    		}
+    		List<Providers> providers = new ArrayList<Providers>();
+				Providers provider1 = new Providers();
+				List<String> roles = new ArrayList<String>();
+				provider1.setName("Eurac EO ODC");
+				roles.add("producer");
+				roles.add("host");
+				provider1.setRoles(roles);
+				try {
+					provider1.setUrl(new URI ("http://www.eurac.edu"));
+				} catch (URISyntaxException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				providers.add(0, provider1);
+				currentCollection.setProviders(providers);
+    		}
     		
 			if (odcDatacubeID == false) {
     		currentCollection.setStacVersion("0.9.0");
@@ -967,7 +966,7 @@ public class CollectionsApiController implements CollectionsApi {
 						String bandId = band.getName();
 						dimensionbands.addValuesItem(bandId);
 						try {
-							bandWave = band.getChildText("center_wavelength");
+							bandWave = band.getChildText("wavelength");
 						}catch(Exception e) {
 //							log.warn("Error in parsing band wave-lenght:" + e.getMessage());
 						}
@@ -1023,7 +1022,7 @@ public class CollectionsApiController implements CollectionsApi {
 //		    	log.debug(axis[a]);
 				if(axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long")){
 					xIndex=a;
-					dimensionXspatial.setReferenceSystem(srsDescription);
+					dimensionXspatial.setReferenceSystem(Integer.parseInt(srsDescription));
 					dimensionXspatial.setAxis(AxisEnum.X);
 					List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
 					xExtent.add(0, new BigDecimal(c1[1]));
@@ -1033,7 +1032,7 @@ public class CollectionsApiController implements CollectionsApi {
 				}
 				if(axis[a].equals("N") || axis[a].equals("Y") || axis[a].equals("Lat")){
 					yIndex=a;
-					dimensionYspatial.setReferenceSystem(srsDescription);
+					dimensionYspatial.setReferenceSystem(Integer.parseInt(srsDescription));
 					dimensionYspatial.setAxis(AxisEnum.Y);
 					List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
 					yExtent.add(0, new BigDecimal(c1[0]));
@@ -1155,7 +1154,7 @@ public class CollectionsApiController implements CollectionsApi {
 							String bandId = band.getName();
 							dimensionbands.addValuesItem(bandId);
 							try {
-								bandWave = band.getChildText("center_wavelength");
+								bandWave = band.getChildText("wavelength");
 							}catch(Exception e) {
 //								log.warn("Error in parsing band wave-lenght:" + e.getMessage());
 							}
@@ -1199,7 +1198,7 @@ public class CollectionsApiController implements CollectionsApi {
 //			    	log.debug(axis[a]);
 					if(axis[a].equals("i")){
 						xIndex=a;
-						dimensionXspatial.setReferenceSystem(srsDescription);
+						dimensionXspatial.setReferenceSystem(Integer.parseInt(srsDescription));
 						dimensionXspatial.setAxis(AxisEnum.X);
 						List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
 						xExtent.add(0, new BigDecimal(minValues[j]));
@@ -1209,7 +1208,7 @@ public class CollectionsApiController implements CollectionsApi {
 					}
 					if(axis[a].equals("j")){
 						yIndex=a;
-						dimensionYspatial.setReferenceSystem(srsDescription);
+						dimensionYspatial.setReferenceSystem(Integer.parseInt(srsDescription));
 						dimensionYspatial.setAxis(AxisEnum.Y);
 						List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
 						yExtent.add(0, new BigDecimal(minValues[j+1]));
@@ -1327,13 +1326,13 @@ public class CollectionsApiController implements CollectionsApi {
 			String description = null;
 			String tempStep = null;
 			try {
-				title = metadataElement.getChildText("Title", gmlNS);
-				currentCollection.setTitle(title);
+				title = metadataElement.getChildText("Title", gmlNS);				
 			}catch(Exception e) {
 			}
 			if(title==null) {
 				title = "No Title Available";
 			}
+			currentCollection.setTitle(title);
 			
 			try {
 				citation = metadataElement.getChildText("Citation", gmlNS);					
@@ -1352,6 +1351,7 @@ public class CollectionsApiController implements CollectionsApi {
 			if(description==null) {
 				description = "No Description Available";
 			}
+			currentCollection.setDescription(description);
 			
 			try {
 				tempStep = metadataElement.getChildText("temproral_step", gmlNS);					
@@ -1443,7 +1443,7 @@ public class CollectionsApiController implements CollectionsApi {
 			}
 
 			try {				
-				instruments.add(metadataElement.getChildText("Instrument", gmlNS));
+				instruments.add(metadataElement.getChildText("Instruments", gmlNS));
 			}catch(Exception e) {
 				log.warn("Error in parsing Instrument:" + e.getMessage());
 			}
@@ -1532,7 +1532,7 @@ public class CollectionsApiController implements CollectionsApi {
 						}
 						
 						try {
-							bandWave = band.getChildText("center_wavelength");
+							bandWave = band.getChildText("wavelength");
 							bandsSummaryList.setCenterwavelength(Double.parseDouble(bandWave));
 						}catch(Exception e) {
 							log.warn("Error in parsing band wave-lenght:" + e.getMessage());
@@ -1568,162 +1568,6 @@ public class CollectionsApiController implements CollectionsApi {
 			
 			currentCollection.setAssets(assets);
 			
-//			JSONArray links = new JSONArray();			
-//			JSONObject linkSelf = new JSONObject();
-//			linkSelf.put("href", ConvenienceHelper.readProperties("openeo-endpoint") + "/collections/" + collectionId);
-//			linkSelf.put("rel", "self");
-//			
-//			JSONObject linkAlternate = new JSONObject();
-//			linkAlternate.put("href", ConvenienceHelper.readProperties("wcps-endpoint") + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionId);
-//			linkAlternate.put("rel", "alternate");
-//			
-//			JSONObject linkLicense = new JSONObject();
-//			linkLicense.put("href", "https://creativecommons.org/licenses/by/4.0/");
-//			linkLicense.put("rel", "license");
-//			
-//			JSONObject linkAbout = new JSONObject();
-//			linkAbout.put("href", ConvenienceHelper.readProperties("wcps-endpoint") + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionId);
-//			linkAbout.put("title", ConvenienceHelper.readProperties("wcps-endpoint") + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + collectionId);
-//			linkAbout.put("rel", "about");
-//			
-//			links.put(linkSelf);
-//			links.put(linkAlternate);
-//			links.put(linkLicense);
-//			links.put(linkAbout);
-		
-			//String keyword1 = metadataObj.getString("Project");
-			
-			//String providerName = metadataObj.getString("Creator");		
-			
-//			JSONArray roles1 = new JSONArray();
-//			roles1.put("host");
-//			try {
-//				roles1.put(metadataElement.getChildText("Role", gmlNS));
-//			}catch(Exception e) {
-//				log.warn("Error in parsing Role :" + e.getMessage());
-//			}
-			
-//			JSONArray provider1 = new JSONArray();
-//			JSONObject provider1Info = new JSONObject();
-//			provider1Info.put("name", "Eurac Research - Institute for Earth Observation");
-//			provider1Info.put("roles", roles1);
-//			provider1Info.put("url", "http://www.eurac.edu");
-//			provider1.put(provider1Info);			
-//			
-//			JSONObject properties = new JSONObject();
-//			JSONObject other_properties = new JSONObject();
-//			
-//		
-//			JSONArray epsg_values = new JSONArray();
-//			epsg_values.put(Double.parseDouble(srsDescription));
-//			
-//			epsgvalues.put("values", epsg_values);
-//			
-//			JSONArray platform_values = new JSONArray();
-//		    try {
-//				platform = metadataElement.getChildText("Platform", gmlNS);
-//			}catch(Exception e) {
-//			    	log.warn("Error in parsing Project Name :" + e.getMessage());
-//			    }
-//			platform_values.put("Sentinel-2A");
-//			platform_values.put("Sentinel-2B");
-//			pltfrmvalues.put("values", platform_values);			
-		    
-//			JSONArray cloud_cover = new JSONArray();
-//			JSONObject cloud_cover_extent = new JSONObject();			
-//			JSONObject cube_dimensions = new JSONObject();
-			
-//			try {
-//			for(JSONObject dim: dimObjects) {
-//				cube_dimensions.put(dim.getString("axis"), dim);
-//			}
-//			}catch(Exception e) {
-//				log.warn("Error in parsing Band Values :" + e.getMessage());
-//			}
-//			
-//			List<Element> slices = null;
-//			try {
-//				slices = metadataElement.getChild("slices", gmlNS).getChildren();
-//		    }catch(Exception e) {
-//		    	log.warn("Error in parsing metadata slices:" + e.getMessage());
-//		    }
-//			
-//			Element props = null;
-//			try {
-//				props = slices.get(0);
-//		    }catch(Exception e) {
-//		    	log.warn("Error in parsing metadata slice :" + e.getMessage());
-//		    }
-//			try {
-//				properties.put("sci:citation", metadataElement.getChildText("Citation", gmlNS));
-//			}catch(Exception e) {
-//				log.warn("Error in parsing Constellation:" + e.getMessage());
-//			}
-//
-//			try {
-//				properties.put("eo:constellation", metadataElement.getChildText("Constellation", gmlNS));
-//			}catch(Exception e) {
-//				log.warn("Error in parsing Constellation:" + e.getMessage());
-//			}				
-//
-//			try {				
-//				properties.put("eo:instrument", metadataElement.getChildText("Instrument", gmlNS));
-//			}catch(Exception e) {
-//				log.warn("Error in parsing Instrument:" + e.getMessage());
-//			}
-//
-//			JSONArray cloudCovArray = new JSONArray();
-//			
-//			try {
-//			for(int c = 0; c < slices.size(); c++) {
-//				try {					
-//					double cloudCov = Double.parseDouble(slices.get(c).getChildText("CLOUD_COVERAGE_ASSESSMENT"));
-//					cloudCovArray.put(cloudCov);					
-//				}catch(Exception e) {
-////					log.warn("Error in parsing Cloud Coverage:" + e.getMessage());
-//				}
-//			}
-//		    }catch(Exception e) {
-////		    	log.warn("Error in parsing metadata slice :" + e.getMessage());
-//		    }
-//			
-//			double maxCCValue = 0;
-//			double minCCValue = 0;	
-//			Boolean cloudCoverFlag = false;
-//			try {
-//				maxCCValue = cloudCovArray.getDouble(0);
-//				minCCValue = cloudCovArray.getDouble(0);
-//				cloudCoverFlag = true;
-//		    }catch(Exception e) {
-////		    	log.warn("Error in parsing cloud cover Extents :" + e.getMessage());
-//		    }
-//			
-//			try {
-//				for(int i=1;i < cloudCovArray.length();i++){
-//					if(cloudCovArray.getDouble(i) > maxCCValue){
-//						maxCCValue = cloudCovArray.getDouble(i); 
-//					}
-//					if(cloudCovArray.getDouble(i) < minCCValue){
-//						minCCValue = cloudCovArray.getDouble(i);
-//					}
-//				}
-//		    }catch(Exception e) {
-////		    	log.error("Error in parsing cloud cover array :" + e.getMessage());
-//		    }
-//			
-//			cloud_cover.put(minCCValue);
-//			cloud_cover.put(maxCCValue);
-//			cloud_cover_extent.put("extent", cloud_cover);
-//			if (cloudCoverFlag) {
-//			other_properties.put("eo:cloud_cover", cloud_cover_extent);
-//			}
-//			
-//			properties.put("cube:dimensions", cube_dimensions);
-//			properties.put("eo:epsg", Double.parseDouble(srsDescription));			
-//			properties.put("eo:bands", bandArray);
-//						
-//			other_properties.put("eo:platform", pltfrmvalues);
-//			other_properties.put("eo:epsg", epsgvalues);
 			}
 
 			return  new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
