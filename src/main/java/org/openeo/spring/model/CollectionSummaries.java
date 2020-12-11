@@ -26,6 +26,12 @@ public class CollectionSummaries   {
 
 	@JsonProperty("platform")
 	private List<String> platform;
+	
+	@JsonProperty("rows")
+	private Integer rows;
+	
+	@JsonProperty("columns")
+	private Integer columns;
 
 	@JsonProperty("instruments")
 	private List<String> instruments;
@@ -73,10 +79,10 @@ public class CollectionSummaries   {
 	}
 
 	/**
-	 * The value MUST be a valid URL.
+	 * The value MUST be a valid String.
 	 * @return href
 	 */
-	@ApiModelProperty(example = "https://example.openeo.org", required = true, value = "The value MUST be a valid URL.")
+	@ApiModelProperty(example = "Sentinel-2", required = true, value = "The value MUST be a valid String.")
 	@NotNull
 
 	@Valid
@@ -88,6 +94,45 @@ public class CollectionSummaries   {
 	public void setPlatform(List<String> platform) {
 		this.platform = platform;
 	}
+	
+	
+	public CollectionSummaries rows(Integer rows) {
+		this.rows = rows;
+		return this;
+	}
+	
+	@ApiModelProperty(example = "22", required = true, value = "The value MUST be a valid Integer.")
+	@NotNull
+
+	@Valid
+
+	public Integer getRows() {
+		return rows;
+	}
+
+	public void setRows(Integer rows) {
+		this.rows = rows;
+	}
+	
+	
+	public CollectionSummaries columns(Integer columns) {
+		this.columns = columns;
+		return this;
+	}
+	
+	@ApiModelProperty(example = "22", required = true, value = "The value MUST be a valid Integer.")
+	@NotNull
+
+	@Valid
+
+	public Integer getColumns() {
+		return columns;
+	}
+
+	public void setColumns(Integer columns) {
+		this.columns = columns;
+	}
+	
 
 	public CollectionSummaries cloudCover(CollectionSummaryStats cloudCover) {
 		this.cloudCover = cloudCover;

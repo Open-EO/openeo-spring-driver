@@ -430,27 +430,21 @@ public class CollectionsApiController implements CollectionsApi {
 				}
  				currentCollection.setKeywords(keywords);
  				
- 				String license = null;				
+ 				String license = null;
+ 				Link linkItemsCollection = new Link();
+ 				List<Link> linksCollections = new ArrayList<Link>();
 				try {
-					license = metadataElement.getChildText("License", gmlNS);					
+					license = metadataElement.getChildText("License", gmlNS);
+					linkItemsCollection.setHref(new URI (metadataElement.getChildText("License_Link", gmlNS)));
+ 					linkItemsCollection.setRel("licence");
+ 					linkItemsCollection.setTitle("License Link");
+ 	 				linkItemsCollection.setType(metadataElement.getChildText("License_Link_Type", gmlNS));
 				}catch(Exception e) {
 				}
 				if(license==null) {
 					license = "No License Information Available";
 				}
- 				currentCollection.setLicense(license);
- 				
- 				Link linkItemsCollection = new Link();
- 				List<Link> linksCollections = new ArrayList<Link>();
- 				linkItemsCollection.setRel("licence");
- 				try {
- 					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
- 				} catch (URISyntaxException e) {
- 					// TODO Auto-generated catch block
- 					e.printStackTrace();
- 				}
- 				linkItemsCollection.setTitle("License Link");
- 				linkItemsCollection.setType("text/html");
+ 				currentCollection.setLicense(license);				
  				linksCollections.add(linkItemsCollection);
  				currentCollection.setLinks(linksCollections);
 				
@@ -458,7 +452,6 @@ public class CollectionsApiController implements CollectionsApi {
 				Providers provider1 = new Providers();
 				List<String> roles = new ArrayList<String>();
 				provider1.setName("Eurac EO WCS");
-				roles.add("producer");
 				roles.add("host");
 				provider1.setRoles(roles);
 				try {
@@ -582,7 +575,6 @@ public class CollectionsApiController implements CollectionsApi {
 // 				Providers provider1 = new Providers();
 // 				List<String> roles = new ArrayList<String>();
 // 				provider1.setName("Eurac EO ODC");
-// 				roles.add("producer");
 //				roles.add("host");
 // 				provider1.setRoles(roles);
 // 				try {
@@ -843,7 +835,6 @@ public class CollectionsApiController implements CollectionsApi {
 				Providers provider1 = new Providers();
 				List<String> roles = new ArrayList<String>();
 				provider1.setName("Eurac EO ODC");
-				roles.add("producer");
 				roles.add("host");
 				provider1.setRoles(roles);
 				try {
@@ -1296,30 +1287,25 @@ public class CollectionsApiController implements CollectionsApi {
 			}			
 			
 			List<Link> links = new ArrayList<Link>();
-			Link link1 = new Link();
-			link1.setRel("license");
-			link1.setType("text/html");
-			link1.setTitle("License Link");
-			try {
-				link1.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
-			} catch (URISyntaxException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			links.add(0, link1);
-			currentCollection.setLinks(links);
-			
+			Link link1 = new Link();			
+				
 			currentCollection.setVersion("v1");
 			
 			String license = null;				
 			try {
-				license = metadataElement.getChildText("License", gmlNS);					
+				license = metadataElement.getChildText("License", gmlNS);
+				link1.setHref(new URI (metadataElement.getChildText("License_Link", gmlNS)));
+				link1.setRel("licence");
+				link1.setTitle("License Link");
+	 			link1.setType(metadataElement.getChildText("License_Link_Type", gmlNS));
 			}catch(Exception e) {
 			}
 			if(license==null) {
 				license = "No License Information Available";
 			}
 			currentCollection.setLicense(license);
+			links.add(0, link1);
+			currentCollection.setLinks(links);
 			
 			String title = null;
 			String citation = null;
@@ -1354,7 +1340,7 @@ public class CollectionsApiController implements CollectionsApi {
 			currentCollection.setDescription(description);
 			
 			try {
-				tempStep = metadataElement.getChildText("temproral_step", gmlNS);					
+				tempStep = metadataElement.getChildText("Temporal_Step", gmlNS);					
 			}catch(Exception e) {
 				
 			}					
@@ -1378,19 +1364,71 @@ public class CollectionsApiController implements CollectionsApi {
 						
 			List<Providers> providers = new ArrayList<Providers>();
 			Providers provider1 = new Providers();
-			List<String> roles = new ArrayList<String>();
+			List<String> roles1 = new ArrayList<String>();
+			Providers provider2 = new Providers();
+			String provider2Name = null;
+			String provider2Role = null;
+			String provider2Link = null;
+			List<String> roles2 = new ArrayList<String>();
+			Providers provider3 = new Providers();
+			String provider3Name = null;
+			String provider3Role = null;
+			String provider3Link = null;
+			List<String> roles3 = new ArrayList<String>();
+			Providers provider4 = new Providers();
+			String provider4Name = null;
+			String provider4Role = null;
+			String provider4Link = null;
+			List<String> roles4 = new ArrayList<String>();
 			provider1.setName("Eurac EO WCS");
-			roles.add("producer");
-			roles.add("host");
-			provider1.setRoles(roles);
+			roles1.add("host");
+			provider1.setRoles(roles1);
 			try {
 				provider1.setUrl(new URI ("http://www.eurac.edu"));
 			} catch (URISyntaxException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
 			providers.add(0, provider1);
+			
+			try {
+				provider2Name = metadataElement.getChildText("Provider2_Name", gmlNS);
+				provider2Role = metadataElement.getChildText("Provider2_Roles", gmlNS);
+				provider2Link = metadataElement.getChildText("Provider2_Link", gmlNS);
+				provider2.setName(provider2Name);
+				roles2.add(provider2Role);
+				provider2.setRoles(roles2);
+				provider2.setUrl(new URI (provider2Link));
+				providers.add(1, provider2);
+			}catch(Exception e) {
+				
+			}
+			
+			try {
+				provider3Name = metadataElement.getChildText("Provider3_Name", gmlNS);
+				provider3Role = metadataElement.getChildText("Provider3_Roles", gmlNS);
+				provider3Link = metadataElement.getChildText("Provider3_Link", gmlNS);
+				provider3.setName(provider3Name);
+				roles3.add(provider3Role);
+				provider3.setRoles(roles3);
+				provider3.setUrl(new URI (provider3Link));
+				providers.add(2, provider3);
+			}catch(Exception e) {
+				
+			}
+			
+			try {
+				provider4Name = metadataElement.getChildText("Provider4_Name", gmlNS);
+				provider4Role = metadataElement.getChildText("Provider4_Roles", gmlNS);
+				provider4Link = metadataElement.getChildText("Provider4_Link", gmlNS);
+				provider4.setName(provider4Name);
+				roles4.add(provider4Role);
+				provider4.setRoles(roles4);
+				provider4.setUrl(new URI (provider4Link));
+				providers.add(3, provider4);
+			}catch(Exception e) {
+				
+			}
 			currentCollection.setProviders(providers);
 			
 			CollectionSummaries summaries = new CollectionSummaries();
@@ -1398,6 +1436,8 @@ public class CollectionsApiController implements CollectionsApi {
 			List<String> constellation = new ArrayList<String>();
 			List<Double> gsd = new ArrayList<Double>();
 			List<String> instruments = new ArrayList<String>();
+			Integer rows = 0;
+			Integer columns = 0;
 			List<BandSummary> bandsSummary = new ArrayList<BandSummary>();			
 			CollectionSummaryStats cloudCover = new CollectionSummaryStats();
 			
@@ -1449,7 +1489,19 @@ public class CollectionsApiController implements CollectionsApi {
 			}
 			if(instruments.get(0)==null) {
 				instruments.set(0, "No Instrument Information Available");				
-			}			
+			}
+			
+			try {				
+				rows = Integer.parseInt(metadataElement.getChildText("Rows", gmlNS));
+			}catch(Exception e) {
+				log.warn("Error in parsing Rows:" + e.getMessage());
+			}
+			
+			try {				
+				columns = Integer.parseInt(metadataElement.getChildText("Columns", gmlNS));
+			}catch(Exception e) {
+				log.warn("Error in parsing Rows:" + e.getMessage());
+			}
 						
 			try {
 				slicesList = metadataElement.getChild("slices", gmlNS).getChildren();
@@ -1558,6 +1610,8 @@ public class CollectionsApiController implements CollectionsApi {
 			summaries.setInstruments(instruments);
 			summaries.setCloudCover(cloudCover);
 			summaries.setGsd(gsd);
+			summaries.setRows(rows);
+			summaries.setColumns(columns);
 //			summaries.setEpsg(epsg);
 			summaries.setBands(bandsSummary);
 			
