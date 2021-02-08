@@ -98,6 +98,8 @@ public class WCPSQueryFactory {
 		StringBuilder basicWCPS;
 		basicWCPS = new StringBuilder("for ");
 		
+		// Update WCPS when there are multiple cubes accessed
+		
 		for (int c = 1; c <= collectionIDs.size(); c++) {
 			String collectionID = processGraph.getJSONObject(collectionIDs.get(c - 1).getName()).getJSONObject("arguments").getString("id");
 			basicWCPS.append("$cube" + collectionID + collectionIDs.get(c - 1).getName() + " in (" + collectionID + ")");
@@ -113,7 +115,6 @@ public class WCPSQueryFactory {
 	private void build() {
 		StringBuilder wcpsPayLoad = new StringBuilder("");
 		StringBuilder varPayLoad = new StringBuilder("");
-
 		//String collectionVar = "$c";
 		JSONArray nodesArray = new JSONArray();
 		JSONArray nodesSortedArray = new JSONArray();
@@ -121,7 +122,6 @@ public class WCPSQueryFactory {
 		String saveNode = getSaveNode();
 		JSONArray saveNodeAsArray = new JSONArray();
 		log.debug(processGraph.toString());
-		parseOpenEOProcessGraph();
 //		for (int c = 1; c <= collectionIDs.size(); c++) {
 //			log.debug(collectionIDs.get(c - 1).getName());
 //			String collectionID = processGraph.getJSONObject(collectionIDs.get(c - 1).getName()).getJSONObject("arguments").getString("id");
@@ -132,20 +132,25 @@ public class WCPSQueryFactory {
 //		}
 		wcpsStringBuilder = basicWCPSStringBuilder(varPayLoad.toString());
 		saveNodeAsArray.put(saveNode);
+		
+		// Add the node Key of last Save_result node
 		nodesArray.put(saveNodeAsArray);
 		
+		// Join the nodeKey in the list by going backwards in the ProcessGraph
 		for (int n = 0; n < nodesArray.length(); n++) {
 			for (int a = 0; a < nodesArray.getJSONArray(n).length(); a++) {
 				JSONArray fromNodeOfProcess = getFromNodeOfCurrentKey(nodesArray.getJSONArray(n).getString(a));
 				if (fromNodeOfProcess.length()>0) {
 					nodesArray.put(fromNodeOfProcess);
 				}
+				// Add the Datacube nodeKey in the sorted List
 				else if (fromNodeOfProcess.length()==0) {
 					nodesSortedArray.put(nodesArray.getJSONArray(n).getString(a));
 				}
 			}
 		}
 		
+		// Remove the nodeKeys that are duplicates
 		for (int i = 0; i < nodesSortedArray.length(); i++) {
 			for (int j = i + 1 ; j < nodesSortedArray.length(); j++) {
 				if (nodesSortedArray.get(i).equals(nodesSortedArray.get(j))) {
@@ -155,15 +160,20 @@ public class WCPSQueryFactory {
 		}
 		
 		nodesArray.remove(nodesArray.length()-1);
+		
+		// Add the nodeKeys in correct order into the sorted Array
 		for (int i = nodesArray.length()-1; i>0; i--) {
-			if (nodesArray.getJSONArray(i).length()>0) {				
+			if (nodesArray.getJSONArray(i).length()>0) {
 				for (int a = 0; a < nodesArray.getJSONArray(i).length(); a++) {
 					nodesSortedArray.put(nodesArray.getJSONArray(i).getString(a));
 				}
 			}
 		}
 		
+		// Add the node Key of last Save_result node
 		nodesSortedArray.put(saveNode);
+		
+		// Remove the nodeKeys that are duplicates
 		for (int i = 0; i < nodesSortedArray.length(); i++) {
 			for (int j = i + 1 ; j < nodesSortedArray.length(); j++) {
 				if (nodesSortedArray.get(i).equals(nodesSortedArray.get(j))) {
@@ -180,7 +190,16 @@ public class WCPSQueryFactory {
 		log.debug("Process Graph's Nodes Sequence is : ");
 		log.debug(nodesSortedArray);
 		log.debug("Process Graph's Processes Sequence is : ");
-		log.debug(processesSequence);	
+		log.debug(processesSequence);
+		log.debug("Executing Processes : " + nodesSortedArray);
+		
+		// Execute the Processes that are independent of sort order
+		for(int a = 0; a<nodesSortedArray.length()-1; a++) {
+			String nodeKeyOfCurrentProcess = nodesSortedArray.getString(a);
+			String currentProcessID = processGraph.getJSONObject(nodeKeyOfCurrentProcess).getString("process_id");
+			log.debug("Executing Process : " + currentProcessID);
+			executeProcesses(currentProcessID, nodeKeyOfCurrentProcess);
+		}
 		
 		boolean containsMergeCubes = false;
 		boolean containsNormDiffProcess = false;
@@ -197,6 +216,7 @@ public class WCPSQueryFactory {
 		boolean collDims2D = false;
 		//int loadedCubes = 1;
 
+		// Build WCPS Queries as per correct order of Processes in ProcessGraph
 		myLoop:		for(int i = 0; i < nodesSortedArray.length(); i++) {
 			String nodeKeyOfCurrentProcess = nodesSortedArray.getString(i);
 			JSONObject currentProcess = processGraph.getJSONObject(nodeKeyOfCurrentProcess);
@@ -5927,66 +5947,6 @@ public class WCPSQueryFactory {
 //			}
 		}
 		return fromNodes;
-	}
-
-	/**
-	 * 
-	 * @param processParent
-	 * @return
-	 */
-	private JSONObject parseOpenEOProcessGraph() {
-		//TODO why do we create an object here, that we never touch again and return that empty object?
-		JSONObject result = null;
-		JSONArray nodesArray = new JSONArray();
-		JSONArray nodesSortedArray = new JSONArray();
-		String saveNode = getSaveNode();
-		JSONArray saveNodeAsArray = new JSONArray();
-		saveNodeAsArray.put(saveNode);
-		nodesArray.put(saveNodeAsArray);
-
-		for (int n = 0; n < nodesArray.length(); n++) {
-			for (int a = 0; a < nodesArray.getJSONArray(n).length(); a++) {
-				JSONArray fromNodeOfReducers = getFromNodeOfCurrentKey(nodesArray.getJSONArray(n).getString(a));
-				if (fromNodeOfReducers.length()>0) {
-					nodesArray.put(fromNodeOfReducers);
-				}
-				else if (fromNodeOfReducers.length()==0) {
-					nodesSortedArray.put(nodesArray.getJSONArray(n).getString(a));
-				}
-			}
-		}
-		
-		for (int i = 0; i < nodesSortedArray.length(); i++) {
-			for (int j = i + 1 ; j < nodesSortedArray.length(); j++) {
-				if (nodesSortedArray.get(i).equals(nodesSortedArray.get(j))) {
-					nodesSortedArray.remove(j);
-				}
-			}
-		}				
-		nodesArray.remove(nodesArray.length()-1);		
-		for (int i = nodesArray.length()-1; i>0; i--) {
-			if (nodesArray.getJSONArray(i).length()>0) {				
-				for (int a = 0; a < nodesArray.getJSONArray(i).length(); a++) {
-					nodesSortedArray.put(nodesArray.getJSONArray(i).getString(a));
-				}
-			}
-		}
-		nodesSortedArray.put(saveNode);
-		for (int i = 0; i < nodesSortedArray.length(); i++) {
-			for (int j = i + 1 ; j < nodesSortedArray.length(); j++) {
-				if (nodesSortedArray.get(i).equals(nodesSortedArray.get(j))) {
-					nodesSortedArray.remove(j);
-				}
-			}
-		}
-		log.debug("Executing Processes : " + nodesSortedArray);
-		for(int a = 0; a<nodesSortedArray.length()-1; a++) {
-			String nodeKeyOfCurrentProcess = nodesSortedArray.getString(a);
-			String currentProcessID = processGraph.getJSONObject(nodeKeyOfCurrentProcess).getString("process_id");
-			log.debug("Executing Process : " + currentProcessID);
-			executeProcesses(currentProcessID, nodeKeyOfCurrentProcess);
-		}
-		return result;
 	}
 
 	private void executeProcesses(String processID, String processNodeKey) {

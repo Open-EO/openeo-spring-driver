@@ -904,6 +904,8 @@ public class CollectionsApiController implements CollectionsApi {
 			DimensionTemporal dimensionTemporal = new DimensionTemporal();
 			dimensionTemporal.setType(TypeEnum.TEMPORAL);
 			String srsDescription = boundingBoxElement.getAttributeValue("srsName");
+			Integer rows = 0;
+			Integer columns = 0;
 			if (srsDescription.contains("EPSG")) {
 			try {
 				srsDescription = srsDescription.substring(srsDescription.indexOf("EPSG"), srsDescription.indexOf("&")).replace("/0/", ":");
@@ -932,10 +934,11 @@ public class CollectionsApiController implements CollectionsApi {
 		    String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
 		    int xIndex = 0;
 		    int yIndex = 0;
-						
+			
 			List<Element> bandsList = null;
 			List<Element> bandsListSwe = null;
 			Boolean bandsMeta = false;
+			
 			try {
 				bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
 				bandsMeta = true;
@@ -1006,6 +1009,13 @@ public class CollectionsApiController implements CollectionsApi {
 			c1 = tx.TransformPoint(Double.parseDouble(minValues[j]), Double.parseDouble(minValues[j+1]));
 			c2 = tx.TransformPoint(Double.parseDouble(maxValues[j]), Double.parseDouble(maxValues[j+1]));
 			
+			String[] spatDims = null;
+			try {
+			spatDims = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("ReferenceableGridByVectors", gmlNS).getChild("limits", gmlNS).getChild("GridEnvelope", gmlNS).getChildText("high", gmlNS).split(" ");
+		    }catch(Exception e) {
+			log.warn("Error in parsing bands :" + e.getMessage());
+		    }
+			
 			String startTime = null;
 			String endTime = null;
 			
@@ -1013,6 +1023,7 @@ public class CollectionsApiController implements CollectionsApi {
 //		    	log.debug(axis[a]);
 				if(axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long")){
 					xIndex=a;
+					rows = Integer.parseInt(spatDims[xIndex]) + 1;
 					dimensionXspatial.setReferenceSystem(Integer.parseInt(srsDescription));
 					dimensionXspatial.setAxis(AxisEnum.X);
 					List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
@@ -1023,6 +1034,7 @@ public class CollectionsApiController implements CollectionsApi {
 				}
 				if(axis[a].equals("N") || axis[a].equals("Y") || axis[a].equals("Lat")){
 					yIndex=a;
+					columns = Integer.parseInt(spatDims[yIndex]) + 1;
 					dimensionYspatial.setReferenceSystem(Integer.parseInt(srsDescription));
 					dimensionYspatial.setAxis(AxisEnum.Y);
 					List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
@@ -1435,9 +1447,7 @@ public class CollectionsApiController implements CollectionsApi {
 			List<String> platform = new ArrayList<String>();
 			List<String> constellation = new ArrayList<String>();
 			List<Double> gsd = new ArrayList<Double>();
-			List<String> instruments = new ArrayList<String>();
-			Integer rows = 0;
-			Integer columns = 0;
+			List<String> instruments = new ArrayList<String>();			
 			List<BandSummary> bandsSummary = new ArrayList<BandSummary>();			
 			CollectionSummaryStats cloudCover = new CollectionSummaryStats();
 			
@@ -1491,18 +1501,18 @@ public class CollectionsApiController implements CollectionsApi {
 				instruments.set(0, "No Instrument Information Available");				
 			}
 			
-			try {				
-				rows = Integer.parseInt(metadataElement.getChildText("Rows", gmlNS));
-			}catch(Exception e) {
-				log.warn("Error in parsing Rows:" + e.getMessage());
-			}
+//			try {
+//				rows = Integer.parseInt(metadataElement.getChildText("Rows", gmlNS));
+//			}catch(Exception e) {
+//				log.warn("Error in parsing Rows:" + e.getMessage());
+//			}
+//			
+//			try {
+//				columns = Integer.parseInt(metadataElement.getChildText("Columns", gmlNS));
+//			}catch(Exception e) {
+//				log.warn("Error in parsing Columns:" + e.getMessage());
+//			}
 			
-			try {				
-				columns = Integer.parseInt(metadataElement.getChildText("Columns", gmlNS));
-			}catch(Exception e) {
-				log.warn("Error in parsing Rows:" + e.getMessage());
-			}
-						
 			try {
 				slicesList = metadataElement.getChild("slices", gmlNS).getChildren();
 				for(int c = 0; c < slicesList.size(); c++) {
