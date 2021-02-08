@@ -962,7 +962,7 @@ public class CollectionsApiController implements CollectionsApi {
 						try {
 							bandWave = band.getChildText("wavelength");
 						}catch(Exception e) {
-//							log.warn("Error in parsing band wave-lenght:" + e.getMessage());
+//							log.warn("Error in parsing band wave-length:" + e.getMessage());
 						}
 						try {
 							bandCommonName = band.getChildText("common_name");
@@ -1009,21 +1009,26 @@ public class CollectionsApiController implements CollectionsApi {
 			c1 = tx.TransformPoint(Double.parseDouble(minValues[j]), Double.parseDouble(minValues[j+1]));
 			c2 = tx.TransformPoint(Double.parseDouble(maxValues[j]), Double.parseDouble(maxValues[j+1]));
 			
-			String[] spatDims = null;
+			String[] spatDims = null;			
 			try {
-			spatDims = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("ReferenceableGridByVectors", gmlNS).getChild("limits", gmlNS).getChild("GridEnvelope", gmlNS).getChildText("high", gmlNS).split(" ");
-		    }catch(Exception e) {
-			log.warn("Error in parsing bands :" + e.getMessage());
-		    }
+				spatDims = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("ReferenceableGridByVectors", gmlNS).getChild("limits", gmlNS).getChild("GridEnvelope", gmlNS).getChildText("high", gmlNS).split(" ");
+			}catch(Exception e) {
+				log.warn("Error in parsing bands :" + e.getMessage());
+			}
+
+			try {
+				spatDims = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS).getChild("RectifiedGrid", gmlNS).getChild("limits", gmlNS).getChild("GridEnvelope", gmlNS).getChildText("high", gmlNS).split(" ");
+			}catch(Exception e) {
+				log.warn("Error in parsing bands :" + e.getMessage());
+			}			
 			
 			String startTime = null;
-			String endTime = null;
-			
+			String endTime = null;			
 			for(int a = 0; a < axis.length; a++) {
 //		    	log.debug(axis[a]);
 				if(axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long")){
 					xIndex=a;
-					rows = Integer.parseInt(spatDims[xIndex]) + 1;
+					columns = Integer.parseInt(spatDims[xIndex]) + 1;
 					dimensionXspatial.setReferenceSystem(Integer.parseInt(srsDescription));
 					dimensionXspatial.setAxis(AxisEnum.X);
 					List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
@@ -1034,7 +1039,7 @@ public class CollectionsApiController implements CollectionsApi {
 				}
 				if(axis[a].equals("N") || axis[a].equals("Y") || axis[a].equals("Lat")){
 					yIndex=a;
-					columns = Integer.parseInt(spatDims[yIndex]) + 1;
+					rows = Integer.parseInt(spatDims[yIndex]) + 1;
 					dimensionYspatial.setReferenceSystem(Integer.parseInt(srsDescription));
 					dimensionYspatial.setAxis(AxisEnum.Y);
 					List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
