@@ -16,13 +16,17 @@ import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,6 +80,12 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 	@Value("${org.openeo.wcps.tmp.dir}")
 	private String tmpDir;
+	
+	@Value("${org.openeo.udf.dir}")
+	private String tmpDirUDF;
+	
+	@Value("${org.openeo.udf.importscript}")
+	private String udfimport;
 
 	@Value("{org.openeo.udf.python.endpoint}")
 	private String pythonEndpoint;
@@ -191,6 +201,8 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 						builder.append(element.toString() + "\n");
 					}
 					log.error(builder.toString());
+					job.setStatus(JobStates.ERROR);
+					jobDAO.update(job);
 				}
 
 				String service_url = null;
@@ -205,7 +217,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 					log.debug("service URL for UDF processing: " + candelaEndpoint);
 				} else if (runtime.toLowerCase().equals("r")) {
 					runtime = "r";
-					service_url = REndpoint;
+					service_url = "http://10.8.246.140:5555";
 					log.debug("service URL for UDF processing: " + REndpoint);
 				} else {
 					log.error("The requested runtime is not available!");
@@ -222,6 +234,8 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 						builder.append(element.toString() + "\n");
 					}
 					log.error(builder.toString());
+					job.setStatus(JobStates.ERROR);
+					jobDAO.update(job);
 				}
 				log.info(udfServiceEndpoint);
 				// open http connection to udf execution endpoint
@@ -240,9 +254,11 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 						builder.append(element.toString() + "\n");
 					}
 					log.error(builder.toString());
+					job.setStatus(JobStates.ERROR);
+					jobDAO.update(job);
 				}
 
-				String inputHyperCubeDebugPath = tmpDir + "udf_result/input_" + job.getId() + ".json";
+				String inputHyperCubeDebugPath = tmpDirUDF + "udf_result/input_" + job.getId() + ".json";
 				saveHyperCubeToDisk(udfDescriptor, inputHyperCubeDebugPath);
 
 				// stream UDF in form of json hypercube object to udf endpoint via http post
@@ -260,6 +276,8 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 						builder.append(element.toString() + "\n");
 					}
 					log.error(builder.toString());
+					job.setStatus(JobStates.ERROR);
+					jobDAO.update(job);
 				}
 
 				// get result from udf endpoint in form of a json hypercube document.
@@ -277,10 +295,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 					JSONObject firstHyperCube = hyperCubes.getJSONObject(0);
 
-					String outputHyperCubeDebugPath = tmpDir + "udf_result/output_" + job.getId() + ".json";
+					String outputHyperCubeDebugPath = tmpDirUDF + "udf_result/output_" + job.getId() + ".json";
 					saveHyperCubeToDisk(firstHyperCube, outputHyperCubeDebugPath);
 					// convert hypercube json object into netcdf file and save to tempory disk
-					String netCDFPath = tmpDir + "udf_result/" + job.getId() + ".nc";
+					String netCDFPath = tmpDirUDF + "udf_result/" + job.getId() + ".nc";
 					new HyperCubeFactory().writeHyperCubeToNetCDFBandAsVariable(firstHyperCube,
 							udfResponse.getString("proj"), netCDFPath);
 					JSONArray dimensionsArray = firstHyperCube.getJSONArray("dimensions");
@@ -290,8 +308,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 					// Re-import result from UDF in rasdaman using wcst_import tool
 					try {
 						ProcessBuilder importProcessBuilder = new ProcessBuilder();
-						importProcessBuilder.command("bash", "-c",
-								"/tmp/openeo/udf_result/import_udf_multi.sh " + netCDFPath);
+						importProcessBuilder.command("bash", "-c", udfimport + " " + netCDFPath);
 						log.debug(netCDFPath);
 						Process importProcess = importProcessBuilder.start();
 						StringBuilder importProcessLogger = new StringBuilder();
@@ -329,6 +346,8 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 							builder.append(element.toString() + "\n");
 						}
 						log.error(builder.toString());
+						job.setStatus(JobStates.ERROR);
+						jobDAO.update(job);
 					} catch (InterruptedException e) {
 						log.error("\"An error occured when launching import to cube: " + e.getMessage());
 						StringBuilder builder = new StringBuilder();
@@ -336,6 +355,8 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 							builder.append(element.toString() + "\n");
 						}
 						log.error(builder.toString());
+						job.setStatus(JobStates.ERROR);
+						jobDAO.update(job);
 					}
 					// continue processing of process_graph after the UDF
 					log.debug(processGraphAfterUDF);
@@ -344,6 +365,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 					URL urlUDF = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages"
 							+ "&QUERY=" + URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 					executeWCPS(urlUDF, job, wcpsFactory);
+					deleteUDFCube(job.getId());
 
 				} catch (UnsupportedEncodingException e) {
 					log.error("An error occured when encoding response of udf service endpoint " + e.getMessage());
@@ -352,6 +374,8 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 						builder.append(element.toString() + "\n");
 					}
 					log.error(builder.toString());
+					job.setStatus(JobStates.ERROR);
+					jobDAO.update(job);
 				} catch (IOException e) {
 					log.error("An error occured during execution of UDF: " + e.getMessage());
 					StringBuilder builder = new StringBuilder();
@@ -360,6 +384,8 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 					}
 					log.error(builder.toString());
 					logErrorStream(con.getErrorStream());
+					job.setStatus(JobStates.ERROR);
+					jobDAO.update(job);
 				}
 			}
 
@@ -369,18 +395,75 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 						+ "&QUERY=" + URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 				executeWCPS(url, job, wcpsFactory);
 			}
-		} catch (MalformedURLException e1) {
-			e1.printStackTrace();
-		} catch (UnsupportedEncodingException e1) {
-			e1.printStackTrace();
-		} catch (IOException e1) {
-			e1.printStackTrace();
+		} catch (MalformedURLException e) {
+			log.error("An error occured when running job with udf: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+			job.setStatus(JobStates.ERROR);
+			jobDAO.update(job);
+		} catch (UnsupportedEncodingException e) {
+			log.error("An error occured when running job with udf: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+			job.setStatus(JobStates.ERROR);
+			jobDAO.update(job);
+		} catch (IOException e) {
+			log.error("An error occured when running job with udf: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+			job.setStatus(JobStates.ERROR);
+			jobDAO.update(job);
 		}
 	}
 
 	@Override
 	public void jobExecuted(JobEvent jobEvent) {
 		// TODO check if this is still needed. Currently this event chain is unused...
+	}
+	
+	private void deleteUDFCube(UUID jobId) {
+		Job job = jobDAO.findOne(jobId);
+		if(job != null && job.getStatus() == JobStates.FINISHED) {
+			try {
+				URL url = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages"
+						+ "&COVERAGEID=udfCube_" + job.getId());
+				URLConnection con =  url.openConnection();
+				con.getContent();
+				File f = new File(tmpDirUDF + "udf_result");			
+				File[] listFiles = f.listFiles();
+				
+				for (int i=0; i<listFiles.length; i++) {
+					File currentFile = listFiles[i];
+					if(currentFile.isFile() && !Files.isSymbolicLink(currentFile.toPath())) {
+						if(currentFile.getName().contains(job.getId().toString())) {
+							log.debug("The following file will be deleted: " + currentFile.getName());
+							currentFile.delete();
+						}
+					}
+				}
+			} catch (MalformedURLException e) {
+				log.error("An error occured when defining URL to delete UDF data cube from WCS endpoint: " + e.getMessage());
+				StringBuilder builder = new StringBuilder();
+				for (StackTraceElement element : e.getStackTrace()) {
+					builder.append(element.toString() + "\n");
+				}
+				log.error(builder.toString());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}else {
+			log.error("UDF could not be deleted since job was not finished correctly.");
+		}
 	}
 
 	private void executeWCPS(URL url, Job job, WCPSQueryFactory wcpsQuery) {

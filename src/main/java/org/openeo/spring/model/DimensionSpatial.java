@@ -74,7 +74,7 @@ public class DimensionSpatial extends Dimension  {
   private JsonNullable<BigDecimal> step = JsonNullable.undefined();
 
   @JsonProperty("reference_system")
-  private String referenceSystem = null;
+  private Integer referenceSystem = null;
 
   public DimensionSpatial axis(AxisEnum axis) {
     this.axis = axis;
@@ -176,7 +176,7 @@ public class DimensionSpatial extends Dimension  {
     this.step = step;
   }
 
-  public DimensionSpatial referenceSystem(String referenceSystem) {
+  public DimensionSpatial referenceSystem(Integer referenceSystem) {
     this.referenceSystem = referenceSystem;
     return this;
   }
@@ -189,11 +189,11 @@ public class DimensionSpatial extends Dimension  {
 
   @Valid
 
-  public String getReferenceSystem() {
+  public Integer getReferenceSystem() {
     return referenceSystem;
   }
 
-  public void setReferenceSystem(String referenceSystem) {
+  public void setReferenceSystem(Integer referenceSystem) {
     this.referenceSystem = referenceSystem;
   }
 
