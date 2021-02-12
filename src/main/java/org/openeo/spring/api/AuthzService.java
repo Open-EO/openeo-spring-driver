@@ -53,7 +53,7 @@ public class AuthzService {
             AuthzClient authzClient = AuthzClient.create();
             
             ProtectedResource resourceClient = authzClient.protection().resource();
-            ResourceRepresentation existingResource = resourceClient.findByName(resourceRepresentation.getName());
+            ResourceRepresentation existingResource =  resourceClient.findByName(resourceRepresentation.getName());
             
             if (existingResource != null) {
                 resourceClient.delete(existingResource.getId());

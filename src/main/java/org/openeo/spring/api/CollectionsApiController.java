@@ -19,6 +19,7 @@ import java.util.Optional;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import org.openapitools.jackson.nullable.JsonNullable;
 
@@ -32,6 +33,7 @@ import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
 import org.json.JSONObject;
+import org.keycloak.adapters.springsecurity.client.KeycloakRestTemplate;
 import org.json.JSONArray;
 import org.openeo.spring.model.AdditionalDimension;
 import org.openeo.spring.model.Asset;
@@ -48,6 +50,7 @@ import org.openeo.spring.model.DimensionSpatial;
 import org.openeo.spring.model.DimensionSpatial.AxisEnum;
 import org.openeo.spring.model.DimensionTemporal;
 import org.openeo.spring.model.Link;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -479,6 +482,7 @@ public class CollectionsApiController implements CollectionsApi {
      *         or The request can&#39;t be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 400)
      *         or The request can&#39;t be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json) (status code 500)
      */
+    
     @Operation(summary = "Full metadata for a specific dataset", operationId = "describeCollecion", description = "Lists **all** information about a specific collection specified by the identifier `collection_id`.  This endpoint is compatible with [STAC 0.9.0](https://stacspec.org) and [OGC API - Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features / extensions and [STAC extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions) can be implemented in addition to what is documented here.", tags={ "EO Data Discovery", })
     @ApiResponses(value = { 
         @ApiResponse(responseCode = "200", description = "JSON object with the full collection metadata."),
@@ -496,7 +500,7 @@ public class CollectionsApiController implements CollectionsApi {
 //    	}else {
 //    		log.warn("The current user is not authenticated!");
 //    	}
-    	
+    	   	
     	URL url;
     	Collection currentCollection = new Collection();
     	try {
