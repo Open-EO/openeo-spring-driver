@@ -6,6 +6,7 @@ import org.keycloak.adapters.springsecurity.KeycloakConfiguration;
 import org.keycloak.adapters.springsecurity.KeycloakSecurityComponents;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider;
 import org.keycloak.adapters.springsecurity.config.KeycloakWebSecurityConfigurerAdapter;
+import org.keycloak.adapters.springsecurity.filter.KeycloakAuthenticatedActionsFilter;
 import org.keycloak.adapters.springsecurity.filter.KeycloakAuthenticationProcessingFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -41,6 +42,12 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 	protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {
 		return new RegisterSessionAuthenticationStrategy(new SessionRegistryImpl());
 	}
+
+//	@Bean
+//	@Override
+//	protected KeycloakAuthenticatedActionsFilter keycloakAuthenticatedActionsRequestFilter() {
+//	    return new FixedKeycloakAuthenticatedActionsFilter();
+//	}
 	
 	@Bean
     @Primary
