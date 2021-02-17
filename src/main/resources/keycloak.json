@@ -7,8 +7,22 @@
   "credentials": {
     "secret": "d00875a6-7967-44fd-b597-bd39fb0f4473"
   },
-  "use-resource-role-mappings": true,
+  "use-resource-role-mappings": false,
   "confidential-port": 0,
-  "policy-enforcer": {}
+  "policy-enforcer": {
+
+      "claim-information-point": {
+      "claims": {
+      
+                  "claim-from-relativePath":"{request.relativePath}"  
+      }      
+      }  
+  }
 }
+
+
+
+
+
+
 
