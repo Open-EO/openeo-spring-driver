@@ -183,7 +183,7 @@ public class JobsApiController implements JobsApi {
 		Job verifiedSave = jobDAO.findOne(job.getId());
 		if (verifiedSave != null) {
 			if(token != null) {
-				authzService.createProtectedResource(job);
+				authzService.createProtectedResource(job, token);
 			}
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 			log.debug("verified retrieved job: " + verifiedSave.toString());
@@ -341,6 +341,8 @@ public class JobsApiController implements JobsApi {
 			}
 			jobDAO.delete(job);
 			log.debug("The job " + jobId + " was successfully deleted.");
+			authzService.deleteProtectedResource(job);
+			log.debug("The job " + jobId + " was successfully deleted from Keycloak.");
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
 			Error error = new Error();

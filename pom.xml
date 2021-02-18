@@ -103,7 +103,7 @@
          <!-- keycloak -->
 		 <dependency>		
 		 	<groupId>org.keycloak</groupId>
-		 	<artifactId>keycloak-spring-boot-starter</artifactId>
+		 	<artifactId>keycloak-spring-security-adapter</artifactId>
 		 	<version>8.0.1</version>
 		 </dependency>
 		 <!-- keycloak-authz-client-->
