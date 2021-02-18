@@ -22,6 +22,7 @@ import org.keycloak.adapters.springsecurity.filter.KeycloakAuthenticationProcess
 import org.keycloak.adapters.springsecurity.filter.KeycloakPreAuthActionsFilter;
 import org.keycloak.adapters.springsecurity.filter.KeycloakSecurityContextRequestFilter;
 import org.keycloak.adapters.springsecurity.management.HttpSessionManager;
+import org.openeo.spring.keycloak.OpenEOKeycloakAuthenticationProcessingFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
