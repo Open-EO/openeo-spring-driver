@@ -5,3 +5,4 @@
 /private.key
 /selfsigned.crt
 /keycloak_self.crt
+/keycloak.json
