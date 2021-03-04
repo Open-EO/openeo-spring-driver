@@ -203,11 +203,11 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 			csrf().
 			disable().
 			authorizeRequests().
-			//antMatchers("/**").
-			//permitAll().
+			antMatchers("/**").
+			permitAll();
 			
-			antMatchers("/collections").hasAnyRole("eurac", "public").
-			antMatchers("/collections/{collection_id}").hasAnyRole("eurac", "public").	
+//			antMatchers("/collections").hasAnyRole("eurac", "public").
+//			antMatchers("/collections/{collection_id}").hasAnyRole("eurac", "public").	
 //			antMatchers("/jobs/*").hasAnyRole("eurac", "public").
 //			antMatchers("/services/*").hasAnyRole("eurac", "public").
 //			antMatchers("/files/*").hasAnyRole("eurac", "public").
@@ -222,8 +222,8 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 			//antMatchers("/udf_runtimes").hasAnyRole("eurac", "public").
 			//antMatchers("/processes").hasAnyRole("eurac", "public").
 			//antMatchers("/validation").hasAnyRole("eurac", "public").
-			anyRequest().
-			permitAll();
+//			anyRequest().
+//			permitAll();
 			http.headers().frameOptions().disable();
 
 		}
