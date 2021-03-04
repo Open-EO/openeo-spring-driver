@@ -33,7 +33,7 @@ public class JobDAO extends AbstractDAO<Job> {
 	//	CriteriaQuery<T> select = query.select(from); //SELECT * FROM JOBS (get all jobs in the table)
 		
 		// SELECT * FROM JOBS WHERE owner = "Bahar"; (get all jobs with owner bahar in the table)
-		CriteriaQuery<Job> select = query.select(from).where(criteria.equal(from.get("OWNER"), ownerName));
+		CriteriaQuery<Job> select = query.select(from).where(criteria.equal(from.get("owner"), ownerName));
 		
 		
 		
