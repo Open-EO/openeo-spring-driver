@@ -99,7 +99,7 @@ public class WCPSQueryFactory {
 			}
 		}
 		// varPayLoad is for when there is 'let' function to be used in WCPS
-		//basicWCPS.append(" let " + varPayLoad + " $mock := 1 return encode ( ");
+//		basicWCPS.append(" let " + varPayLoad + " $mock := 1 return encode ( ");
 		basicWCPS.append(varPayLoad + " return encode ( ");
 		return basicWCPS;
 	}
@@ -123,7 +123,7 @@ public class WCPSQueryFactory {
 //			}
 //		}
 		
-		wcpsStringBuilder = basicWCPSStringBuilder(varPayLoad.toString());
+		
 		saveNodeAsArray.put(saveNode);
 		
 		// Add the node Key of last Save_result node
@@ -194,7 +194,7 @@ public class WCPSQueryFactory {
 			log.debug("Executing Process : " + currentProcessID);
 			executeProcesses(currentProcessID, nodeKeyOfCurrentProcess);
 		}
-		
+		wcpsStringBuilder = basicWCPSStringBuilder(varPayLoad.toString());
 		boolean collDims2D = false;
 		
 		// Start build WCPS Queries according to correct order of Processes in the ProcessGraph
