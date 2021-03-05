@@ -90,7 +90,7 @@ public class WCPSQueryFactory {
 		basicWCPS = new StringBuilder("for ");
 		
 		// Update WCPS when there are multiple cubes to be accessed
-		
+		log.debug("collectionIDs size: " +  collectionIDs.size());
 		for (int c = 1; c <= collectionIDs.size(); c++) {
 			String collectionID = processGraph.getJSONObject(collectionIDs.get(c - 1).getName()).getJSONObject("arguments").getString("id");
 			basicWCPS.append("$cube" + collectionID + collectionIDs.get(c - 1).getName() + " in (" + collectionID + ")");
