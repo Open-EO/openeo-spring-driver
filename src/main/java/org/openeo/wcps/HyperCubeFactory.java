@@ -493,7 +493,7 @@ public class HyperCubeFactory {
 					epsgCode = Integer.parseInt(srs.replace("EPSG:", ""));
 					writer.addGlobalAttribute(new Attribute("EPSG", epsgCode));
 				}catch (NumberFormatException e) {
-					log.error("The epsg code of the UDF result could not be parsed");
+					log.error("The epsg code of the UDF result could not be parsed: ", srs);
 				}				
 			}else {
 				log.error("The epsg code of the UDF result was empty");
