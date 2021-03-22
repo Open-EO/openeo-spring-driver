@@ -18,7 +18,7 @@
         <commonsio.version>2.6</commonsio.version>
         <json.version>20200518</json.version>
         <!-- Keycloak -->
-        <keycloak.version>10.0.2</keycloak.version>
+        <keycloak.version>12.0.4</keycloak.version>
         <tomcat.dbcp.version>9.0.37</tomcat.dbcp.version>
         <jackson.nullable.version>0.2.1</jackson.nullable.version>
     </properties>
@@ -104,13 +104,13 @@
 		 <dependency>		
 		 	<groupId>org.keycloak</groupId>
 		 	<artifactId>keycloak-spring-security-adapter</artifactId>
-		 	<version>8.0.1</version>
+		 	<version>${keycloak.version}</version>
 		 </dependency>
 		 <!-- keycloak-authz-client-->
         <dependency>
            <groupId>org.keycloak</groupId>
            <artifactId>keycloak-authz-client</artifactId>
-           <version>8.0.1</version>
+           <version>${keycloak.version}</version>
        </dependency>
 		 <dependency>
 		    <groupId>org.springframework.security</groupId>
