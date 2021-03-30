@@ -493,125 +493,127 @@ public class CollectionsApiController implements CollectionsApi {
 				log.error(builderODC.toString());
 			}
 			
-			JSONObject odcCollections = odcSTACMetdata.getJSONObject("collections");
+			if(odcSTACMetdata != null) {
+				
+				JSONObject odcCollections = odcSTACMetdata.getJSONObject("collections");
 			
-			for (String argumentKey : odcCollections.keySet()) {
-				JSONObject odcCollection= odcCollections.getJSONObject(argumentKey);
-				Collection currentCollection = new Collection();
-				
-				try {
-					currentCollection.setId(odcCollection.getString("id"));
-				}catch(Exception e) {
-					currentCollection.setId("No Collection ID available");
-				}
-				
-				try {
-					currentCollection.setDescription(odcCollection.getString("description"));
-				}catch(Exception e) {
-					currentCollection.setDescription("No Description available");
-				}
-				
-				try {
-					currentCollection.setTitle(odcCollection.getString("title"));
-				}catch(Exception e) {
-					currentCollection.setTitle("No Title available");
-				}
-				
-				try {
-					currentCollection.setStacVersion(odcCollection.getString("stac_version"));
-				}catch(Exception e) {
-					currentCollection.setStacVersion("No Stac Version Information available");
-				}
-				
-				try {
-					currentCollection.setLicense(odcCollection.getString("license"));
-				}catch(Exception e) {
-					currentCollection.setLicense("No License Information available");
-				}
-				
-				CollectionExtent extent = new CollectionExtent();
-				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
-				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
-				List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
-				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
-				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
-				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
-				try {
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(0));
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(1));
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(2));
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(3));
-				}catch(Exception e) {
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-				}
-				bbox.add(bbox1);
-				spatialExtent.setBbox(bbox);
-				extent.setSpatial(spatialExtent);
-								
-				try {
-					interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(0)));
-					interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(1)));					
-				}catch(Exception e) {
-					interval1.add(null);
-					interval1.add(null);
-				}
-				interval.add(interval1);
-				temporalExtent.setInterval(interval);
-				extent.setTemporal(temporalExtent);
-				currentCollection.setExtent(extent);
-				
-				Link linkItemsCollection = new Link();
- 				List<Link> linksCollections = new ArrayList<Link>();
- 				linkItemsCollection.setRel("licence");
- 				try {
- 					//TODO remove hard coded names here and inject them via properties file
- 					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
- 				} catch (URISyntaxException e) {
- 					// TODO Auto-generated catch block
- 					e.printStackTrace();
- 				}
- 				linkItemsCollection.setTitle("License Link");
- 				linkItemsCollection.setType("text/html");
- 				linksCollections.add(linkItemsCollection);
- 				currentCollection.setLinks(linksCollections);
- 				
- 				List<Providers> providers = new ArrayList<Providers>();
- 				Providers provider1 = new Providers();
- 				List<String> roles = new ArrayList<String>();
- 				provider1.setName("Eurac EO ODC");
-				roles.add("host");
- 				provider1.setRoles(roles);
- 				try {
- 					//TODO remove hard coded names here and inject them via properties file
- 					provider1.setUrl(new URI ("http://www.eurac.edu"));
- 				} catch (URISyntaxException e) {
- 					// TODO Auto-generated catch block
- 					e.printStackTrace();
- 				}
- 				
- 				providers.add(0, provider1);
- 				currentCollection.setProviders(providers);
- 				
-				collectionsList.addCollectionsItem(currentCollection);
-				
-				Link linkItems = new Link();
-				linkItems.setType("text/gml");
-				linkItems.setRel("alternate");
-				try {
+				for (String argumentKey : odcCollections.keySet()) {
+					JSONObject odcCollection= odcCollections.getJSONObject(argumentKey);
+					Collection currentCollection = new Collection();
+					
+					try {
+						currentCollection.setId(odcCollection.getString("id"));
+					}catch(Exception e) {
+						currentCollection.setId("No Collection ID available");
+					}
+					
+					try {
+						currentCollection.setDescription(odcCollection.getString("description"));
+					}catch(Exception e) {
+						currentCollection.setDescription("No Description available");
+					}
+					
+					try {
+						currentCollection.setTitle(odcCollection.getString("title"));
+					}catch(Exception e) {
+						currentCollection.setTitle("No Title available");
+					}
+					
+					try {
+						currentCollection.setStacVersion(odcCollection.getString("stac_version"));
+					}catch(Exception e) {
+						currentCollection.setStacVersion("No Stac Version Information available");
+					}
+					
+					try {
+						currentCollection.setLicense(odcCollection.getString("license"));
+					}catch(Exception e) {
+						currentCollection.setLicense("No License Information available");
+					}
+					
+					CollectionExtent extent = new CollectionExtent();
+					CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
+					List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
+					List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
+					CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
+					List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
+					List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
+					try {
+						bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(0));
+						bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(1));
+						bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(2));
+						bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0).getBigDecimal(3));
+					}catch(Exception e) {
+						bbox1.add(null);
+						bbox1.add(null);
+						bbox1.add(null);
+						bbox1.add(null);
+					}
+					bbox.add(bbox1);
+					spatialExtent.setBbox(bbox);
+					extent.setSpatial(spatialExtent);
+									
+					try {
+						interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(0)));
+						interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal").getJSONArray("interval").getJSONArray(0).getString(1)));					
+					}catch(Exception e) {
+						interval1.add(null);
+						interval1.add(null);
+					}
+					interval.add(interval1);
+					temporalExtent.setInterval(interval);
+					extent.setTemporal(temporalExtent);
+					currentCollection.setExtent(extent);
+					
+					Link linkItemsCollection = new Link();
+	 				List<Link> linksCollections = new ArrayList<Link>();
+	 				linkItemsCollection.setRel("licence");
+	 				try {
+	 					//TODO remove hard coded names here and inject them via properties file
+	 					linkItemsCollection.setHref(new URI ("https://creativecommons.org/licenses/by/4.0/"));
+	 				} catch (URISyntaxException e) {
+	 					// TODO Auto-generated catch block
+	 					e.printStackTrace();
+	 				}
+	 				linkItemsCollection.setTitle("License Link");
+	 				linkItemsCollection.setType("text/html");
+	 				linksCollections.add(linkItemsCollection);
+	 				currentCollection.setLinks(linksCollections);
+	 				
+	 				List<Providers> providers = new ArrayList<Providers>();
+	 				Providers provider1 = new Providers();
+	 				List<String> roles = new ArrayList<String>();
+	 				provider1.setName("Eurac EO ODC");
+					roles.add("host");
+	 				provider1.setRoles(roles);
+	 				try {
+	 					//TODO remove hard coded names here and inject them via properties file
+	 					provider1.setUrl(new URI ("http://www.eurac.edu"));
+	 				} catch (URISyntaxException e) {
+	 					// TODO Auto-generated catch block
+	 					e.printStackTrace();
+	 				}
+	 				
+	 				providers.add(0, provider1);
+	 				currentCollection.setProviders(providers);
+	 				
+					collectionsList.addCollectionsItem(currentCollection);
+					
+					Link linkItems = new Link();
+					linkItems.setType("text/gml");
+					linkItems.setRel("alternate");
+					try {
+						//TODO remove hard coded names here and inject them via properties file
+						linkItems.setHref(new URI ("http://saocompute.eurac.edu/rasdaman/ows"));
+					} catch (URISyntaxException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					//TODO remove hard coded names here and inject them via properties file
-					linkItems.setHref(new URI ("http://saocompute.eurac.edu/rasdaman/ows"));
-				} catch (URISyntaxException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					linkItems.setTitle("openEO STAC Catalog (STAC Version 0.9.0)");
+					collectionsList.addLinksItem(linkItems);
 				}
-				//TODO remove hard coded names here and inject them via properties file
-				linkItems.setTitle("openEO STAC Catalog (STAC Version 0.9.0)");
-				collectionsList.addLinksItem(linkItems);
 			}
-
 //			getRequest().ifPresent(request -> {
 //				for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
 //					if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
