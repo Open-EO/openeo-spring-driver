@@ -48,7 +48,9 @@ public class ProcessesApiController implements ProcessesApi {
     private Map<String, Process> processes = null;
 	private Map<String, Link> links = null;
 	private ObjectMapper mapper = null;
-	@Value("classpath:processes.json")
+//	("classpath:processes.json")
+	@Value("${org.openeo.wcps.processes.list}")
+
 	Resource processesFile;
 //	
 	@Autowired
