@@ -23,6 +23,8 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Collection   {
+  private EngineTypes engine;
+  
   @JsonProperty("stac_version")
   private String stacVersion;
 
@@ -78,7 +80,15 @@ public class Collection   {
   @Valid
   private Map<String, Asset> assets = null;
 
-  public Collection stacVersion(String stacVersion) {
+  public EngineTypes getEngine() {
+	return engine;
+}
+
+public void setEngine(EngineTypes engine) {
+	this.engine = engine;
+}
+
+public Collection stacVersion(String stacVersion) {
     this.stacVersion = stacVersion;
     return this;
   }

@@ -47,6 +47,8 @@ public class Process implements Serializable{
 	/**
 	 * 
 	 */
+	private EngineTypes engine;
+	
 	private static final long serialVersionUID = -6102545771306725349L;
 	
 	@Transient
@@ -111,6 +113,14 @@ public class Process implements Serializable{
 	@Valid
 	@Lob
 	private byte[] processGraph = null;
+
+	public EngineTypes getEngine() {
+		return engine;
+	}
+
+	public void setEngine(EngineTypes engine) {
+		this.engine = engine;
+	}
 
 	public Process id(String id) {
 		this.id = id;
