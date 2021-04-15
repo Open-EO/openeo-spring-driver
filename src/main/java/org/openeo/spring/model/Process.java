@@ -47,6 +47,7 @@ public class Process implements Serializable{
 	/**
 	 * 
 	 */
+	@JsonProperty("engine")
 	private EngineTypes engine;
 	
 	private static final long serialVersionUID = -6102545771306725349L;
@@ -599,6 +600,7 @@ public class Process implements Serializable{
 		StringBuilder sb = new StringBuilder();
 		sb.append("class Process {\n");
 
+		sb.append("    engine: ").append(toIndentedString(engine)).append("\n");
 		sb.append("    id: ").append(toIndentedString(id)).append("\n");
 		sb.append("    summary: ").append(toIndentedString(summary)).append("\n");
 		sb.append("    description: ").append(toIndentedString(description)).append("\n");

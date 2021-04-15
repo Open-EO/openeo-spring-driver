@@ -15,6 +15,7 @@ import org.openeo.spring.model.Process;
 import org.openeo.spring.model.ProcessParameter;
 import org.openeo.spring.model.ProcessReturnValue;
 import org.openeo.spring.model.DataTypeSchema;
+import org.openeo.spring.model.EngineTypes;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.ParameterSchema;
 
@@ -50,8 +51,10 @@ public class ProcessesApiController implements ProcessesApi {
 	private ObjectMapper mapper = null;
 //	("classpath:processes.json")
 	@Value("${org.openeo.wcps.processes.list}")
-
-	Resource processesFile;
+	Resource processesFileWCPS;
+	@Value("${org.openeo.odc.processes.list}")
+	Resource processesFileODC;
+	
 //	
 	@Autowired
 	ResourceLoader resourceLoader;
@@ -121,9 +124,18 @@ public class ProcessesApiController implements ProcessesApi {
     
     public ResponseEntity<Processes> listProcesses(@Min(1)@Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
     	ObjectMapper mapper = new ObjectMapper();
-    	Processes processesList = null;
+    	Processes processesList = new Processes();
 		try {
-			processesList = mapper.readValue(processesFile.getInputStream(), Processes.class);
+			Processes processesListWCPS = mapper.readValue(processesFileWCPS.getInputStream(), Processes.class);
+			Processes processesListODC = mapper.readValue(processesFileODC.getInputStream(), Processes.class);
+			for(Process processElement: processesListWCPS.getProcesses()) {
+				processElement.setEngine(EngineTypes.WCPS);
+				processesList.addProcessesItem(processElement);
+			}
+			for(Process processElement: processesListODC.getProcesses()) {
+				processElement.setEngine(EngineTypes.ODC_DASK);
+				processesList.addProcessesItem(processElement);
+			}
 		} catch (JsonParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

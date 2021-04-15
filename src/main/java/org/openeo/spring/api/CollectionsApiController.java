@@ -190,9 +190,7 @@ public class CollectionsApiController implements CollectionsApi {
 		}
 		for (Collection currentCollection: odcCollections.getCollections()) {
 			collectionsList.addCollectionsItem(currentCollection);
-		}
-		//TODO merge ODC and wcps collections and move ODC block in private method and add to init instead. 
-		
+		}		
 //			getRequest().ifPresent(request -> {
 //				for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
 //					if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
