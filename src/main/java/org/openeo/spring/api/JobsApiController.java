@@ -161,6 +161,7 @@ public class JobsApiController implements JobsApi {
 			token = TokenUtil.getAccessToken(principal);
 			job.setOwnerPrincipal(token.getPreferredUsername());
 		}
+		//TODO add validity check of the job using ValidationApiController
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
 		
@@ -170,7 +171,7 @@ public class JobsApiController implements JobsApi {
 		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
-		log.debug("Process Graph attached: " + processGraph.toString(4));
+		log.trace("Process Graph attached: " + processGraph.toString(4));
 		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
 		jobDAO.save(job);
 		ObjectMapper mapper = new ObjectMapper();
@@ -196,6 +197,7 @@ public class JobsApiController implements JobsApi {
 				Error error = new Error();
 				error.setCode("500");
 				error.setMessage("The submitted job " + job.toString() + " has an invalid URI");
+				log.error("The submitted job " + job.toString() + " has an invalid URI");
 				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 			
@@ -203,6 +205,7 @@ public class JobsApiController implements JobsApi {
 			Error error = new Error();
 			error.setCode("500");
 			error.setMessage("The submitted job " + job.toString() + " was not saved persistently");
+			log.error("The submitted job " + job.toString() + " was not saved persistently");
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -348,6 +351,7 @@ public class JobsApiController implements JobsApi {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
+			log.error("The requested job " + jobId + " could not be found.");
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
 
@@ -710,6 +714,7 @@ public class JobsApiController implements JobsApi {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
+			log.error("The requested job " + jobId + " could not be found.");
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
 
