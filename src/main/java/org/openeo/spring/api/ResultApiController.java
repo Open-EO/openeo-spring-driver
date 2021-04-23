@@ -1,5 +1,6 @@
 package org.openeo.spring.api;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,6 +11,8 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 
 import javax.validation.Valid;
@@ -17,12 +20,22 @@ import javax.validation.Valid;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
+import org.openeo.spring.model.Collection;
+import org.openeo.spring.model.Collections;
+import org.openeo.spring.model.EngineTypes;
+import org.openeo.spring.api.CollectionsApiController;
+import org.openeo.spring.components.CollectionsMap;
+import org.openeo.spring.components.JobScheduler;
 import org.openeo.wcps.ConvenienceHelper;
 import org.openeo.wcps.WCPSQueryFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +45,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,6 +63,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @RequestMapping("${openapi.openEO.base-path:}")
 public class ResultApiController implements ResultApi {
 
+	@Autowired
+	private JobScheduler jobScheduler;
+	
+	@Autowired
+	private CollectionsMap collectionsMap;
+	
 	private final NativeWebRequest request;
 
 	private final Logger log = LogManager.getLogger(ResultApiController.class);
@@ -57,6 +82,11 @@ public class ResultApiController implements ResultApi {
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
 
+	@Value("${org.openeo.wcps.collections.list}")
+	Resource collectionsFileWCPS;
+	@Value("${org.openeo.odc.collections.list}")
+	Resource collectionsFileODC;
+	
 	@org.springframework.beans.factory.annotation.Autowired
 	public ResultApiController(NativeWebRequest request) {
 		this.request = request;
@@ -78,14 +108,54 @@ public class ResultApiController implements ResultApi {
 	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
 		String backend = job.getProcess().getDescription();
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
+//		log.error("Selected Engine: " + job.getProcess().getEngine().toString());
+
+		//TODO Check to which engine we need to send the job
+		
+		// The following approach has been copied from jobScheduler, where it looks for udfs
+		log.info("+++++++++ START HERE +++++++++ ");
+		log.info(processGraphJSON.toString());
+		log.info(processGraphJSON.toString().contains("load_collection"));
+		String collectionID = new String();
+		
+		List<JSONObject> loadCollectionNodes = jobScheduler.getProcessNode("load_collection",processGraphJSON);
+		
+		boolean containsOnlyOdcCollections = true;
+		
+		for (JSONObject loadCollectionNode: loadCollectionNodes) {
+			
+			collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString();
+			
+			Collections odcCollections = collectionsMap.get(EngineTypes.ODC_DASK);
+			
+			Collection collection = null;
+			for (Collection coll: odcCollections.getCollections()) {
+				if (coll.getId().equals(collectionID)) {
+					collection = coll;
+					break;
+				}
+			}
+			if (collection == null) {
+				containsOnlyOdcCollections = false;
+				break;
+			}
+		}
+		
+
 		//TODO Change to engine property -> based on collection and processes
-		if (backend != null && backend.contains("ODC")) {
+		// Check engine from the collection used in the graph
+		log.info("++++++++ ");
+		log.info(collectionID);
+		log.info(containsOnlyOdcCollections);
+		log.info("++++++++ ");
+		if (collectionID != "" && containsOnlyOdcCollections) {
+			log.info("+++++++++ ODC FORWARD ++++++++");
 			JSONObject process = new JSONObject();
 			process.put("id", "ODC-graph");
 			process.put("process_graph", processGraphJSON);
 			URL url;
 			try {
-				url = new URL(odcEndpoint + "/graph/" + "test");
+				url = new URL(odcEndpoint);
 				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 				conn.setRequestMethod("POST");
 				conn.setRequestProperty("Content-Type", "application/json; utf-8");
@@ -152,5 +222,6 @@ public class ResultApiController implements ResultApi {
 		return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 
 	}
+	
 
 }

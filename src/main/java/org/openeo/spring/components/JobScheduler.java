@@ -1,4 +1,4 @@
-package org.openeo.wcps;
+package org.openeo.spring.components;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -40,6 +40,10 @@ import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.EngineTypes;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
+import org.openeo.wcps.ConvenienceHelper;
+import org.openeo.wcps.HyperCubeFactory;
+import org.openeo.wcps.UDFFactory;
+import org.openeo.wcps.WCPSQueryFactory;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
 import org.openeo.wcps.events.UDFEvent;
@@ -610,7 +614,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		log.debug("The following job was set to status finished: \n" + job.toString());
 	}
 
-	private JSONArray getProcessesNodesSequence() {
+	public JSONArray getProcessesNodesSequence() {
 		JSONArray nodesArray = new JSONArray();
 		JSONArray nodesSortedArray = new JSONArray();
 
@@ -669,6 +673,19 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			}
 		}
 		return null;
+	}
+	
+	public List<JSONObject> getProcessNode(String process_id, JSONObject inputProcessGraphJSON) {
+		ArrayList<JSONObject> nodesList = new ArrayList<JSONObject>();
+		for (String processNodeKey : inputProcessGraphJSON.keySet()) {
+			JSONObject processNode = inputProcessGraphJSON.getJSONObject(processNodeKey);
+			String processID = processNode.getString("process_id");
+			if (processID.equals(process_id)) {
+				log.debug(process_id + " Process Node key found is: " + processNodeKey);
+				nodesList.add(processNode);
+			}
+		}
+		return nodesList;
 	}
 
 	private String getSaveNode() {

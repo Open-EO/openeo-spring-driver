@@ -45,6 +45,7 @@ import org.json.JSONObject;
 import org.keycloak.adapters.springsecurity.client.KeycloakRestTemplate;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.openeo.spring.components.CollectionsMap;
 import org.openeo.spring.model.AdditionalDimension;
 import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.BandSummary;
@@ -65,6 +66,7 @@ import org.openeo.spring.model.EngineTypes;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.Processes;
 import org.openeo.spring.model.Providers;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -103,8 +105,9 @@ public class CollectionsApiController implements CollectionsApi {
 	Resource collectionsFileWCPS;
 	@Value("${org.openeo.odc.collections.list}")
 	Resource collectionsFileODC;
-		
-	private HashMap<EngineTypes, Collections> collectionsMap;
+	
+	@Autowired
+	private CollectionsMap collectionsMap;
 	
 	private final Logger log = LogManager.getLogger(CollectionsApiController.class);
 
@@ -209,13 +212,13 @@ public class CollectionsApiController implements CollectionsApi {
 	}
 
 	private JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
-		//log.debug("Trying to read JSON from the following URL : ");
-		//log.debug(url);
+		log.debug("Trying to read JSON from the following URL : ");
+		log.debug(url);
 		InputStream is = new URL(url).openStream();
 		try {
 			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
 			String jsonText = readAll(rd);
-			//log.debug(jsonText);
+			log.debug(jsonText);
 			JSONObject json = new JSONObject(jsonText);
 			return json;
 		} finally {
