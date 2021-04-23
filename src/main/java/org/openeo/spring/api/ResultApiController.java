@@ -106,50 +106,47 @@ public class ResultApiController implements ResultApi {
 	@RequestMapping(value = "/result", produces = { "*" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
-		String backend = job.getProcess().getDescription();
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
-//		log.error("Selected Engine: " + job.getProcess().getEngine().toString());
 
 		//TODO Check to which engine we need to send the job
-		
-		// The following approach has been copied from jobScheduler, where it looks for udfs
-		log.info("+++++++++ START HERE +++++++++ ");
-		log.info(processGraphJSON.toString());
-		log.info(processGraphJSON.toString().contains("load_collection"));
 		String collectionID = new String();
 		
 		List<JSONObject> loadCollectionNodes = jobScheduler.getProcessNode("load_collection",processGraphJSON);
 		
-		boolean containsOnlyOdcCollections = true;
+		boolean containsSameEngineCollections = true;
+		EngineTypes selectedEngineType = null;
 		
-		for (JSONObject loadCollectionNode: loadCollectionNodes) {
-			
-			collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString();
-			
-			Collections odcCollections = collectionsMap.get(EngineTypes.ODC_DASK);
-			
-			Collection collection = null;
-			for (Collection coll: odcCollections.getCollections()) {
-				if (coll.getId().equals(collectionID)) {
-					collection = coll;
+		// The following loop checks if the collections requested in the load_collection calls are provided by the same engine and tells us which to use
+		for (EngineTypes enType: EngineTypes.values()) {
+			for (JSONObject loadCollectionNode: loadCollectionNodes) {
+				
+				collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString(); // The collection id requested in the process graph
+				
+				Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
+		
+				Collection collection = null;
+				
+				for (Collection coll: engineCollections.getCollections()) {
+					if (coll.getId().equals(collectionID)) {
+						collection = coll; // We found the requested collection in the current engine of the loop
+						break;
+					}
+				}
+				if (collection == null) {
+					containsSameEngineCollections = false;
 					break;
 				}
-			}
-			if (collection == null) {
-				containsOnlyOdcCollections = false;
-				break;
+				else {
+					selectedEngineType = enType;
+					containsSameEngineCollections = true;
+				}
 			}
 		}
-		
 
 		//TODO Change to engine property -> based on collection and processes
 		// Check engine from the collection used in the graph
-		log.info("++++++++ ");
-		log.info(collectionID);
-		log.info(containsOnlyOdcCollections);
-		log.info("++++++++ ");
-		if (collectionID != "" && containsOnlyOdcCollections) {
-			log.info("+++++++++ ODC FORWARD ++++++++");
+
+		if (containsSameEngineCollections && selectedEngineType == EngineTypes.ODC_DASK) {
 			JSONObject process = new JSONObject();
 			process.put("id", "ODC-graph");
 			process.put("process_graph", processGraphJSON);
@@ -185,7 +182,7 @@ public class ResultApiController implements ResultApi {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		} else {
+		} else if(containsSameEngineCollections && selectedEngineType == EngineTypes.WCPS) {
 			WCPSQueryFactory wcpsFactory = null;
 			wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint);
 			URL url;
@@ -215,6 +212,13 @@ public class ResultApiController implements ResultApi {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+		else {
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("The submitted job contains collections from two different engines, not supported!");
+			log.debug("The submitted job contains collections from two different engines, not supported!");
+			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		Error error = new Error();
 		error.setCode("500");
