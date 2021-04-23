@@ -66,6 +66,7 @@ import org.openeo.spring.model.Link;
 import org.openeo.spring.model.Processes;
 import org.openeo.spring.model.Providers;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -97,10 +98,14 @@ public class CollectionsApiController implements CollectionsApi {
 	private String wcpsEndpoint;
 	@Value("${org.openeo.odc.collectionsEndpoint}")
 	private String odcCollEndpoint;
-
-	private Collections wcpsCollections;
-	private Collections odcCollections;
-
+	
+	@Value("${org.openeo.wcps.collections.list}")
+	Resource collectionsFileWCPS;
+	@Value("${org.openeo.odc.collections.list}")
+	Resource collectionsFileODC;
+		
+	private HashMap<EngineTypes, Collections> collectionsMap;
+	
 	private final Logger log = LogManager.getLogger(CollectionsApiController.class);
 
 	@org.springframework.beans.factory.annotation.Autowired
@@ -110,9 +115,8 @@ public class CollectionsApiController implements CollectionsApi {
 
 	@PostConstruct
 	public void init() {
-		wcpsCollections = loadWcpsCollections();
-		odcCollections = loadOdcCollections();
-
+		collectionsMap.put(EngineTypes.WCPS, loadWcpsCollections());
+		collectionsMap.put(EngineTypes.ODC_DASK, loadOdcCollections());
 	}
 
 	@Override
@@ -184,30 +188,18 @@ public class CollectionsApiController implements CollectionsApi {
 	public ResponseEntity<Collections> listCollections(
 			@Min(1) @Parameter(name = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
 		Collections collectionsList = new Collections();
-
-		for (Collection currentCollection: wcpsCollections.getCollections()) {
-			collectionsList.addCollectionsItem(currentCollection);
+		
+		for (EngineTypes type : collectionsMap.keySet()) {
+			for (Collection currentCollection: collectionsMap.get(type).getCollections()) {
+				collectionsList.addCollectionsItem(currentCollection);
+			}
 		}
-		for (Collection currentCollection: odcCollections.getCollections()) {
-			collectionsList.addCollectionsItem(currentCollection);
-		}		
-//			getRequest().ifPresent(request -> {
-//				for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
-//					if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-//
-//
-//						String exampleString = "{ \"collections\" : [ { \"extent\" : { \"spatial\" : { \"bbox\" : [ [ -180, -90, 180, 90 ], [ -180, -90, 180, 90 ] ] }, \"temporal\" : { \"interval\" : [ [ \"2011-11-11T12:22:11Z\", null ], [ \"2011-11-11T12:22:11Z\", null ] ] } }, \"stac_version\" : \"stac_version\", \"keywords\" : [ \"keywords\", \"keywords\" ], \"deprecated\" : false, \"description\" : \"description\", \"cube:dimensions\" : { \"key\" : \"\" }, \"title\" : \"title\", \"version\" : \"version\", \"license\" : \"Apache-2.0\", \"assets\" : { \"key\" : { \"roles\" : [ \"data\" ], \"description\" : \"description\", \"href\" : \"href\", \"title\" : \"title\", \"type\" : \"image/tiff; application=geotiff\" } }, \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ], \"id\" : \"Sentinel-2A\", \"stac_extensions\" : [ \"\", \"\" ], \"providers\" : [ \"{}\", \"{}\" ], \"summaries\" : { \"key\" : \"\" } }, { \"extent\" : { \"spatial\" : { \"bbox\" : [ [ -180, -90, 180, 90 ], [ -180, -90, 180, 90 ] ] }, \"temporal\" : { \"interval\" : [ [ \"2011-11-11T12:22:11Z\", null ], [ \"2011-11-11T12:22:11Z\", null ] ] } }, \"stac_version\" : \"stac_version\", \"keywords\" : [ \"keywords\", \"keywords\" ], \"deprecated\" : false, \"description\" : \"description\", \"cube:dimensions\" : { \"key\" : \"\" }, \"title\" : \"title\", \"version\" : \"version\", \"license\" : \"Apache-2.0\", \"assets\" : { \"key\" : { \"roles\" : [ \"data\" ], \"description\" : \"description\", \"href\" : \"href\", \"title\" : \"title\", \"type\" : \"image/tiff; application=geotiff\" } }, \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ], \"id\" : \"Sentinel-2A\", \"stac_extensions\" : [ \"\", \"\" ], \"providers\" : [ \"{}\", \"{}\" ], \"summaries\" : { \"key\" : \"\" } } ], \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ] }";
-//						ApiUtil.setExampleResponse(request, "application/json", exampleString);
-//						break;
-//					}
-//				}
-//			});
 
 		return new ResponseEntity<Collections>(collectionsList, HttpStatus.OK);
 
 	}
 
-	private String readAll(Reader rd) throws IOException {
+	private static String readAll(Reader rd) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		int cp;
 		while ((cp = rd.read()) != -1) {
@@ -217,37 +209,17 @@ public class CollectionsApiController implements CollectionsApi {
 	}
 
 	private JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
-		log.debug("Trying to read JSON from the following URL : ");
-		log.debug(url);
+		//log.debug("Trying to read JSON from the following URL : ");
+		//log.debug(url);
 		InputStream is = new URL(url).openStream();
 		try {
 			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
 			String jsonText = readAll(rd);
-			log.debug(jsonText);
+			//log.debug(jsonText);
 			JSONObject json = new JSONObject(jsonText);
 			return json;
 		} finally {
 			is.close();
-		}
-	}
-
-	private static JSONObject readUrl(String urlString) throws IOException, JSONException {
-		BufferedReader reader = null;
-		try {
-			URL url = new URL(urlString);
-			reader = new BufferedReader(new InputStreamReader(url.openStream()));
-			StringBuffer buffer = new StringBuffer();
-			int read;
-			char[] chars = new char[1024];
-			while ((read = reader.read(chars)) != -1)
-				buffer.append(chars, 0, read);
-
-			// log.debug(buffer.toString());
-			JSONObject json = new JSONObject(buffer.toString());
-			return json;
-		} finally {
-			if (reader != null)
-				reader.close();
 		}
 	}
 
@@ -1701,7 +1673,8 @@ public class CollectionsApiController implements CollectionsApi {
 		ObjectMapper mapper = new ObjectMapper();
 		// Java object to JSON file
 		try {
-			mapper.writeValue(new File("wcpsCollections.json"), collectionsList);
+			log.info(collectionsFileWCPS.getFilename());
+			mapper.writeValue(collectionsFileWCPS.getFile(), collectionsList);
 		} catch (JsonGenerationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1868,7 +1841,8 @@ public class CollectionsApiController implements CollectionsApi {
 			ObjectMapper mapper = new ObjectMapper();
 			// Java object to JSON file
 			try {
-				mapper.writeValue(new File("odcCollections.json"), collectionsList);
+				log.info(collectionsFileODC.getFilename());
+				mapper.writeValue(collectionsFileODC.getFile(), collectionsList);
 			} catch (JsonGenerationException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
