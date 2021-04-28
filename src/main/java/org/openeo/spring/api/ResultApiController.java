@@ -1,8 +1,10 @@
 package org.openeo.spring.api;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -151,12 +153,22 @@ public class ResultApiController implements ResultApi {
 			process.put("id", "ODC-graph");
 			process.put("process_graph", processGraphJSON);
 			URL url;
+			HttpURLConnection conn;
 			try {
 				url = new URL(odcEndpoint);
-				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+				conn = (HttpURLConnection) url.openConnection();
 				conn.setRequestMethod("POST");
 				conn.setRequestProperty("Content-Type", "application/json; utf-8");
 				conn.setDoOutput(true);
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage("Not possible to establish connection with ODC Endpoint!");
+				log.error(error.getMessage());
+				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+			try {
 				log.debug("graph object send to ODC server: " + process.toString());
 				try (OutputStream os = conn.getOutputStream()) {
 					byte[] requestBody = process.toString().getBytes("utf-8");
@@ -168,19 +180,20 @@ public class ResultApiController implements ResultApi {
 				byte[] response = IOUtils.toByteArray(is);
 				log.info("Job successfully executed: " + job.toString());
 				return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(response);
-			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-
-			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ProtocolException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (Exception e) {
+				StringBuilder importProcessLogger = new StringBuilder();
+				BufferedReader importProcessLogErrorReader = new BufferedReader(
+				new InputStreamReader(conn.getErrorStream()));
+				String line;
+				try{
+					while ((line = importProcessLogErrorReader.readLine()) != null) {
+						importProcessLogger.append(line + "\n");
+					}
+				}
+				catch (Exception e1){
+					addStackTraceAndErrorToLog(e1);
+				}
+				addStackTraceAndErrorToLog(e);
 			}
 		} else if(containsSameEngineCollections && selectedEngineType == EngineTypes.WCPS) {
 			WCPSQueryFactory wcpsFactory = null;
@@ -217,15 +230,24 @@ public class ResultApiController implements ResultApi {
 			Error error = new Error();
 			error.setCode("500");
 			error.setMessage("The submitted job contains collections from two different engines, not supported!");
-			log.debug("The submitted job contains collections from two different engines, not supported!");
+			log.error(error.getMessage());
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		Error error = new Error();
 		error.setCode("500");
 		error.setMessage("The submitted job " + job.toString() + " was not executed!");
+		log.error(error.getMessage());
 		return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 
 	}
-	
+
+	private void addStackTraceAndErrorToLog(Exception e) {
+		log.error(e.getMessage());
+		StringBuilder builder = new StringBuilder();
+		for (StackTraceElement element : e.getStackTrace()) {
+			builder.append(element.toString() + "\n");
+		}
+		log.error(builder.toString());
+	}
 
 }

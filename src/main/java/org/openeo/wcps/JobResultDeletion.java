@@ -14,12 +14,20 @@ import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 
 public class JobResultDeletion implements Runnable {
 	
 	Logger log = LogManager.getLogger();
 	
 	JobDAO jobDAO;
+
+	@Value("${org.openeo.tmp.dir}")
+	Resource tmpDirResource;
+	
+	@Value("${org.openeo.tmp.file.expiry}")
+	int tmpFileExpiry;
 	
 	@Autowired
 	public void setDao(JobDAO injectedDAO) {
@@ -42,14 +50,14 @@ public class JobResultDeletion implements Runnable {
 	}	
 	private void checkResultsFilesJobToDelete() {
 		try {
-			File f = new File(ConvenienceHelper.readProperties("temp-dir"));			
+			File f = tmpDirResource.getFile();		
 			File[] listFiles = f.listFiles();
 			Job job = null;
 			
 			for (int i=0; i<listFiles.length; i++) {
 				File currentFile = listFiles[i];
 				if(currentFile.isFile() && !Files.isSymbolicLink(currentFile.toPath())) {
-					if(differenceTimeMinutes(currentFile.lastModified()) > Integer.parseInt(ConvenienceHelper.readProperties("temp-file-expiry"))) {
+					if(differenceTimeMinutes(currentFile.lastModified()) > tmpFileExpiry) {
 						currentFile.delete();
 						UUID jobId = UUID.fromString(currentFile.getName().substring(0, currentFile.getName().indexOf(".")));
 						log.debug("The current file " + currentFile.getName() + " is expired.\nIt will be deleted and the its job's status will be set to SUBMITTED.");

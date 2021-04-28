@@ -83,7 +83,7 @@ public class JobsApiController implements JobsApi {
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
 
-	@Value("${org.openeo.wcps.tmp.dir}")
+	@Value("${org.openeo.tmp.dir}")
 	private String tmpDir;
 
 	@Autowired

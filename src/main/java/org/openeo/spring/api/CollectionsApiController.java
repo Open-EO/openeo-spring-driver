@@ -101,6 +101,9 @@ public class CollectionsApiController implements CollectionsApi {
 	@Value("${org.openeo.odc.collectionsEndpoint}")
 	private String odcCollEndpoint;
 	
+	@Value("${org.openeo.querycollectionsonstartup}")
+	private boolean queryCollectionsOnStartup;
+	
 	@Value("${org.openeo.wcps.collections.list}")
 	Resource collectionsFileWCPS;
 	@Value("${org.openeo.odc.collections.list}")
@@ -118,8 +121,14 @@ public class CollectionsApiController implements CollectionsApi {
 
 	@PostConstruct
 	public void init() {
-		collectionsMap.put(EngineTypes.WCPS, loadWcpsCollections());
-		collectionsMap.put(EngineTypes.ODC_DASK, loadOdcCollections());
+		if (queryCollectionsOnStartup) {
+			collectionsMap.put(EngineTypes.WCPS, loadWcpsCollections());
+			collectionsMap.put(EngineTypes.ODC_DASK, loadOdcCollections());
+		}
+		else {
+			collectionsMap.put(EngineTypes.WCPS, loadCollectionsFromFile(collectionsFileWCPS));
+			collectionsMap.put(EngineTypes.ODC_DASK, loadCollectionsFromFile(collectionsFileODC));
+		}
 	}
 
 	@Override
@@ -1252,7 +1261,6 @@ public class CollectionsApiController implements CollectionsApi {
 	}
 
 	private Collections loadWcpsCollections() {
-
 		Collections collectionsList = new Collections();
 		InputStream wcpsInputStream;
 		URL urlWCPS;
@@ -1859,5 +1867,26 @@ public class CollectionsApiController implements CollectionsApi {
 		}
 		return collectionsList;
 	}
+	private Collections loadCollectionsFromFile(Resource collectionResource) {
+		Collections collectionsList = null;
+		
+		ObjectMapper mapper = new ObjectMapper();
 
+		try {
+			collectionsList = mapper.readValue(collectionResource.getInputStream(), Collections.class);
+		} catch (Exception e) {
+			addStackTraceAndErrorToLog(e);
+		}
+		return collectionsList;
+
+	}
+
+	private void addStackTraceAndErrorToLog(Exception e) {
+		log.error(e.getMessage());
+		StringBuilder builder = new StringBuilder();
+		for (StackTraceElement element : e.getStackTrace()) {
+			builder.append(element.toString() + "\n");
+		}
+		log.error(builder.toString());
+	}
 }
