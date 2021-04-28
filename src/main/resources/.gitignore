@@ -7,3 +7,7 @@
 /keycloak_self.crt
 /keycloak.json
 /keycloak_openEO.json
+/collections_odc.json
+/collections_wcps.json
+/processes_odc.json
+/processes_wcps.json
