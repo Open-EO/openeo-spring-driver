@@ -150,16 +150,6 @@ public class DefaultApiController implements DefaultApi {
 		downloadEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(downloadEndpoint);
 
-		Link operatorUrl = new Link();
-		try {
-			operatorUrl.setHref(new URI(providerUrl));
-		} catch (URISyntaxException e) {
-			log.error("the url provided is not valid: " + providerUrl);
-		}
-		operatorUrl.setTitle("Homepage of the service provider");
-		operatorUrl.setType("text/html");
-		operatorUrl.setRel("Eurac Research");
-		capabilities.addLinksItem(operatorUrl);
 		Billing billing = new Billing();
 		billing.setDefaultPlan("free");
 		billing.setCurrency(null);
@@ -174,6 +164,17 @@ public class DefaultApiController implements DefaultApi {
 		}
 		billing.addPlansItem(billingPlan);
 		capabilities.setBilling(billing);
+		
+		Link operatorUrl = new Link();
+		try {
+			operatorUrl.setHref(new URI(providerUrl));
+		} catch (URISyntaxException e) {
+			log.error("the url provided is not valid: " + providerUrl);
+		}
+		operatorUrl.setTitle("Homepage of the Service Provider");
+		operatorUrl.setType("text/html");
+		operatorUrl.setRel("Eurac Research");
+		capabilities.addLinksItem(operatorUrl);
 
 		Link openEOUrl = new Link();
 		try {
@@ -181,10 +182,32 @@ public class DefaultApiController implements DefaultApi {
 		} catch (URISyntaxException e) {
 			log.error("the url provided is not valid: " + openEOEndpoint);
 		}
-		openEOUrl.setTitle("url to openeo api service");
-		openEOUrl.setType("text/html");
+		openEOUrl.setTitle("URL to openEO API Service");
+		openEOUrl.setType("applicaton/json");
 		openEOUrl.setRel("self");
 		capabilities.addLinksItem(openEOUrl);
+		
+		Link versionHistoryUrl = new Link();
+		try {
+			versionHistoryUrl.setHref(new URI("https://openeo.eurac.edu/.well-known/openeo"));
+		} catch (URISyntaxException e) {
+			log.error("the url provided is not valid: " + "https://openeo.eurac.edu/.well-known/openeo");
+		}
+		versionHistoryUrl.setTitle("Well-Known URL");
+		versionHistoryUrl.setType("applicaton/json");
+		versionHistoryUrl.setRel("version-history");
+		capabilities.addLinksItem(versionHistoryUrl);
+		
+		Link collDataUrl = new Link();
+		try {
+			collDataUrl.setHref(new URI("https://openeo.eurac.edu/collections"));
+		} catch (URISyntaxException e) {
+			log.error("the url provided is not valid: " + "https://openeo.eurac.edu/collections");
+		}
+		collDataUrl.setTitle("Collections");
+		collDataUrl.setType("applicaton/json");
+		collDataUrl.setRel("data");
+		capabilities.addLinksItem(collDataUrl);
 
 		return new ResponseEntity<Capabilities>(capabilities, HttpStatus.OK);
 

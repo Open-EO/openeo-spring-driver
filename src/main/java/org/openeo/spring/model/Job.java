@@ -49,7 +49,7 @@ public class Job implements Serializable {
 	
 	@Column(name = "owner")
 	@JsonIgnore
-	private String ownerPrincipal;
+	private String owner;
 	
 	@Id
 	@GeneratedValue
@@ -115,11 +115,11 @@ public class Job implements Serializable {
 	}
 
 	public String getOwnerPrincipal() {
-		return ownerPrincipal;
+		return owner;
 	}
 
 	public void setOwnerPrincipal(String ownerPrincipal) {
-		this.ownerPrincipal = ownerPrincipal;
+		this.owner = ownerPrincipal;
 	}
 
 	public Job title(String title) {

@@ -1,4 +1,4 @@
-package org.openeo.spring;
+package org.openeo.spring.keycloak;
 
 import java.util.ArrayList;
 import java.util.Collections;

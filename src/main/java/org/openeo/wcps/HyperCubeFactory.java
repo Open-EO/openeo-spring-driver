@@ -487,7 +487,17 @@ public class HyperCubeFactory {
 			for (int a = 0; a < dimsArray.length(); a++) {
 				writer.addGlobalAttribute(new Attribute("Dim"+a, dimsArray.getString(a)));
 			}
-			writer.addGlobalAttribute(new Attribute("EPSG", Integer.parseInt(srs.replace("EPSG:", ""))));
+			if(srs != null) {
+				int epsgCode = 0;
+				try {
+					epsgCode = Integer.parseInt(srs.replace("EPSG:", ""));
+					writer.addGlobalAttribute(new Attribute("EPSG", epsgCode));
+				}catch (NumberFormatException e) {
+					log.error("The epsg code of the UDF result could not be parsed: ", srs);
+				}				
+			}else {
+				log.error("The epsg code of the UDF result was empty");
+			}
 			writer.addGlobalAttribute(new Attribute("JOB", path.substring(path.lastIndexOf('/')+1, path.lastIndexOf('.'))));
 			// write header of netcdf file to disk.
 			writer.create();

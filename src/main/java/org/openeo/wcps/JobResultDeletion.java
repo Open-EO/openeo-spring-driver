@@ -39,8 +39,7 @@ public class JobResultDeletion implements Runnable {
 			}
 			log.error(builder.toString());
 		}		
-	};
-	
+	}	
 	private void checkResultsFilesJobToDelete() {
 		try {
 			File f = new File(ConvenienceHelper.readProperties("temp-dir"));			

@@ -1,4 +1,4 @@
-package org.openeo.wcps;
+package org.openeo.spring.components;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -37,8 +37,13 @@ import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.BatchJobResult;
+import org.openeo.spring.model.EngineTypes;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
+import org.openeo.wcps.ConvenienceHelper;
+import org.openeo.wcps.HyperCubeFactory;
+import org.openeo.wcps.UDFFactory;
+import org.openeo.wcps.WCPSQueryFactory;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
 import org.openeo.wcps.events.UDFEvent;
@@ -103,6 +108,13 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		log.debug("Job Scheduler has been initialized successfully!");
 	}
 
+	public EngineTypes getProcessingEngine(Job job) {
+
+		//TODO find the most suitable engine to execute the job
+		
+		return EngineTypes.WCPS;
+	}
+	
 	@Override
 	public void jobQueued(JobEvent jobEvent) {
 		Job job = null;
@@ -115,6 +127,8 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 			processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
 			JSONArray nodesSortedArray = getProcessesNodesSequence();
+			//TODO Check to which engine we need to send the job
+			
 			JSONArray processesSequence = new JSONArray();
 
 			for (int i = 0; i < nodesSortedArray.length(); i++) {
@@ -217,6 +231,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 					log.debug("service URL for UDF processing: " + candelaEndpoint);
 				} else if (runtime.toLowerCase().equals("r")) {
 					runtime = "r";
+					//TODO remove hardcoded link
 					service_url = "http://10.8.246.140:5555";
 					log.debug("service URL for UDF processing: " + REndpoint);
 				} else {
@@ -468,16 +483,17 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 	private void executeWCPS(URL url, Job job, WCPSQueryFactory wcpsQuery) {
 		
-		BatchJobResult batchJonResult = resultDAO.findOne(job.getId());
+		BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
 		
 		//Skip computing if result is already available.
-		if(batchJonResult != null) {
+		if(batchJobResult != null) {
 			return;
 		}else {
-			batchJonResult = new BatchJobResult();
+			batchJobResult = new BatchJobResult();
 		}
 
 		job.setUpdated(OffsetDateTime.now());
+		job.setStatus(JobStates.RUNNING);
 		jobDAO.update(job);
 
 		JSONObject linkProcessGraph = new JSONObject();
@@ -507,13 +523,15 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			for (StackTraceElement element : e.getStackTrace()) {
 				builder.append(element.toString() + "\n");
 			}
+			//TODO add external error stream
+			//logErrorStream(e);
 			log.error(builder.toString());
 		}
 		
-		batchJonResult.setId(job.getId());
-		batchJonResult.bbox(null);
-		batchJonResult.setStacVersion("1.0.0");
-		batchJonResult.setGeometry(null);
+		batchJobResult.setId(job.getId());
+		batchJobResult.bbox(null);
+		batchJobResult.setStacVersion("1.0.0");
+		batchJobResult.setGeometry(null);
 		LinkedHashMap<String, Asset> assetMap = new LinkedHashMap<String, Asset>();
 
 		// Data Asset
@@ -584,9 +602,9 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		processAsset.setRoles(processAssetRoles);
 		assetMap.put(processFileName, processAsset);
 
-		batchJonResult.setAssets(assetMap);
-		log.debug(batchJonResult.toString());
-		resultDAO.save(batchJonResult);
+		batchJobResult.setAssets(assetMap);
+		log.debug(batchJobResult.toString());
+		resultDAO.save(batchJobResult);
 		log.debug("Result Stored in DB");
 
 		job.setStatus(JobStates.FINISHED);
@@ -596,7 +614,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		log.debug("The following job was set to status finished: \n" + job.toString());
 	}
 
-	private JSONArray getProcessesNodesSequence() {
+	public JSONArray getProcessesNodesSequence() {
 		JSONArray nodesArray = new JSONArray();
 		JSONArray nodesSortedArray = new JSONArray();
 
@@ -655,6 +673,19 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			}
 		}
 		return null;
+	}
+	
+	public List<JSONObject> getProcessNode(String process_id, JSONObject inputProcessGraphJSON) {
+		ArrayList<JSONObject> nodesList = new ArrayList<JSONObject>();
+		for (String processNodeKey : inputProcessGraphJSON.keySet()) {
+			JSONObject processNode = inputProcessGraphJSON.getJSONObject(processNodeKey);
+			String processID = processNode.getString("process_id");
+			if (processID.equals(process_id)) {
+				log.debug(process_id + " Process Node key found is: " + processNodeKey);
+				nodesList.add(processNode);
+			}
+		}
+		return nodesList;
 	}
 
 	private String getSaveNode() {

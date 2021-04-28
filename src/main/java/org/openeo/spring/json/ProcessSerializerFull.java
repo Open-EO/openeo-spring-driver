@@ -29,6 +29,7 @@ public class ProcessSerializerFull extends StdSerializer<Process>{
 	@Override
 	public void serialize(Process value, JsonGenerator gen, SerializerProvider provider) throws IOException {
 		gen.writeStartObject();
+		gen.writeStringField("engine", value.getEngine().toString());
 		gen.writeStringField("id", value.getId());
 		if(value.getSummary() != null) {
 			gen.writeStringField("summary", value.getSummary());

@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
+import org.openeo.spring.components.JobScheduler;
 import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.BatchJobEstimate;
@@ -34,7 +35,6 @@ import org.openeo.spring.model.JobStates;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.LogEntries;
 import org.openeo.wcps.ConvenienceHelper;
-import org.openeo.wcps.JobScheduler;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -161,6 +161,7 @@ public class JobsApiController implements JobsApi {
 			token = TokenUtil.getAccessToken(principal);
 			job.setOwnerPrincipal(token.getPreferredUsername());
 		}
+		//TODO add validity check of the job using ValidationApiController
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
 		
@@ -170,7 +171,7 @@ public class JobsApiController implements JobsApi {
 		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
-		log.debug("Process Graph attached: " + processGraph.toString(4));
+		log.trace("Process Graph attached: " + processGraph.toString(4));
 		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
 		jobDAO.save(job);
 		ObjectMapper mapper = new ObjectMapper();
@@ -183,7 +184,7 @@ public class JobsApiController implements JobsApi {
 		Job verifiedSave = jobDAO.findOne(job.getId());
 		if (verifiedSave != null) {
 			if(token != null) {
-				authzService.createProtectedResource(job);
+				authzService.createProtectedResource(job, token);
 			}
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 			log.debug("verified retrieved job: " + verifiedSave.toString());
@@ -196,6 +197,7 @@ public class JobsApiController implements JobsApi {
 				Error error = new Error();
 				error.setCode("500");
 				error.setMessage("The submitted job " + job.toString() + " has an invalid URI");
+				log.error("The submitted job " + job.toString() + " has an invalid URI");
 				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 			
@@ -203,6 +205,7 @@ public class JobsApiController implements JobsApi {
 			Error error = new Error();
 			error.setCode("500");
 			error.setMessage("The submitted job " + job.toString() + " was not saved persistently");
+			log.error("The submitted job " + job.toString() + " was not saved persistently");
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -341,11 +344,14 @@ public class JobsApiController implements JobsApi {
 			}
 			jobDAO.delete(job);
 			log.debug("The job " + jobId + " was successfully deleted.");
+			authzService.deleteProtectedResource(job);
+			log.debug("The job " + jobId + " was successfully deleted from Keycloak.");
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
+			log.error("The requested job " + jobId + " could not be found.");
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
 
@@ -508,12 +514,18 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@GetMapping(value = "/jobs", produces = { "application/json" })
 	public ResponseEntity<?> listJobs(
-			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
+			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit, Principal principal) {
 		BatchJobs batchJobs = new BatchJobs();
-		for (Job job : jobDAO.findAll()) {
-			batchJobs.addJobsItem(job);
-			
-		}
+		//I added///
+				AccessToken token = TokenUtil.getAccessToken(principal); 
+				for (Job job : jobDAO.findWithOwner(token.getPreferredUsername())) {
+					batchJobs.addJobsItem(job);
+				
+				}
+//		for (Job job : jobDAO.findAll()) {
+//			batchJobs.addJobsItem(job);
+//			
+//		}
 		Link linkToJob = new Link();
 		linkToJob.setTitle("next");
 		linkToJob.setRel("next");
@@ -702,6 +714,7 @@ public class JobsApiController implements JobsApi {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
+			log.error("The requested job " + jobId + " could not be found.");
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
 
