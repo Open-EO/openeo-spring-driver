@@ -101,13 +101,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
-		<!-- keycloak -->
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-spring-security-adapter</artifactId>
 			<version>${keycloak.version}</version>
 		</dependency>
-		<!-- keycloak-authz-client -->
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-authz-client</artifactId>
