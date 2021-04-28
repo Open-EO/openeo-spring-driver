@@ -83,8 +83,11 @@ import org.springframework.web.context.request.NativeWebRequest;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -1682,6 +1685,9 @@ public class CollectionsApiController implements CollectionsApi {
 			collectionsList.addCollectionsItem(currentCollection);
 		}
 		ObjectMapper mapper = new ObjectMapper();
+		mapper.enable(SerializationFeature.INDENT_OUTPUT);
+		mapper.registerModule(new JavaTimeModule());
+		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 		// Java object to JSON file
 		try {
 			log.info(collectionsFileWCPS.getFilename());
@@ -1855,6 +1861,9 @@ public class CollectionsApiController implements CollectionsApi {
 				collectionsList.addCollectionsItem(currentCollection);
 			}
 			ObjectMapper mapper = new ObjectMapper();
+			mapper.enable(SerializationFeature.INDENT_OUTPUT);
+			mapper.registerModule(new JavaTimeModule());
+			mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 			// Java object to JSON file
 			try {
 				log.info(collectionsFileODC.getFilename());				
@@ -1879,7 +1888,9 @@ public class CollectionsApiController implements CollectionsApi {
 	}
 	private Collections loadCollectionsFromFile(Resource collectionResource) {
 		Collections collectionsList = null;
-		ObjectMapper mapper = new ObjectMapper();
+		ObjectMapper  mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
+		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 		try {
 			String rootPath = System.getProperty("user.dir");
 			File collectionsFile = new File(rootPath + "/" + collectionResource.getFilename());
