@@ -1685,7 +1685,12 @@ public class CollectionsApiController implements CollectionsApi {
 		// Java object to JSON file
 		try {
 			log.info(collectionsFileWCPS.getFilename());
-			mapper.writeValue(collectionsFileWCPS.getFile(), collectionsList);
+			String rootPath = System.getProperty("user.dir");
+			File collectionsFile = new File(rootPath + "/" + collectionsFileWCPS.getFilename());
+			if(!collectionsFile.exists()) {
+				collectionsFile.createNewFile();
+			}
+			mapper.writeValue(collectionsFile, collectionsList);
 		} catch (JsonGenerationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1852,8 +1857,13 @@ public class CollectionsApiController implements CollectionsApi {
 			ObjectMapper mapper = new ObjectMapper();
 			// Java object to JSON file
 			try {
-				log.info(collectionsFileODC.getFilename());
-				mapper.writeValue(collectionsFileODC.getFile(), collectionsList);
+				log.info(collectionsFileODC.getFilename());				
+				String rootPath = System.getProperty("user.dir");
+				File collectionsFile = new File(rootPath + "/" + collectionsFileODC.getFilename());
+				if(!collectionsFile.exists()) {
+					collectionsFile.createNewFile();
+				}
+				mapper.writeValue(collectionsFile, collectionsList);
 			} catch (JsonGenerationException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1869,16 +1879,15 @@ public class CollectionsApiController implements CollectionsApi {
 	}
 	private Collections loadCollectionsFromFile(Resource collectionResource) {
 		Collections collectionsList = null;
-		
 		ObjectMapper mapper = new ObjectMapper();
-
 		try {
-			collectionsList = mapper.readValue(collectionResource.getInputStream(), Collections.class);
+			String rootPath = System.getProperty("user.dir");
+			File collectionsFile = new File(rootPath + "/" + collectionResource.getFilename());
+			collectionsList = mapper.readValue(collectionsFile, Collections.class);
 		} catch (Exception e) {
 			addStackTraceAndErrorToLog(e);
 		}
 		return collectionsList;
-
 	}
 
 	private void addStackTraceAndErrorToLog(Exception e) {
