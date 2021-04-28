@@ -126,16 +126,11 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-config</artifactId>
 		</dependency>
-		<!--SpringFox dependencies -->
-		<!-- <dependency> <groupId>io.springfox</groupId> <artifactId>springfox-swagger2</artifactId> 
-			<version>${springfox-version}</version> </dependency> -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-ui</artifactId>
 			<version>${springdoc-version}</version>
 		</dependency>
-		<!-- <dependency> <groupId>io.springfox</groupId> <artifactId>springfox-swagger-ui</artifactId> 
-			<version>${springfox-version}</version> </dependency> -->
 		<dependency>
 			<groupId>io.springfox</groupId>
 			<artifactId>springfox-boot-starter</artifactId>
@@ -150,18 +145,10 @@
 			<artifactId>jackson-databind-nullable</artifactId>
 			<version>${jackson.nullable.version}</version>
 		</dependency>
-		<!-- Bean Validation API support -->
 		<dependency>
 			<groupId>javax.validation</groupId>
 			<artifactId>validation-api</artifactId>
 		</dependency>
-		<!-- <dependency> -->
-		<!-- <groupId>org.gdal</groupId> -->
-		<!-- <artifactId>gdal</artifactId> -->
-		<!-- <version>${gdal.version}</version> -->
-		<!-- <scope>system</scope> -->
-		<!-- <systemPath>${gdal.path}</systemPath> -->
-		<!-- </dependency> -->
 		<dependency>
 			<groupId>org.gdal</groupId>
 			<artifactId>gdal</artifactId>
@@ -214,8 +201,6 @@
 			<version>${tomcat.dbcp.version}</version>
 		</dependency>
 	</dependencies>
-
-	<!-- Adapter BOM dependency (Key-cloak) -->
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
