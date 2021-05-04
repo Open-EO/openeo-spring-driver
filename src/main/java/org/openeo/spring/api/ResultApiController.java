@@ -14,6 +14,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +28,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
+import org.openeo.spring.model.Processes;
+import org.openeo.spring.model.Process;
 import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.EngineTypes;
@@ -49,9 +52,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -89,6 +95,11 @@ public class ResultApiController implements ResultApi {
 	@Value("${org.openeo.odc.collections.list}")
 	Resource collectionsFileODC;
 	
+	@Value("${org.openeo.wcps.processes.list}")
+	Resource processesFileWCPS;
+	@Value("${org.openeo.odc.processes.list}")
+	Resource processesFileODC;
+	
 	@org.springframework.beans.factory.annotation.Autowired
 	public ResultApiController(NativeWebRequest request) {
 		this.request = request;
@@ -115,17 +126,15 @@ public class ResultApiController implements ResultApi {
 		
 		List<JSONObject> loadCollectionNodes = jobScheduler.getProcessNode("load_collection",processGraphJSON);
 		
-		boolean containsSameEngineCollections = true;
+		boolean containsSameEngineCollections = false;
 		EngineTypes selectedEngineType = null;
 		
 		// The following loop checks if the collections requested in the load_collection calls are provided by the same engine and tells us which to use
 		for (EngineTypes enType: EngineTypes.values()) {
 			for (JSONObject loadCollectionNode: loadCollectionNodes) {
-				
 				collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString(); // The collection id requested in the process graph
-				
+
 				Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
-		
 				Collection collection = null;
 				
 				for (Collection coll: engineCollections.getCollections()) {
@@ -143,10 +152,70 @@ public class ResultApiController implements ResultApi {
 					containsSameEngineCollections = true;
 				}
 			}
+			if (containsSameEngineCollections) {
+				break; // We don't need to check anything else, we found that the required collections are in the current engine/back-end
+			}
 		}
 
-		//TODO Change to engine property -> based on collection and processes
-		// Check engine from the collection used in the graph
+		//TODO Check that all processes are available at the back-end before sending the request
+		if (containsSameEngineCollections && selectedEngineType == EngineTypes.ODC_DASK) {
+	    	ObjectMapper mapper = new ObjectMapper();
+			Processes processesListODC = new Processes();
+			try {
+				processesListODC = mapper.readValue(processesFileODC.getInputStream(), Processes.class);
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+			}
+			List<String> processesList = new ArrayList<>();
+			List<String> missingProcessesList = new ArrayList<>();
+			for (Process proc: processesListODC.getProcesses()) {
+				processesList.add(proc.getId());
+			}
+			for (String processNodeKey : processGraphJSON.keySet()) {
+				JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
+				String processID = processNode.getString("process_id");
+				if (!processesList.contains(processID)) {
+					missingProcessesList.add(processID);
+				}
+			}
+			// If process_id not in current engine processes list return/raise error
+			if (missingProcessesList.isEmpty()==false) {
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage(" Processes " + missingProcessesList.toString()+ " not found in ODC Processes! Can't run the provided process graph.");
+				log.error(error.getMessage());
+				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+				}
+		}
+		else if(containsSameEngineCollections && selectedEngineType == EngineTypes.WCPS) {
+	    	ObjectMapper mapper = new ObjectMapper();
+			Processes processesListODC = new Processes();
+			try {
+				processesListODC = mapper.readValue(processesFileWCPS.getInputStream(), Processes.class);
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+			}
+			List<String> processesList = new ArrayList<>();
+			List<String> missingProcessesList = new ArrayList<>();
+			for (Process proc: processesListODC.getProcesses()) {
+				processesList.add(proc.getId());
+			}
+			for (String processNodeKey : processGraphJSON.keySet()) {
+				JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
+				String processID = processNode.getString("process_id");
+				if (!processesList.contains(processID)) {
+					missingProcessesList.add(processID);
+				}
+				// If process_id not in current engine processes list return/raise error
+			}
+			if (missingProcessesList.isEmpty()==false) {
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage(" Processes " + missingProcessesList.toString() + " not found in WCPS Processes! Can't run the provided process graph.");
+				log.error(error.getMessage());
+				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+				}
+		}
 
 		if (containsSameEngineCollections && selectedEngineType == EngineTypes.ODC_DASK) {
 			JSONObject process = new JSONObject();
@@ -175,10 +244,14 @@ public class ResultApiController implements ResultApi {
 					os.write(requestBody, 0, requestBody.length);
 				}
 				InputStream is = conn.getInputStream();
-				String mime = URLConnection.guessContentTypeFromStream(is);
+			    String mime = conn.getContentType();
+				//String mime = URLConnection.guessContentTypeFromStream(is);
 				log.debug("Mime type on ODC response guessed to be: " + mime);
 				byte[] response = IOUtils.toByteArray(is);
 				log.info("Job successfully executed: " + job.toString());
+				if (mime == null) {
+					return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/octet-stream")).body(response);
+				}
 				return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(response);
 			} catch (Exception e) {
 				StringBuilder importProcessLogger = new StringBuilder();
@@ -189,6 +262,11 @@ public class ResultApiController implements ResultApi {
 					while ((line = importProcessLogErrorReader.readLine()) != null) {
 						importProcessLogger.append(line + "\n");
 					}
+					log.error(importProcessLogger);
+					Error error = new Error();
+					error.setCode("500");
+					error.setMessage(importProcessLogger.toString());
+					return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 				}
 				catch (Exception e1){
 					addStackTraceAndErrorToLog(e1);
@@ -240,7 +318,20 @@ public class ResultApiController implements ResultApi {
 		return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 
 	}
-
+	
+	private Processes loadProcessesFromFile(Resource processesResource) {
+		Processes processesList = null;
+		ObjectMapper  mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
+		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		try {
+			File processesFile = new File(processesResource.getFilename());
+			processesList = mapper.readValue(processesFile, Processes.class);
+		} catch (Exception e) {
+			addStackTraceAndErrorToLog(e);
+		}
+		return processesList;
+	}
 	private void addStackTraceAndErrorToLog(Exception e) {
 		log.error(e.getMessage());
 		StringBuilder builder = new StringBuilder();
