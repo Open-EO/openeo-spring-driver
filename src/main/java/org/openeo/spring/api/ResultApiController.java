@@ -51,11 +51,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -120,104 +115,17 @@ public class ResultApiController implements ResultApi {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
-
-		//TODO Check to which engine we need to send the job
-		String collectionID = new String();
-		
-		List<JSONObject> loadCollectionNodes = jobScheduler.getProcessNode("load_collection",processGraphJSON);
-		
-		boolean containsSameEngineCollections = false;
-		EngineTypes selectedEngineType = null;
-		
-		// The following loop checks if the collections requested in the load_collection calls are provided by the same engine and tells us which to use
-		for (EngineTypes enType: EngineTypes.values()) {
-			for (JSONObject loadCollectionNode: loadCollectionNodes) {
-				collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString(); // The collection id requested in the process graph
-
-				Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
-				Collection collection = null;
-				
-				for (Collection coll: engineCollections.getCollections()) {
-					if (coll.getId().equals(collectionID)) {
-						collection = coll; // We found the requested collection in the current engine of the loop
-						break;
-					}
-				}
-				if (collection == null) {
-					containsSameEngineCollections = false;
-					break;
-				}
-				else {
-					selectedEngineType = enType;
-					containsSameEngineCollections = true;
-				}
-			}
-			if (containsSameEngineCollections) {
-				break; // We don't need to check anything else, we found that the required collections are in the current engine/back-end
-			}
+		EngineTypes resultEngine = null;
+		try {
+			resultEngine = checkGraphValidityAndEngine(processGraphJSON);
+		} catch (Exception e) {
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage(e.getMessage());
+			log.error(error.getMessage());
+			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
-		//TODO Check that all processes are available at the back-end before sending the request
-		if (containsSameEngineCollections && selectedEngineType == EngineTypes.ODC_DASK) {
-	    	ObjectMapper mapper = new ObjectMapper();
-			Processes processesListODC = new Processes();
-			try {
-				processesListODC = mapper.readValue(processesFileODC.getInputStream(), Processes.class);
-			} catch (Exception e) {
-				addStackTraceAndErrorToLog(e);
-			}
-			List<String> processesList = new ArrayList<>();
-			List<String> missingProcessesList = new ArrayList<>();
-			for (Process proc: processesListODC.getProcesses()) {
-				processesList.add(proc.getId());
-			}
-			for (String processNodeKey : processGraphJSON.keySet()) {
-				JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
-				String processID = processNode.getString("process_id");
-				if (!processesList.contains(processID)) {
-					missingProcessesList.add(processID);
-				}
-			}
-			// If process_id not in current engine processes list return/raise error
-			if (missingProcessesList.isEmpty()==false) {
-				Error error = new Error();
-				error.setCode("500");
-				error.setMessage(" Processes " + missingProcessesList.toString()+ " not found in ODC Processes! Can't run the provided process graph.");
-				log.error(error.getMessage());
-				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-				}
-		}
-		else if(containsSameEngineCollections && selectedEngineType == EngineTypes.WCPS) {
-	    	ObjectMapper mapper = new ObjectMapper();
-			Processes processesListODC = new Processes();
-			try {
-				processesListODC = mapper.readValue(processesFileWCPS.getInputStream(), Processes.class);
-			} catch (Exception e) {
-				addStackTraceAndErrorToLog(e);
-			}
-			List<String> processesList = new ArrayList<>();
-			List<String> missingProcessesList = new ArrayList<>();
-			for (Process proc: processesListODC.getProcesses()) {
-				processesList.add(proc.getId());
-			}
-			for (String processNodeKey : processGraphJSON.keySet()) {
-				JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
-				String processID = processNode.getString("process_id");
-				if (!processesList.contains(processID)) {
-					missingProcessesList.add(processID);
-				}
-				// If process_id not in current engine processes list return/raise error
-			}
-			if (missingProcessesList.isEmpty()==false) {
-				Error error = new Error();
-				error.setCode("500");
-				error.setMessage(" Processes " + missingProcessesList.toString() + " not found in WCPS Processes! Can't run the provided process graph.");
-				log.error(error.getMessage());
-				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-				}
-		}
-
-		if (containsSameEngineCollections && selectedEngineType == EngineTypes.ODC_DASK) {
+		if (resultEngine == EngineTypes.ODC_DASK) {
 			JSONObject process = new JSONObject();
 			process.put("id", "ODC-graph");
 			process.put("process_graph", processGraphJSON);
@@ -273,7 +181,7 @@ public class ResultApiController implements ResultApi {
 				}
 				addStackTraceAndErrorToLog(e);
 			}
-		} else if(containsSameEngineCollections && selectedEngineType == EngineTypes.WCPS) {
+		} else if(resultEngine == EngineTypes.WCPS) {
 			WCPSQueryFactory wcpsFactory = null;
 			wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint);
 			URL url;
@@ -304,13 +212,6 @@ public class ResultApiController implements ResultApi {
 				e.printStackTrace();
 			}
 		}
-		else {
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage("The submitted job contains collections from two different engines, not supported!");
-			log.error(error.getMessage());
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
 		Error error = new Error();
 		error.setCode("500");
 		error.setMessage("The submitted job " + job.toString() + " was not executed!");
@@ -319,19 +220,100 @@ public class ResultApiController implements ResultApi {
 
 	}
 	
-	private Processes loadProcessesFromFile(Resource processesResource) {
-		Processes processesList = null;
-		ObjectMapper  mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
-		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-		try {
-			File processesFile = new File(processesResource.getFilename());
-			processesList = mapper.readValue(processesFile, Processes.class);
-		} catch (Exception e) {
-			addStackTraceAndErrorToLog(e);
+	public EngineTypes checkGraphValidityAndEngine(JSONObject processGraphJSON) throws Exception {
+		//TODO Check to which engine we need to send the job
+		String collectionID = new String();
+	
+		List<JSONObject> loadCollectionNodes = jobScheduler.getProcessNode("load_collection",processGraphJSON);
+		
+		boolean containsSameEngineCollections = false;
+		EngineTypes selectedEngineType = null;
+		
+		// The following loop checks if the collections requested in the load_collection calls are provided by the same engine and tells us which to use
+		for (EngineTypes enType: EngineTypes.values()) {
+			for (JSONObject loadCollectionNode: loadCollectionNodes) {
+				collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString(); // The collection id requested in the process graph
+	
+				Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
+				Collection collection = null;
+				
+				for (Collection coll: engineCollections.getCollections()) {
+					if (coll.getId().equals(collectionID)) {
+						collection = coll; // We found the requested collection in the current engine of the loop
+						break;
+					}
+				}
+				if (collection == null) {
+					containsSameEngineCollections = false;
+					break;
+				}
+				else {
+					selectedEngineType = enType;
+					containsSameEngineCollections = true;
+				}
+			}
+			if (containsSameEngineCollections) {
+				break; // We don't need to check anything else, we found that the required collections are in the current engine/back-end
+			}
 		}
-		return processesList;
+
+		//TODO Check that all processes are available at the back-end before sending the request
+		if (containsSameEngineCollections && selectedEngineType == EngineTypes.ODC_DASK) {
+	    	ObjectMapper mapper = new ObjectMapper();
+			Processes processesListODC = new Processes();
+			try {
+				processesListODC = mapper.readValue(processesFileODC.getInputStream(), Processes.class);
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+			}
+			List<String> processesList = new ArrayList<>();
+			List<String> missingProcessesList = new ArrayList<>();
+			for (Process proc: processesListODC.getProcesses()) {
+				processesList.add(proc.getId());
+			}
+			for (String processNodeKey : processGraphJSON.keySet()) {
+				JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
+				String processID = processNode.getString("process_id");
+				if (!processesList.contains(processID)) {
+					missingProcessesList.add(processID);
+				}
+			}
+			// If process_id not in current engine processes list return/raise error
+			if (missingProcessesList.isEmpty()==false) {
+				throw new Exception("Selected Collection from ODC. Processes " + missingProcessesList.toString()+ " not found in ODC Processes! Can't run the provided process graph.");
+				}
+		}
+		else if(containsSameEngineCollections && selectedEngineType == EngineTypes.WCPS) {
+	    	ObjectMapper mapper = new ObjectMapper();
+			Processes processesListODC = new Processes();
+			try {
+				processesListODC = mapper.readValue(processesFileWCPS.getInputStream(), Processes.class);
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+			}
+			List<String> processesList = new ArrayList<>();
+			List<String> missingProcessesList = new ArrayList<>();
+			for (Process proc: processesListODC.getProcesses()) {
+				processesList.add(proc.getId());
+			}
+			for (String processNodeKey : processGraphJSON.keySet()) {
+				JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
+				String processID = processNode.getString("process_id");
+				if (!processesList.contains(processID)) {
+					missingProcessesList.add(processID);
+				}
+				// If process_id not in current engine processes list return/raise error
+			}
+			if (missingProcessesList.isEmpty()==false) {
+				throw new Exception("Selected collection from WCPS. Processes " + missingProcessesList.toString()+ " not found in WCPS Processes! Can't run the provided process graph.");
+				}
+		}
+		else {
+			throw new Exception("The submitted job contains collections from two different engines, not supported!");
+		}
+		return selectedEngineType;
 	}
+	
 	private void addStackTraceAndErrorToLog(Exception e) {
 		log.error(e.getMessage());
 		StringBuilder builder = new StringBuilder();
