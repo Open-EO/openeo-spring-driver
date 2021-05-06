@@ -1,8 +1,10 @@
 package org.openeo.spring.api;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -12,6 +14,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +28,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
+import org.openeo.spring.model.Processes;
+import org.openeo.spring.model.Process;
 import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.EngineTypes;
@@ -46,10 +51,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -87,6 +90,11 @@ public class ResultApiController implements ResultApi {
 	@Value("${org.openeo.odc.collections.list}")
 	Resource collectionsFileODC;
 	
+	@Value("${org.openeo.wcps.processes.list}")
+	Resource processesFileWCPS;
+	@Value("${org.openeo.odc.processes.list}")
+	Resource processesFileODC;
+	
 	@org.springframework.beans.factory.annotation.Autowired
 	public ResultApiController(NativeWebRequest request) {
 		this.request = request;
@@ -107,82 +115,73 @@ public class ResultApiController implements ResultApi {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
-
-		//TODO Check to which engine we need to send the job
-		String collectionID = new String();
-		
-		List<JSONObject> loadCollectionNodes = jobScheduler.getProcessNode("load_collection",processGraphJSON);
-		
-		boolean containsSameEngineCollections = true;
-		EngineTypes selectedEngineType = null;
-		
-		// The following loop checks if the collections requested in the load_collection calls are provided by the same engine and tells us which to use
-		for (EngineTypes enType: EngineTypes.values()) {
-			for (JSONObject loadCollectionNode: loadCollectionNodes) {
-				
-				collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString(); // The collection id requested in the process graph
-				
-				Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
-		
-				Collection collection = null;
-				
-				for (Collection coll: engineCollections.getCollections()) {
-					if (coll.getId().equals(collectionID)) {
-						collection = coll; // We found the requested collection in the current engine of the loop
-						break;
-					}
-				}
-				if (collection == null) {
-					containsSameEngineCollections = false;
-					break;
-				}
-				else {
-					selectedEngineType = enType;
-					containsSameEngineCollections = true;
-				}
-			}
+		EngineTypes resultEngine = null;
+		try {
+			resultEngine = checkGraphValidityAndEngine(processGraphJSON);
+		} catch (Exception e) {
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage(e.getMessage());
+			log.error(error.getMessage());
+			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
-		//TODO Change to engine property -> based on collection and processes
-		// Check engine from the collection used in the graph
-
-		if (containsSameEngineCollections && selectedEngineType == EngineTypes.ODC_DASK) {
+		if (resultEngine == EngineTypes.ODC_DASK) {
 			JSONObject process = new JSONObject();
 			process.put("id", "ODC-graph");
 			process.put("process_graph", processGraphJSON);
 			URL url;
+			HttpURLConnection conn;
 			try {
 				url = new URL(odcEndpoint);
-				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+				conn = (HttpURLConnection) url.openConnection();
 				conn.setRequestMethod("POST");
 				conn.setRequestProperty("Content-Type", "application/json; utf-8");
 				conn.setDoOutput(true);
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage("Not possible to establish connection with ODC Endpoint!");
+				log.error(error.getMessage());
+				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+			try {
 				log.debug("graph object send to ODC server: " + process.toString());
 				try (OutputStream os = conn.getOutputStream()) {
 					byte[] requestBody = process.toString().getBytes("utf-8");
 					os.write(requestBody, 0, requestBody.length);
 				}
 				InputStream is = conn.getInputStream();
-				String mime = URLConnection.guessContentTypeFromStream(is);
+			    String mime = conn.getContentType();
+				//String mime = URLConnection.guessContentTypeFromStream(is);
 				log.debug("Mime type on ODC response guessed to be: " + mime);
 				byte[] response = IOUtils.toByteArray(is);
 				log.info("Job successfully executed: " + job.toString());
+				if (mime == null) {
+					return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/octet-stream")).body(response);
+				}
 				return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(response);
-			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-
-			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ProtocolException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (Exception e) {
+				StringBuilder importProcessLogger = new StringBuilder();
+				BufferedReader importProcessLogErrorReader = new BufferedReader(
+				new InputStreamReader(conn.getErrorStream()));
+				String line;
+				try{
+					while ((line = importProcessLogErrorReader.readLine()) != null) {
+						importProcessLogger.append(line + "\n");
+					}
+					log.error(importProcessLogger);
+					Error error = new Error();
+					error.setCode("500");
+					error.setMessage(importProcessLogger.toString());
+					return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+				}
+				catch (Exception e1){
+					addStackTraceAndErrorToLog(e1);
+				}
+				addStackTraceAndErrorToLog(e);
 			}
-		} else if(containsSameEngineCollections && selectedEngineType == EngineTypes.WCPS) {
+		} else if(resultEngine == EngineTypes.WCPS) {
 			WCPSQueryFactory wcpsFactory = null;
 			wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint);
 			URL url;
@@ -213,19 +212,115 @@ public class ResultApiController implements ResultApi {
 				e.printStackTrace();
 			}
 		}
-		else {
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage("The submitted job contains collections from two different engines, not supported!");
-			log.debug("The submitted job contains collections from two different engines, not supported!");
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
 		Error error = new Error();
 		error.setCode("500");
 		error.setMessage("The submitted job " + job.toString() + " was not executed!");
+		log.error(error.getMessage());
 		return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 
 	}
 	
+	public EngineTypes checkGraphValidityAndEngine(JSONObject processGraphJSON) throws Exception {
+		//TODO Check to which engine we need to send the job
+		String collectionID = new String();
+	
+		List<JSONObject> loadCollectionNodes = jobScheduler.getProcessNode("load_collection",processGraphJSON);
+		
+		boolean containsSameEngineCollections = false;
+		EngineTypes selectedEngineType = null;
+		
+		// The following loop checks if the collections requested in the load_collection calls are provided by the same engine and tells us which to use
+		for (EngineTypes enType: EngineTypes.values()) {
+			for (JSONObject loadCollectionNode: loadCollectionNodes) {
+				collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString(); // The collection id requested in the process graph
+	
+				Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
+				Collection collection = null;
+				
+				for (Collection coll: engineCollections.getCollections()) {
+					if (coll.getId().equals(collectionID)) {
+						collection = coll; // We found the requested collection in the current engine of the loop
+						break;
+					}
+				}
+				if (collection == null) {
+					containsSameEngineCollections = false;
+					break;
+				}
+				else {
+					selectedEngineType = enType;
+					containsSameEngineCollections = true;
+				}
+			}
+			if (containsSameEngineCollections) {
+				break; // We don't need to check anything else, we found that the required collections are in the current engine/back-end
+			}
+		}
+
+		//TODO Check that all processes are available at the back-end before sending the request
+		if (containsSameEngineCollections && selectedEngineType == EngineTypes.ODC_DASK) {
+	    	ObjectMapper mapper = new ObjectMapper();
+			Processes processesListODC = new Processes();
+			try {
+				processesListODC = mapper.readValue(processesFileODC.getInputStream(), Processes.class);
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+			}
+			List<String> processesList = new ArrayList<>();
+			List<String> missingProcessesList = new ArrayList<>();
+			for (Process proc: processesListODC.getProcesses()) {
+				processesList.add(proc.getId());
+			}
+			for (String processNodeKey : processGraphJSON.keySet()) {
+				JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
+				String processID = processNode.getString("process_id");
+				if (!processesList.contains(processID)) {
+					missingProcessesList.add(processID);
+				}
+			}
+			// If process_id not in current engine processes list return/raise error
+			if (missingProcessesList.isEmpty()==false) {
+				throw new Exception("Selected Collection from ODC. Processes " + missingProcessesList.toString()+ " not found in ODC Processes! Can't run the provided process graph.");
+				}
+		}
+		else if(containsSameEngineCollections && selectedEngineType == EngineTypes.WCPS) {
+	    	ObjectMapper mapper = new ObjectMapper();
+			Processes processesListODC = new Processes();
+			try {
+				processesListODC = mapper.readValue(processesFileWCPS.getInputStream(), Processes.class);
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+			}
+			List<String> processesList = new ArrayList<>();
+			List<String> missingProcessesList = new ArrayList<>();
+			for (Process proc: processesListODC.getProcesses()) {
+				processesList.add(proc.getId());
+			}
+			for (String processNodeKey : processGraphJSON.keySet()) {
+				JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
+				String processID = processNode.getString("process_id");
+				if (!processesList.contains(processID)) {
+					missingProcessesList.add(processID);
+				}
+				// If process_id not in current engine processes list return/raise error
+			}
+			if (missingProcessesList.isEmpty()==false) {
+				throw new Exception("Selected collection from WCPS. Processes " + missingProcessesList.toString()+ " not found in WCPS Processes! Can't run the provided process graph.");
+				}
+		}
+		else {
+			throw new Exception("The submitted job contains collections from two different engines, not supported!");
+		}
+		return selectedEngineType;
+	}
+	
+	private void addStackTraceAndErrorToLog(Exception e) {
+		log.error(e.getMessage());
+		StringBuilder builder = new StringBuilder();
+		for (StackTraceElement element : e.getStackTrace()) {
+			builder.append(element.toString() + "\n");
+		}
+		log.error(builder.toString());
+	}
 
 }

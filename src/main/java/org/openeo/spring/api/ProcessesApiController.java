@@ -125,16 +125,25 @@ public class ProcessesApiController implements ProcessesApi {
     public ResponseEntity<Processes> listProcesses(@Min(1)@Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
     	ObjectMapper mapper = new ObjectMapper();
     	Processes processesList = new Processes();
+    	HashMap<String, Process> processMap = new HashMap<String, Process>();
 		try {
 			Processes processesListWCPS = mapper.readValue(processesFileWCPS.getInputStream(), Processes.class);
 			Processes processesListODC = mapper.readValue(processesFileODC.getInputStream(), Processes.class);
 			for(Process processElement: processesListWCPS.getProcesses()) {
-				processElement.setEngine(EngineTypes.WCPS);
-				processesList.addProcessesItem(processElement);
+				processElement.addEngine(EngineTypes.WCPS);
+				processMap.put(processElement.getId(),processElement);
+				//processesList.addProcessesItem(processElement);
 			}
 			for(Process processElement: processesListODC.getProcesses()) {
-				processElement.setEngine(EngineTypes.ODC_DASK);
-				processesList.addProcessesItem(processElement);
+				Process currentProcess = processMap.get(processElement.getId());
+				if (currentProcess == null) {
+					processElement.addEngine(EngineTypes.ODC_DASK);
+					processMap.put(processElement.getId(),processElement);					
+				}
+				else {
+					processMap.get(processElement.getId()).addEngine(EngineTypes.ODC_DASK);
+				}
+				//processesList.addProcessesItem(processElement);
 			}
 		} catch (JsonParseException e) {
 			// TODO Auto-generated catch block
@@ -263,6 +272,9 @@ public class ProcessesApiController implements ProcessesApi {
 //                }
 //            }
 //        });
+		for (Process proc: processMap.values()) {
+			processesList.addProcessesItem(proc);
+		}
         return new ResponseEntity<Processes>(processesList, HttpStatus.OK);
 
     }

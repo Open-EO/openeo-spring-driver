@@ -83,8 +83,11 @@ import org.springframework.web.context.request.NativeWebRequest;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -100,6 +103,9 @@ public class CollectionsApiController implements CollectionsApi {
 	private String wcpsEndpoint;
 	@Value("${org.openeo.odc.collectionsEndpoint}")
 	private String odcCollEndpoint;
+	
+	@Value("${org.openeo.querycollectionsonstartup}")
+	private boolean queryCollectionsOnStartup;
 	
 	@Value("${org.openeo.wcps.collections.list}")
 	Resource collectionsFileWCPS;
@@ -118,8 +124,14 @@ public class CollectionsApiController implements CollectionsApi {
 
 	@PostConstruct
 	public void init() {
-		collectionsMap.put(EngineTypes.WCPS, loadWcpsCollections());
-		collectionsMap.put(EngineTypes.ODC_DASK, loadOdcCollections());
+		if (queryCollectionsOnStartup) {
+			collectionsMap.put(EngineTypes.WCPS, loadWcpsCollections());
+			collectionsMap.put(EngineTypes.ODC_DASK, loadOdcCollections());
+		}
+		else {
+			collectionsMap.put(EngineTypes.WCPS, loadCollectionsFromFile(collectionsFileWCPS));
+			collectionsMap.put(EngineTypes.ODC_DASK, loadCollectionsFromFile(collectionsFileODC));
+		}
 	}
 
 	@Override
@@ -1252,7 +1264,6 @@ public class CollectionsApiController implements CollectionsApi {
 	}
 
 	private Collections loadWcpsCollections() {
-
 		Collections collectionsList = new Collections();
 		InputStream wcpsInputStream;
 		URL urlWCPS;
@@ -1674,10 +1685,18 @@ public class CollectionsApiController implements CollectionsApi {
 			collectionsList.addCollectionsItem(currentCollection);
 		}
 		ObjectMapper mapper = new ObjectMapper();
+		mapper.enable(SerializationFeature.INDENT_OUTPUT);
+		mapper.registerModule(new JavaTimeModule());
+		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 		// Java object to JSON file
 		try {
 			log.info(collectionsFileWCPS.getFilename());
-			mapper.writeValue(collectionsFileWCPS.getFile(), collectionsList);
+			String rootPath = System.getProperty("user.dir");
+			File collectionsFile = new File(rootPath + "/" + collectionsFileWCPS.getFilename());
+			if(!collectionsFile.exists()) {
+				collectionsFile.createNewFile();
+			}
+			mapper.writeValue(collectionsFile, collectionsList);
 		} catch (JsonGenerationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1842,10 +1861,18 @@ public class CollectionsApiController implements CollectionsApi {
 				collectionsList.addCollectionsItem(currentCollection);
 			}
 			ObjectMapper mapper = new ObjectMapper();
+			mapper.enable(SerializationFeature.INDENT_OUTPUT);
+			mapper.registerModule(new JavaTimeModule());
+			mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 			// Java object to JSON file
 			try {
-				log.info(collectionsFileODC.getFilename());
-				mapper.writeValue(collectionsFileODC.getFile(), collectionsList);
+				log.info(collectionsFileODC.getFilename());				
+				String rootPath = System.getProperty("user.dir");
+				File collectionsFile = new File(rootPath + "/" + collectionsFileODC.getFilename());
+				if(!collectionsFile.exists()) {
+					collectionsFile.createNewFile();
+				}
+				mapper.writeValue(collectionsFile, collectionsList);
 			} catch (JsonGenerationException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1859,5 +1886,27 @@ public class CollectionsApiController implements CollectionsApi {
 		}
 		return collectionsList;
 	}
+	private Collections loadCollectionsFromFile(Resource collectionResource) {
+		Collections collectionsList = null;
+		ObjectMapper  mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
+		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		try {
+			String rootPath = System.getProperty("user.dir");
+			File collectionsFile = new File(rootPath + "/" + collectionResource.getFilename());
+			collectionsList = mapper.readValue(collectionsFile, Collections.class);
+		} catch (Exception e) {
+			addStackTraceAndErrorToLog(e);
+		}
+		return collectionsList;
+	}
 
+	private void addStackTraceAndErrorToLog(Exception e) {
+		log.error(e.getMessage());
+		StringBuilder builder = new StringBuilder();
+		for (StackTraceElement element : e.getStackTrace()) {
+			builder.append(element.toString() + "\n");
+		}
+		log.error(builder.toString());
+	}
 }

@@ -83,7 +83,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
 
-	@Value("${org.openeo.wcps.tmp.dir}")
+	@Value("${org.openeo.tmp.dir}")
 	private String tmpDir;
 	
 	@Value("${org.openeo.udf.dir}")
