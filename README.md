@@ -34,22 +34,25 @@ security.require-ssl=true
 
 org.openeo.endpoint=https://my_openeo.url
 org.openeo.public.endpoint=https://my_openeo_public.url
+org.openeo.tmp.dir=tmp/
+org.openeo.tmp.file.expiry=60
+org.openeo.file.expiry=1
+org.openeo.querycollectionsonstartup=true
 
 org.openeo.oidc.configuration.endpoint=https://my_openeo.url/auth/realms/openeo/
 
 org.openeo.wcps.endpoint=http://my_wcps_server:8080
 org.openeo.wcps.provider.name=My Company
 org.openeo.wcps.provider.url=http://www.my-company.url
-org.openeo.wcps.tmp.dir=/tmp/openeo/
-org.openeo.wcps.tmp.file.expiry=60
-org.openeo.wcps.file.expiry=1
 org.openeo.wcps.processes.list=classpath:processes_wcps.json
+org.openeo.wcps.collections.list=collections_wcps.json
 
 org.openeo.odc.endpoint=http://my_open_data_cube_endpoint
 org.openeo.odc.collectionsEndpoint=http://my_open_data_cube_endpoint/collections/
 org.openeo.odc.provider.name=open data cube provider name
 org.openeo.odc.provider.url=http://www.open_data_cube_provider.url
 org.openeo.odc.processes.list=classpath:processes_odc.json
+org.openeo.odc.collections.list=collections_odc.json
 
 org.openeo.udf.python.endpoint=http://my_openeo_python_udf_service.url
 org.openeo.udf.r.endpoint=http://my_openeo_R_udf_service.url
