@@ -48,7 +48,8 @@ public class Process implements Serializable{
 	 * 
 	 */
 	@JsonProperty("engine")
-	private EngineTypes engine;
+	@Embedded
+	private List<EngineTypes> engine = null;
 	
 	private static final long serialVersionUID = -6102545771306725349L;
 	
@@ -115,12 +116,19 @@ public class Process implements Serializable{
 	@Lob
 	private byte[] processGraph = null;
 
-	public EngineTypes getEngine() {
+	public List<EngineTypes> getEngine() {
 		return engine;
 	}
 
-	public void setEngine(EngineTypes engine) {
-		this.engine = engine;
+	public void setEngine(List<EngineTypes> enginesList) {
+		this.engine = enginesList;
+	}
+	
+	public void addEngine(EngineTypes engine) {
+		if (this.engine == null) {
+			this.engine = new ArrayList<>();
+		}
+		this.engine.add(engine);
 	}
 
 	public Process id(String id) {
