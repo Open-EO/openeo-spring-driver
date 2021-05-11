@@ -70,6 +70,9 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		jobDAO = injectedJObDAO;
 		resultDAO = injectResultDao;
 	}
+	
+	@Autowired
+	private CollectionMap collectionMap;
 
 	@Value("${org.openeo.wcps.endpoint}")
 	private String wcpsEndpoint;
@@ -197,7 +200,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 						codeStream = new ByteArrayInputStream(udfCode.getBytes(StandardCharsets.UTF_8));
 					}
 					// Get data block for UDF
-					WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint);
+					WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint, collectionMap);
 					wcpsFactory.setOutputFormat("gml");
 
 					URL url = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages"
@@ -376,7 +379,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 					// continue processing of process_graph after the UDF
 					log.debug(processGraphAfterUDF);
 					WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphAfterUDF, openEOEndpoint,
-							wcpsEndpoint);
+							wcpsEndpoint, collectionMap);
 					URL urlUDF = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages"
 							+ "&QUERY=" + URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 					executeWCPS(urlUDF, job, wcpsFactory);
@@ -405,7 +408,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			}
 
 			else {
-				WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint);
+				WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint, collectionMap);
 				URL url = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages"
 						+ "&QUERY=" + URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 				executeWCPS(url, job, wcpsFactory);
@@ -770,7 +773,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			// TODO receive resulting json object from UDF container
 			// TODO import resulting UDF object into rasdaman
 
-			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphAfterUDF, openEOEndpoint, wcpsEndpoint);
+			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphAfterUDF, openEOEndpoint, wcpsEndpoint, collectionMap);
 			URL urlUDF = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages"
 					+ "&QUERY=" + URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 			executeWCPS(urlUDF, job, wcpsFactory);

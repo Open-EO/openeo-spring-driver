@@ -34,6 +34,7 @@ import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.EngineTypes;
 import org.openeo.spring.api.CollectionsApiController;
+import org.openeo.spring.components.CollectionMap;
 import org.openeo.spring.components.CollectionsMap;
 import org.openeo.spring.components.JobScheduler;
 import org.openeo.wcps.ConvenienceHelper;
@@ -71,6 +72,9 @@ public class ResultApiController implements ResultApi {
 	
 	@Autowired
 	private CollectionsMap collectionsMap;
+	
+	@Autowired
+	private CollectionMap  collectionMap;
 	
 	private final NativeWebRequest request;
 
@@ -183,7 +187,7 @@ public class ResultApiController implements ResultApi {
 			}
 		} else if(resultEngine == EngineTypes.WCPS) {
 			WCPSQueryFactory wcpsFactory = null;
-			wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint);
+			wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint, collectionMap);
 			URL url;
 			try {
 				url = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages" + "&QUERY="
