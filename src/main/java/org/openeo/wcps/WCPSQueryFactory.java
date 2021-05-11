@@ -13,6 +13,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
@@ -33,10 +34,14 @@ import org.json.JSONObject;
 import java.lang.Math;
 
 import org.openeo.wcps.domain.Aggregate;
-import org.openeo.wcps.domain.Collection;
 import org.openeo.wcps.domain.Filter;
-
+import org.openeo.spring.model.Collection;
+import org.openeo.spring.model.Dimension;
+import org.openeo.spring.model.DimensionSpatial;
+import org.openeo.spring.model.DimensionTemporal;
+import org.openeo.spring.model.TemporalDimension;
 import org.openeo.wcps.WCPSReduceFunc;
+import org.openeo.spring.components.CollectionMap;
 import org.openeo.wcps.WCPSApplyFunc;
 
 public class WCPSQueryFactory {
@@ -51,6 +56,7 @@ public class WCPSQueryFactory {
 	private boolean withUDF = false;
 	private String openEOEndpoint;
 	private String wcpsEndpoint;
+	private CollectionMap collectionMap;
 	Logger log = LogManager.getLogger();
 
 	/**
@@ -58,7 +64,7 @@ public class WCPSQueryFactory {
 	 * 
 	 * @param openEOGraph
 	 */
-	public WCPSQueryFactory(JSONObject openEOGraph, String openEOEndpoint, String wcpsEndpoint) {
+	public WCPSQueryFactory(JSONObject openEOGraph, String openEOEndpoint, String wcpsEndpoint, CollectionMap collectionMap) {
 		log.debug("openEO endpoint: " + openEOEndpoint);
 		log.debug("wcps endpoint: " + wcpsEndpoint);
 		collectionIDs = new Vector<Collection>();
@@ -69,6 +75,7 @@ public class WCPSQueryFactory {
 		this.processGraph = openEOGraph;
 		this.openEOEndpoint = openEOEndpoint;
 		this.wcpsEndpoint = wcpsEndpoint;
+		this.collectionMap = collectionMap;
 		this.build();
 	}
 
@@ -92,8 +99,8 @@ public class WCPSQueryFactory {
 		// Update WCPS when there are multiple cubes to be accessed
 		log.debug("collectionIDs size: " +  collectionIDs.size());
 		for (int c = 1; c <= collectionIDs.size(); c++) {
-			String collectionID = processGraph.getJSONObject(collectionIDs.get(c - 1).getName()).getJSONObject("arguments").getString("id");
-			basicWCPS.append("$cube" + collectionID + collectionIDs.get(c - 1).getName() + " in (" + collectionID + ")");
+			String collectionID = processGraph.getJSONObject(collectionIDs.get(c - 1).getId()).getJSONObject("arguments").getString("id");
+			basicWCPS.append("$cube" + collectionID + collectionIDs.get(c - 1).getId() + " in (" + collectionID + ")");
 			if (c < collectionIDs.size()) {
 				basicWCPS.append(", ");
 			}
@@ -105,38 +112,10 @@ public class WCPSQueryFactory {
 	}
 	
 	private void buildLoadCollection(JSONObject currentProcessArguments, StringBuilder wcpsPayLoad, JSONObject storedPayLoads, boolean collDims2D, String nodeKeyOfCurrentProcess) {
-		String collectionID = currentProcessArguments.getString("id");				
-		JSONObject jsonresp = null;
-		try {
-			jsonresp = readJsonFromUrl(openEOEndpoint + "/collections/" + collectionID);
-		} catch (JSONException e) {
-			log.error("An error occured: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for (StackTraceElement element : e.getStackTrace()) {
-				builder.append(element.toString() + "\n");
-			}
-			log.error(builder.toString());
-		} catch (IOException e) {
-			log.error("An error occured: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for (StackTraceElement element : e.getStackTrace()) {
-				builder.append(element.toString() + "\n");
-			}
-			log.error(builder.toString());
-		}
+		String collectionID = currentProcessArguments.getString("id");
+		Collection collection = collectionMap.get(collectionID);
 
-		JSONObject extent = jsonresp.getJSONObject("extent");
-		JSONArray temporal = extent.getJSONObject("temporal").getJSONArray("interval").getJSONArray(0);;
-		String templower = null;
-		
-		try {
-			templower = temporal.get(0).toString();
-		}
-		catch (JSONException e) {
-			log.error("An error occured: " + e.getMessage());					
-		}
-		
-		if (templower.contentEquals("null")) {
+		if (collection.getExtent().getTemporal().getInterval().get(0) == null) {
 			collDims2D = true;
 		}
 		
@@ -356,68 +335,19 @@ public class WCPSQueryFactory {
 		
 		int noOfDimsCube1 = 0;
 		int noOfDimsCube2 = 0;
-		JSONObject collectionSTACMetdataCube1 = null;
-		JSONObject collectionSTACMetdataCube2 = null;
-		try {
-			collectionSTACMetdataCube1 = readJsonFromUrl(
-					openEOEndpoint + "/collections/" + cube1);
-		} catch (JSONException e) {
-			log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for( StackTraceElement element: e.getStackTrace()) {
-				builder.append(element.toString()+"\n");
-			}
-			log.error(builder.toString());
-		} catch (IOException e) {
-			log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for( StackTraceElement element: e.getStackTrace()) {
-				builder.append(element.toString()+"\n");
-			}
-			log.error(builder.toString());
-		}
+		Collection coll1 = collectionMap.get(cube1);
+		Collection coll2 = collectionMap.get(cube2);
 		
-		try {
-			collectionSTACMetdataCube2 = readJsonFromUrl(
-					openEOEndpoint + "/collections/" + cube2);
-		} catch (JSONException e) {
-			log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for( StackTraceElement element: e.getStackTrace()) {
-				builder.append(element.toString()+"\n");
-			}
-			log.error(builder.toString());
-		} catch (IOException e) {
-			log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for( StackTraceElement element: e.getStackTrace()) {
-				builder.append(element.toString()+"\n");
-			}
-			log.error(builder.toString());
-		}
-		
-		JSONObject dimsCube1 = (JSONObject) (((JSONObject) collectionSTACMetdataCube1).get("cube:dimensions"));		
-		for (String dimsCube1Keys : dimsCube1.keySet()) {
-			noOfDimsCube1 = noOfDimsCube1+1;
-		}
-		
-		JSONObject dimsCube2 = (JSONObject) (((JSONObject) collectionSTACMetdataCube2).get("cube:dimensions"));		
-		for (String dimsCube2Keys : dimsCube2.keySet()) {
-			noOfDimsCube2 = noOfDimsCube2+1;
-		}
+		noOfDimsCube1 = coll1.getCubeColonDimensions().size();
+		noOfDimsCube2 = coll2.getCubeColonDimensions().size();
 		
 		boolean dimsXY = false;
 		boolean dimsEN = false;
 		JSONObject dimAxisName = null;
-		try {
-			dimAxisName = dimsCube1.getJSONObject("E");
+		if(coll1.getCubeColonDimensions().containsKey("E") || coll1.getCubeColonDimensions().containsKey("N")) {
 			dimsEN = true;
-		}catch(Exception e) {
-		}
-		try {
-			dimAxisName = dimsCube1.getJSONObject("Y");
+		}else if(coll1.getCubeColonDimensions().containsKey("X") || coll1.getCubeColonDimensions().containsKey("Y")) {
 			dimsXY = true;
-		}catch(Exception e) {
 		}
 		log.debug(temporalStartCube1);
 		log.debug(temporalEndCube1);
@@ -837,66 +767,12 @@ public class WCPSQueryFactory {
 		
 		int noOfDimsCube1 = 0;
 		int noOfDimsCube2 = 0;
-		JSONObject collectionSTACMetdataCube1 = null;
-		JSONObject collectionSTACMetdataCube2 = null;
-		try {
-			collectionSTACMetdataCube1 = readJsonFromUrl(openEOEndpoint + "/collections/" + cube1);
-		} catch (JSONException e) {
-			log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for( StackTraceElement element: e.getStackTrace()) {
-				builder.append(element.toString()+"\n");
-			}
-			log.error(builder.toString());
-		} catch (IOException e) {
-			log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for( StackTraceElement element: e.getStackTrace()) {
-				builder.append(element.toString()+"\n");
-			}
-			log.error(builder.toString());
-		}
-		try {
-			collectionSTACMetdataCube2 = readJsonFromUrl(openEOEndpoint + "/collections/" + cube2);
-		} catch (JSONException e) {
-			log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for( StackTraceElement element: e.getStackTrace()) {
-				builder.append(element.toString()+"\n");
-			}
-			log.error(builder.toString());
-		} catch (IOException e) {
-			log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builder = new StringBuilder();
-			for( StackTraceElement element: e.getStackTrace()) {
-				builder.append(element.toString()+"\n");
-			}
-			log.error(builder.toString());
-		}
+		Collection coll1 = collectionMap.get(cube1);
+		Collection coll2 = collectionMap.get(cube2);
 		
-		JSONObject dimsCube1 = (JSONObject) (((JSONObject) collectionSTACMetdataCube1).get("cube:dimensions"));		
-		for (String dimsCube1Keys : dimsCube1.keySet()) {
-			noOfDimsCube1 = noOfDimsCube1+1;
-		}
+		noOfDimsCube1 = coll1.getCubeColonDimensions().size();
+		noOfDimsCube2 = coll2.getCubeColonDimensions().size();
 		
-		JSONObject dimsCube2 = (JSONObject) (((JSONObject) collectionSTACMetdataCube2).get("cube:dimensions"));		
-		for (String dimsCube2Keys : dimsCube2.keySet()) {
-			noOfDimsCube2 = noOfDimsCube2+1;
-		}
-		
-//		boolean dimsXY = false;
-//		boolean dimsEN = false;
-//		JSONObject dimAxisName = null;
-//		try {
-//			dimAxisName = dimsCube1.getJSONObject("E");
-//			dimsEN = true;
-//		}catch(Exception e) {
-//		}
-//		try {
-//			dimAxisName = dimsCube1.getJSONObject("Y");
-//			dimsXY = true;
-//		}catch(Exception e) {
-//		}
 		log.debug(temporalStartCube1);
 		log.debug(temporalEndCube1);
 		log.debug(temporalStartCube2);
@@ -2741,32 +2617,12 @@ public class WCPSQueryFactory {
 					for (int a = 0; a < polygonArray.length(); a++) {
 						polygonArrayLong = polygonArray.getJSONArray(a).getDouble(0);
 						polygonArrayLat = polygonArray.getJSONArray(a).getDouble(0);
-						JSONObject extent;
-						JSONObject jsonresp = null;
-						try {
-							jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + coll);
-						} catch (JSONException e) {
-							log.error("An error occured: " + e.getMessage());
-							StringBuilder builder = new StringBuilder();
-							for (StackTraceElement element : e.getStackTrace()) {
-								builder.append(element.toString() + "\n");
-							}
-							log.error(builder.toString());
-						} catch (IOException e) {
-							log.error("An error occured: " + e.getMessage());
-							StringBuilder builder = new StringBuilder();
-							for (StackTraceElement element : e.getStackTrace()) {
-								builder.append(element.toString() + "\n");
-							}
-							log.error(builder.toString());
-						}
-
-						extent = jsonresp.getJSONObject("extent");
-						JSONArray spatial = extent.getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0);
-						double westlower = spatial.getDouble(0);
-						double eastupper = spatial.getDouble(2);
-						double southlower = spatial.getDouble(1);
-						double northupper = spatial.getDouble(3);
+						Collection collection = collectionMap.get(coll);
+						
+						double westlower = collection.getExtent().getSpatial().getBbox().get(0).get(0).doubleValue();
+						double eastupper = collection.getExtent().getSpatial().getBbox().get(0).get(2).doubleValue();
+						double southlower = collection.getExtent().getSpatial().getBbox().get(0).get(1).doubleValue();
+						double northupper = collection.getExtent().getSpatial().getBbox().get(0).get(3).doubleValue();
 
 						if (polygonArrayLong < westlower) {
 							polygonArrayLong = westlower;
@@ -2980,45 +2836,21 @@ public class WCPSQueryFactory {
 	private void executeProcesses(String processID, String processNodeKey) {
 		JSONObject processNode = processGraph.getJSONObject(processNodeKey);
 		if (processID.equals("load_collection")) {
-			String collection = null;
+			String collectionID = null;
 			JSONObject loadCollectionNode = processGraph.getJSONObject(processNodeKey);
 			JSONObject loadCollectionNodeArguments = loadCollectionNode.getJSONObject("arguments");			
-			collection = (String) loadCollectionNodeArguments.get("id");
-			collectionIDs.add(new Collection(processNodeKey));
-			int srs = 0;
-			log.debug("Found actual dataset: " + collection);
-			log.debug(openEOEndpoint);
-
-			JSONObject collectionSTACMetdata = null;
-			String metdadataurl = openEOEndpoint + "/collections/" + collection;
-			try {
-				collectionSTACMetdata = readJsonFromUrl(metdadataurl);
-			} catch (JSONException e) {
-				log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage() + " At URL: " + metdadataurl);
-				StringBuilder builder = new StringBuilder();
-				for( StackTraceElement element: e.getStackTrace()) {
-					builder.append(element.toString()+"\n");
-				}
-				log.error(builder.toString());
-			} catch (IOException e) {
-				log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage() + " At URL: " + metdadataurl);
-				StringBuilder builder = new StringBuilder();
-				for( StackTraceElement element: e.getStackTrace()) {
-					builder.append(element.toString()+"\n");
-				}
-				log.error(builder.toString());
-			}
-			for (String dimX : collectionSTACMetdata.getJSONObject("cube:dimensions").keySet()) {
-				if (dimX.contentEquals("X") || dimX.contentEquals("E") || dimX.contentEquals("Lon") || dimX.contentEquals("Long")) {
-					srs = ((JSONObject) collectionSTACMetdata.getJSONObject("cube:dimensions")).getJSONObject(dimX).getInt("reference_system");
-				}
-			}
-			log.debug("srs is: " + srs);
+			collectionID = (String) loadCollectionNodeArguments.get("id");
+			Collection col = new Collection();
+			col.setId(processNodeKey);
+			collectionIDs.add(col);
+			Collection collection = collectionMap.get(collectionID);
+			
+			int srs = getSRSFromCollection(collection);
 			
 			JSONArray processDataCubeTempExt = new JSONArray();
 			JSONObject spatialExtentNode = new JSONObject();
-			createDateRangeFilterFromArgs(processDataCubeTempExt, collection, true);
-			createBoundingBoxFilterFromArgs(loadCollectionNodeArguments, srs, collection, true);
+			createDateRangeFilterFromArgs(processDataCubeTempExt, collectionID, true);
+			createBoundingBoxFilterFromArgs(loadCollectionNodeArguments, srs, collectionID, true);
 			
 			for (String argumentKey : loadCollectionNodeArguments.keySet()) {
 				if (argumentKey.equals("spatial_extent")) {
@@ -3026,7 +2858,7 @@ public class WCPSQueryFactory {
 						spatialExtentNode = loadCollectionNodeArguments.getJSONObject("spatial_extent");
 						log.debug("Currently working on Spatial Extent: ");
 						log.debug(spatialExtentNode.toString(4));
-						createBoundingBoxFilterFromArgs(loadCollectionNodeArguments, srs, collection, false);
+						createBoundingBoxFilterFromArgs(loadCollectionNodeArguments, srs, collectionID, false);
 					}
 				}
 				if (argumentKey.equals("temporal_extent")) {
@@ -3034,7 +2866,7 @@ public class WCPSQueryFactory {
 						processDataCubeTempExt = (JSONArray) loadCollectionNodeArguments.get("temporal_extent");					
 						log.debug("Currently working on Temporal Extent: ");
 						log.debug(processDataCubeTempExt.toString(4));
-						createDateRangeFilterFromArgs(processDataCubeTempExt, collection, false);
+						createDateRangeFilterFromArgs(processDataCubeTempExt, collectionID, false);
 					}
 				}
 			}
@@ -3052,26 +2884,10 @@ public class WCPSQueryFactory {
 			String fromNode = processNode.getJSONObject("arguments").getJSONObject("data").getString("from_node");
 			String collectionNodeKey = getFilterCollectionNode(fromNode);
 			String collectionID = processGraph.getJSONObject(collectionNodeKey).getJSONObject("arguments").getString("id");
-			JSONObject jsonresp = null;
-			try {
-				jsonresp = readJsonFromUrl(openEOEndpoint + "/collections/" + collectionID);
-			} catch (JSONException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			} catch (IOException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			}
+			Collection collection = collectionMap.get(collectionID);
 			String temporalAxis = null;
-			for (String tempAxis1 : jsonresp.getJSONObject("cube:dimensions").keySet()) {
+			//TODO check if this can further be simplified ...
+			for (String tempAxis1 : collection.getCubeColonDimensions().keySet()) {
 				String tempAxis1UpperCase = tempAxis1.toUpperCase();
 				if (tempAxis1UpperCase.contentEquals("DATE") || tempAxis1UpperCase.contentEquals("TIME") || tempAxis1UpperCase.contentEquals("ANSI") || tempAxis1UpperCase.contentEquals("UNIX")) {
 					temporalAxis = tempAxis1;
@@ -3111,36 +2927,14 @@ public class WCPSQueryFactory {
 			String filterBboxfromNode = processNode.getJSONObject("arguments").getJSONObject("data").getString("from_node");			
 			filterCollectionNodeKey = getFilterCollectionNode(filterBboxfromNode);
 			JSONObject loadCollectionNode = processGraph.getJSONObject(filterCollectionNodeKey).getJSONObject("arguments");			
-			String coll = (String) loadCollectionNode.get("id");
+			String collectionID = (String) loadCollectionNode.get("id");
 			JSONObject processFilter = processGraph.getJSONObject(filterBboxNodeKey);
 			JSONObject processFilterArguments = processFilter.getJSONObject("arguments");
-			int srs = 0;
-			JSONObject jsonresp = null;
-			try {
-				jsonresp = readJsonFromUrl(openEOEndpoint + "/collections/" + coll);
-			} catch (JSONException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			} catch (IOException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			}
-			for (String dimX : jsonresp.getJSONObject("cube:dimensions").keySet()) {
-				if (dimX.contentEquals("X") || dimX.contentEquals("E") || dimX.contentEquals("Lon") || dimX.contentEquals("Long")) {
-					srs = ((JSONObject) jsonresp.getJSONObject("cube:dimensions")).getJSONObject(dimX).getInt("reference_system");
-				}
-			}
-			log.debug("srs is: " + srs);
+			Collection collection = collectionMap.get(collectionID);
+			
+			int srs = getSRSFromCollection(collection);
 			if (srs > 0) {
-				createBoundingBoxFilterFromArgs(processFilterArguments, srs, coll, false);
+				createBoundingBoxFilterFromArgs(processFilterArguments, srs, collectionID, false);
 			}
 		}		
 //		else if (processID.equals("filter_polygon")) {
@@ -3221,31 +3015,18 @@ public class WCPSQueryFactory {
 		
 		if (tempNull) {
 			JSONObject jsonresp = null;
-			try {
-				jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
-			} catch (JSONException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
+			Collection collection = collectionMap.get(collectionID);
+			DimensionTemporal temporalDimension = null;
+			for(Dimension currentDimension: collection.getCubeColonDimensions().values()) {
+				if(currentDimension.getType() == Dimension.TypeEnum.TEMPORAL) {
+					temporalDimension = (DimensionTemporal) currentDimension;
 				}
-				log.error(builder.toString());
-			} catch (IOException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
 			}
-
-			extent = jsonresp.getJSONObject("extent");
-			JSONArray temporal = extent.getJSONObject("temporal").getJSONArray("interval").getJSONArray(0);
 			String templower = null;
 			String tempupper = null;
 			try {
-				templower = temporal.get(0).toString();
-				tempupper = temporal.get(1).toString();
+				templower = collection.getCubeColonDimensions().get(0).toString();
+				tempupper = temporalDimension.getExtent().get(1).toString();
 				log.debug(" TempUpper : "+ tempupper + " TempLower : " + templower);
 				if (templower.contentEquals("null")) {
 					templower = null;
@@ -3298,26 +3079,10 @@ public class WCPSQueryFactory {
 		else {
 			String extentlower = extentArray.get(0).toString();
 			String extentupper = extentArray.get(1).toString();
-			JSONObject jsonresp = null;
-			try {
-				jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
-			} catch (JSONException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			} catch (IOException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			}
-			extent = jsonresp.getJSONObject("extent");
-			JSONArray temporal = extent.getJSONObject("temporal").getJSONArray("interval").getJSONArray(0);
+
+			Collection collection = collectionMap.get(collectionID);
+			
+			List<OffsetDateTime> temporal = collection.getExtent().getTemporal().getInterval().get(0);
 			String templower = temporal.get(0).toString();
 			String tempupper = temporal.get(1).toString();
 			log.debug("Temporal Extent is: ");
@@ -3342,6 +3107,7 @@ public class WCPSQueryFactory {
 			}
 			if (fromDate != null && toDate != null) {
 				log.debug("Temporal Extent is: |" + fromDate + "|:|" + toDate + "|");
+				//TODO make sure that the parsing here is not causing date time exception!
 				if(LocalDateTime.parse(fromDate.replace("Z", "")).equals(LocalDateTime.parse(toDate.replace("Z", "")))) {
 					toDate = null;
 					log.debug("Dates are identical. To date is set to null!");
@@ -3366,15 +3132,15 @@ public class WCPSQueryFactory {
 					}
 				}
 				this.filters.remove(dateFilter);
-				String tempAxis = null;
-				for (String tempAxis1 : jsonresp.getJSONObject("cube:dimensions").keySet()) {
-					String tempAxis1UpperCase = tempAxis1.toUpperCase();
-					if (tempAxis1UpperCase.contentEquals("DATE") || tempAxis1UpperCase.contentEquals("TIME") || tempAxis1UpperCase.contentEquals("ANSI") || tempAxis1UpperCase.contentEquals("UNIX")) {
-						tempAxis = tempAxis1;
+				String temporalDimensionName = null;
+				for(String dimensionName: collection.getCubeColonDimensions().keySet()) {
+					Dimension currentDimension = collection.getCubeColonDimensions().get(dimensionName);
+					if(currentDimension.getType() == Dimension.TypeEnum.TEMPORAL) {
+						temporalDimensionName = dimensionName;
 					}
 				}
 				log.debug("To Date : "+toDate);
-				this.filters.add(new Filter(tempAxis+"_"+collectionID, fromDate, toDate));
+				this.filters.add(new Filter(temporalDimensionName+"_"+collectionID, fromDate, toDate));
 				
 			}
 		}
@@ -3389,19 +3155,19 @@ public class WCPSQueryFactory {
 		return sb.toString();
 	}
 
-	private JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
-		log.debug("Trying to read JSON from the following URL : ");
-		log.debug(url);
-		InputStream is = new URL(url).openStream();
-		try {
-			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-			String jsonText = readAll(rd);
-			JSONObject json = new JSONObject(jsonText);
-			return json;
-		} finally {
-			is.close();
-		}
-	}
+//	private JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
+//		log.debug("Trying to read JSON from the following URL : ");
+//		log.debug(url);
+//		InputStream is = new URL(url).openStream();
+//		try {
+//			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+//			String jsonText = readAll(rd);
+//			JSONObject json = new JSONObject(jsonText);
+//			return json;
+//		} finally {
+//			is.close();
+//		}
+//	}
 
 	private void createBoundingBoxFilterFromArgs(JSONObject argsObject, int srs, String collectionID, Boolean spatNull) {
 		String left = null;
@@ -3465,34 +3231,13 @@ public class WCPSQueryFactory {
 			log.error("An error occured while requesting capabilities from WCPS endpoint: " + e.getMessage());		
 		}
 		if (spatNull) {
-			JSONObject extent;
-			JSONObject jsonresp = null;
-			try {
-				jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
-			} catch (JSONException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			} catch (IOException e) {
-				log.error("An error occured: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			}
 			
-			extent = jsonresp.getJSONObject("extent");
-			JSONArray spatial = extent.getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0);
-			double westlower = spatial.getDouble(0)+0.00001;
-			double eastupper = spatial.getDouble(2)-0.00001;
-			double southlower = spatial.getDouble(1)+0.00001;
-			double northupper = spatial.getDouble(3)-0.00001;
-			log.debug("Spatial Extent is: ");
-			log.debug(spatial);
+			Collection collection = collectionMap.get(collectionID);
+			
+			double westlower = collection.getExtent().getSpatial().getBbox().get(0).get(0).doubleValue()+0.00001;
+			double eastupper = collection.getExtent().getSpatial().getBbox().get(0).get(2).doubleValue()-0.00001;
+			double southlower = collection.getExtent().getSpatial().getBbox().get(0).get(1).doubleValue()+0.00001;;
+			double northupper = collection.getExtent().getSpatial().getBbox().get(0).get(3).doubleValue()-0.00001;
 			left = Double.toString(westlower);
 			right = Double.toString(eastupper);
 			top = Double.toString(northupper);
@@ -3602,7 +3347,7 @@ public class WCPSQueryFactory {
 				}
 				this.filters.remove(eastFilter);
 				this.filters.remove(westFilter);
-				for (String spatAxis : jsonresp.getJSONObject("cube:dimensions").keySet()) {	
+				for (String spatAxis : collection.getCubeColonDimensions().keySet()) {	
 					String spatAxisUpperCase = spatAxis.toUpperCase();
 					if (spatAxisUpperCase.contentEquals("E") || spatAxisUpperCase.contentEquals("LONG") || spatAxisUpperCase.equals("LON") || spatAxisUpperCase.equals("LONGITUDE") || spatAxisUpperCase.contentEquals("X")) {
 						spatAxisX = spatAxis;
@@ -3618,7 +3363,8 @@ public class WCPSQueryFactory {
 			}
 		}
 		else {
-			JSONObject jsonresp = null;
+//			JSONObject jsonresp = null;
+			Collection collection = collectionMap.get(collectionID);
 			String spatAxisX = null;
 			String spatAxisY = null;
 			for (Object argsKey : argsObject.keySet()) {
@@ -3627,34 +3373,12 @@ public class WCPSQueryFactory {
 					JSONObject extentObject = (JSONObject) argsObject.get(argsKeyStr);
 					for (Object extentKey : extentObject.keySet()) {
 						String extentKeyStr = extentKey.toString();
-						JSONObject extent;
+
+						double westlower = collection.getExtent().getSpatial().getBbox().get(0).get(0).doubleValue();
+						double eastupper = collection.getExtent().getSpatial().getBbox().get(0).get(2).doubleValue();
+						double southlower = collection.getExtent().getSpatial().getBbox().get(0).get(1).doubleValue();
+						double northupper = collection.getExtent().getSpatial().getBbox().get(0).get(3).doubleValue();
 						
-						try {
-							jsonresp = readJsonFromUrl(wcps_endpoint + "/collections/" + collectionID);
-						} catch (JSONException e) {
-							log.error("An error occured: " + e.getMessage());
-							StringBuilder builder = new StringBuilder();
-							for (StackTraceElement element : e.getStackTrace()) {
-								builder.append(element.toString() + "\n");
-							}
-							log.error(builder.toString());
-						} catch (IOException e) {
-							log.error("An error occured: " + e.getMessage());
-							StringBuilder builder = new StringBuilder();
-							for (StackTraceElement element : e.getStackTrace()) {
-								builder.append(element.toString() + "\n");
-							}
-							log.error(builder.toString());
-						}
-						extent = jsonresp.getJSONObject("extent");
-						JSONArray spatial = extent.getJSONObject("spatial").getJSONArray("bbox").getJSONArray(0);
-						
-						double westlower = spatial.getDouble(0);
-						double eastupper = spatial.getDouble(2);
-						double southlower = spatial.getDouble(1);
-						double northupper = spatial.getDouble(3);
-						log.debug("Spatial Extent is: ");
-						log.debug(spatial);
 						double leftlower = 0;
 						double rightupper = 0;
 						double topupper = 0;
@@ -3790,7 +3514,7 @@ public class WCPSQueryFactory {
 				}
 				this.filters.remove(eastFilter);
 				this.filters.remove(westFilter);
-				for (String spatAxis : jsonresp.getJSONObject("cube:dimensions").keySet()) {	
+				for (String spatAxis : collection.getCubeColonDimensions().keySet()) {	
 					String spatAxisUpperCase = spatAxis.toUpperCase();
 					if (spatAxisUpperCase.contentEquals("E") || spatAxisUpperCase.contentEquals("LONG") || spatAxisUpperCase.equals("LON") || spatAxisUpperCase.equals("LONGITUDE") || spatAxisUpperCase.contentEquals("X")) {
 						spatAxisX = spatAxis;
@@ -3929,5 +3653,17 @@ public class WCPSQueryFactory {
 			log.debug("Feature Aggregate added!");
 			aggregates.add(new Aggregate(new String("feature_"+collectionID), new String("NDVI_"+collectionID), params));
 		}
+	}
+	
+	private int getSRSFromCollection(Collection collection) {
+		int srs = 0;
+		for(Dimension dimension: collection.getCubeColonDimensions().values()) {
+			if(dimension.getType() == Dimension.TypeEnum.SPATIAL) {
+				srs = ((DimensionSpatial) dimension).getReferenceSystem();
+				break;
+			}
+		}
+		log.debug("srs is: " + srs);
+		return srs;
 	}
 }
