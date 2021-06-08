@@ -2124,6 +2124,15 @@ public class CollectionsApiController implements CollectionsApi {
 				} catch (Exception e) {
 					currentCollection.setStacVersion("No Stac Version Information available");
 				}
+				
+				try {
+					odcCollection.getJSONArray("stac_extensions");
+					for (Object extension : odcCollection.getJSONArray("stac_extensions")) {
+						currentCollection.addStacExtensionsItem(extension.toString());
+					}
+				} catch (Exception e) {
+					currentCollection.setStacVersion("No Stac Version Information available");
+				}
 
 				try {
 					currentCollection.setLicense(odcCollection.getString("license"));
@@ -2131,6 +2140,47 @@ public class CollectionsApiController implements CollectionsApi {
 					currentCollection.setLicense("No License Information available");
 				}
 
+				try {
+					odcCollection.getJSONArray("keywords");
+					for (Object keyword : odcCollection.getJSONArray("keywords")) {
+						currentCollection.addKeywordsItem(keyword.toString());
+					}
+				} catch (Exception e) {	}
+				
+				try {
+					odcCollection.getString("sci:citation");
+					currentCollection.setCitation(odcCollection.getString("sci:citation"));
+				} catch (Exception e) {	}
+				
+				try {
+					odcCollection.getJSONArray("providers");
+					List<Providers> providers = new ArrayList<Providers>();
+					for (Object p : odcCollection.getJSONArray("providers")) {
+						Providers provider = new Providers();
+						try {
+							provider.setName(((JSONObject) p).getString("name").toString());
+						} catch (Exception e) {
+							provider.setName(null);
+						}
+						try {
+							provider.setUrl(new URI(((JSONObject) p).getString("url").toString()));
+						} catch (Exception e) {
+							provider.setUrl(null);
+						}
+						List<String> roles = new ArrayList<String>();
+						try {
+							for (Object r : ((JSONObject) p).getJSONArray("roles")) {
+								roles.add(r.toString());
+							}
+						} catch (Exception e) {
+							roles.add(null);
+						}
+						provider.setRoles(roles);
+						providers.add(provider);
+					}
+					currentCollection.setProviders(providers);
+				} catch (Exception e) {	}
+				
 				CollectionExtent extent = new CollectionExtent();
 				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
 				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
@@ -2186,20 +2236,6 @@ public class CollectionsApiController implements CollectionsApi {
 				linksCollections.add(linkItemsCollection);
 				currentCollection.setLinks(linksCollections);
 
-				List<Providers> providers = new ArrayList<Providers>();
-				Providers provider1 = new Providers();
-				List<String> roles = new ArrayList<String>();
-				provider1.setName("Eurac EO ODC");
-				roles.add("host");
-				provider1.setRoles(roles);
-				try {
-					// TODO remove hard coded names here and inject them via properties file
-					provider1.setUrl(new URI("http://www.eurac.edu"));
-				} catch (URISyntaxException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
 				Link linkItems = new Link();
 				linkItems.setType("text/gml");
 				linkItems.setRel("alternate");
@@ -2213,9 +2249,6 @@ public class CollectionsApiController implements CollectionsApi {
 				// TODO remove hard coded names here and inject them via properties file
 				linkItems.setTitle("openEO STAC Catalog (STAC Version 0.9.0)");
 				collectionsList.addLinksItem(linkItems);
-
-				providers.add(0, provider1);
-				currentCollection.setProviders(providers);
 
 				collectionsList.addCollectionsItem(currentCollection);
 			}
