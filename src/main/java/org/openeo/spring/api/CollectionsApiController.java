@@ -1,7 +1,9 @@
 package org.openeo.spring.api;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,6 +15,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -30,7 +34,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import org.openapitools.jackson.nullable.JsonNullable;
+//import org.openapitools.jackson.nullable.JsonNullable;
 import org.apache.http.HttpConnection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -129,7 +133,7 @@ public class CollectionsApiController implements CollectionsApi {
 			collectionsMap.put(EngineTypes.WCPS, loadCollectionsFromFile(collectionsFileWCPS));
 			collectionsMap.put(EngineTypes.ODC_DASK, loadCollectionsFromFile(collectionsFileODC));
 		}
-		
+		log.info(collectionsMap.keySet());
 		for (EngineTypes type : collectionsMap.keySet()) {
 			for (Collection currentCollection : collectionsMap.get(type).getCollections()) {
 				collectionMap.put(currentCollection.getId(), currentCollection);
@@ -842,10 +846,10 @@ public class CollectionsApiController implements CollectionsApi {
 
 				try {
 					tempStep = metadataElement.getChildText("Temporal_Step", gmlNS);
+					dimensionTemporal.setStep(tempStep);
 				} catch (Exception e) {
 
 				}
-				dimensionTemporal.setStep(tempStep);
 
 				List<String> keywords = new ArrayList<String>();
 
@@ -1742,18 +1746,13 @@ public class CollectionsApiController implements CollectionsApi {
 
 			try {
 				citation = metadataElement.getChildText("Citation", gmlNS);
+				currentCollection.setCitation(citation);
 			} catch (Exception e) {
 			}
-			if (citation == null) {
-				citation = "No Citation Available";
-			}
-			currentCollection.setCitation(citation);
 
 			try {
 				description = metadataElement.getChildText("Description", gmlNS);
-			} catch (Exception e) {
-
-			}
+			} catch (Exception e) {	}
 			if (description == null) {
 				description = "No Description Available";
 			}
@@ -1761,10 +1760,8 @@ public class CollectionsApiController implements CollectionsApi {
 
 			try {
 				tempStep = metadataElement.getChildText("Temporal_Step", gmlNS);
-			} catch (Exception e) {
-
-			}
-			dimensionTemporal.setStep(tempStep);
+				dimensionTemporal.setStep(tempStep);
+			} catch (Exception e) {	}
 
 			List<String> keywords = new ArrayList<String>();
 
@@ -1864,9 +1861,7 @@ public class CollectionsApiController implements CollectionsApi {
 
 			try {
 				platform.add(metadataElement.getChildText("Platform", gmlNS));
-			} catch (Exception e) {
-				log.warn("Error in parsing Platform Name :" + e.getMessage());
-			}
+			} catch (Exception e) {	}
 
 			try {
 				slicesList = metadataElement.getChild("slices", gmlNS).getChildren();
@@ -1874,40 +1869,17 @@ public class CollectionsApiController implements CollectionsApi {
 					try {
 						platform.add(slicesList.get(c).getChildText("DATATAKE_1_SPACECRAFT_NAME"));
 						platform = platform.stream().distinct().collect(Collectors.toList());
-					} catch (Exception e) {
-						log.warn("Error in parsing Platforms:" + e.getMessage());
-					}
+					} catch (Exception e) {	}
 				}
-			} catch (Exception e) {
-				log.warn("Error in parsing metadata slice :" + e.getMessage());
-			}
-
-			if (platform.get(0) == null) {
-				platform.set(0, "No Platform Information Available");
-			}
-//		try {
-//			citation = metadataElement.getChildText("Citation", gmlNS);
-//		}catch(Exception e) {
-//			log.warn("Error in parsing Constellation:" + e.getMessage());
-//		}
+			} catch (Exception e) {	}
 
 			try {
 				constellation.add(metadataElement.getChildText("Constellation", gmlNS));
-			} catch (Exception e) {
-				log.warn("Error in parsing Constellation:" + e.getMessage());
-			}
-			if (constellation.get(0) == null) {
-				constellation.set(0, "No Constellation Information Available");
-			}
+			} catch (Exception e) {	}
 
 			try {
 				instruments.add(metadataElement.getChildText("Instruments", gmlNS));
-			} catch (Exception e) {
-				log.warn("Error in parsing Instrument:" + e.getMessage());
-			}
-			if (instruments.get(0) == null) {
-				instruments.set(0, "No Instrument Information Available");
-			}
+			} catch (Exception e) {	}
 
 //		try {
 //			rows = Integer.parseInt(metadataElement.getChildText("Rows", gmlNS));
@@ -2093,189 +2065,35 @@ public class CollectionsApiController implements CollectionsApi {
 
 		if (odcSTACMetdata != null) {
 
-			JSONObject odcCollections = odcSTACMetdata.getJSONObject("collections");
+			//JSONObject odcCollections = odcSTACMetdata.getJSONObject("collections");
 
-			for (String argumentKey : odcCollections.keySet()) {
-				JSONObject odcCollection = odcCollections.getJSONObject(argumentKey);
-				Collection currentCollection = new Collection();
-
-				currentCollection.setEngine(EngineTypes.ODC_DASK);
-
-				try {
-					currentCollection.setId(odcCollection.getString("id"));
-				} catch (Exception e) {
-					currentCollection.setId("No Collection ID available");
-				}
-
-				try {
-					currentCollection.setDescription(odcCollection.getString("description"));
-				} catch (Exception e) {
-					currentCollection.setDescription("No Description available");
-				}
-
-				try {
-					currentCollection.setTitle(odcCollection.getString("title"));
-				} catch (Exception e) {
-					currentCollection.setTitle("No Title available");
-				}
-
-				try {
-					currentCollection.setStacVersion(odcCollection.getString("stac_version"));
-				} catch (Exception e) {
-					currentCollection.setStacVersion("No Stac Version Information available");
-				}
-				
-				try {
-					odcCollection.getJSONArray("stac_extensions");
-					for (Object extension : odcCollection.getJSONArray("stac_extensions")) {
-						currentCollection.addStacExtensionsItem(extension.toString());
-					}
-				} catch (Exception e) {
-					currentCollection.setStacVersion("No Stac Version Information available");
-				}
-
-				try {
-					currentCollection.setLicense(odcCollection.getString("license"));
-				} catch (Exception e) {
-					currentCollection.setLicense("No License Information available");
-				}
-
-				try {
-					odcCollection.getJSONArray("keywords");
-					for (Object keyword : odcCollection.getJSONArray("keywords")) {
-						currentCollection.addKeywordsItem(keyword.toString());
-					}
-				} catch (Exception e) {	}
-				
-				try {
-					odcCollection.getString("sci:citation");
-					currentCollection.setCitation(odcCollection.getString("sci:citation"));
-				} catch (Exception e) {	}
-				
-				try {
-					odcCollection.getJSONArray("providers");
-					List<Providers> providers = new ArrayList<Providers>();
-					for (Object p : odcCollection.getJSONArray("providers")) {
-						Providers provider = new Providers();
-						try {
-							provider.setName(((JSONObject) p).getString("name").toString());
-						} catch (Exception e) {
-							provider.setName(null);
-						}
-						try {
-							provider.setUrl(new URI(((JSONObject) p).getString("url").toString()));
-						} catch (Exception e) {
-							provider.setUrl(null);
-						}
-						List<String> roles = new ArrayList<String>();
-						try {
-							for (Object r : ((JSONObject) p).getJSONArray("roles")) {
-								roles.add(r.toString());
-							}
-						} catch (Exception e) {
-							roles.add(null);
-						}
-						provider.setRoles(roles);
-						providers.add(provider);
-					}
-					currentCollection.setProviders(providers);
-				} catch (Exception e) {	}
-				
-				CollectionExtent extent = new CollectionExtent();
-				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
-				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
-				List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
-				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
-				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
-				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
-				try {
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox")
-							.getJSONArray(0).getBigDecimal(0));
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox")
-							.getJSONArray(0).getBigDecimal(1));
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox")
-							.getJSONArray(0).getBigDecimal(2));
-					bbox1.add(odcCollection.getJSONObject("extent").getJSONObject("spatial").getJSONArray("bbox")
-							.getJSONArray(0).getBigDecimal(3));
-				} catch (Exception e) {
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-				}
-				bbox.add(bbox1);
-				spatialExtent.setBbox(bbox);
-				extent.setSpatial(spatialExtent);
-
-				try {
-					interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal")
-							.getJSONArray("interval").getJSONArray(0).getString(0)));
-					interval1.add(OffsetDateTime.parse(odcCollection.getJSONObject("extent").getJSONObject("temporal")
-							.getJSONArray("interval").getJSONArray(0).getString(1)));
-				} catch (Exception e) {
-					interval1.add(null);
-					interval1.add(null);
-				}
-				interval.add(interval1);
-				temporalExtent.setInterval(interval);
-				extent.setTemporal(temporalExtent);
-				currentCollection.setExtent(extent);
-
-				Link linkItemsCollection = new Link();
-				List<Link> linksCollections = new ArrayList<Link>();
-				linkItemsCollection.setRel("licence");
-				try {
-					// TODO remove hard coded names here and inject them via properties file
-					linkItemsCollection.setHref(new URI("https://creativecommons.org/licenses/by/4.0/"));
-				} catch (URISyntaxException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				linkItemsCollection.setTitle("License Link");
-				linkItemsCollection.setType("text/html");
-				linksCollections.add(linkItemsCollection);
-				currentCollection.setLinks(linksCollections);
-
-				Link linkItems = new Link();
-				linkItems.setType("text/gml");
-				linkItems.setRel("alternate");
-				try {
-					// TODO remove hard coded names here and inject them via properties file
-					linkItems.setHref(new URI("http://saocompute.eurac.edu/rasdaman/ows"));
-				} catch (URISyntaxException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				// TODO remove hard coded names here and inject them via properties file
-				linkItems.setTitle("openEO STAC Catalog (STAC Version 0.9.0)");
-				collectionsList.addLinksItem(linkItems);
-
-				collectionsList.addCollectionsItem(currentCollection);
-			}
 			ObjectMapper mapper = new ObjectMapper();
-			mapper.enable(SerializationFeature.INDENT_OUTPUT);
 			mapper.registerModule(new JavaTimeModule());
 			mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-			// Java object to JSON file
-			try {
-				log.info(collectionsFileODC.getFilename());
-				String rootPath = System.getProperty("user.dir");
-				File collectionsFile = new File(rootPath + "/" + collectionsFileODC.getFilename());
-				if (!collectionsFile.exists()) {
+			String rootPath = System.getProperty("user.dir");
+			File collectionsFile = new File(rootPath + "/" + collectionsFileODC.getFilename());
+			if (!collectionsFile.exists()) {
+				try {
 					collectionsFile.createNewFile();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-				mapper.writeValue(collectionsFile, collectionsList);
-			} catch (JsonGenerationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (JsonMappingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
-		}
+			try {
+				FileWriter file = new FileWriter(collectionsFile);
+				file.write(odcSTACMetdata.toString(4));
+				file.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			
+			try {
+				collectionsList = mapper.readValue(collectionsFile, Collections.class);
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+			}
+			}
 		return collectionsList;
 	}
 

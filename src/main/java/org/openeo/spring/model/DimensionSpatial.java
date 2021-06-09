@@ -71,7 +71,7 @@ public class DimensionSpatial extends Dimension  {
   private List<BigDecimal> values = null;
 
   @JsonProperty("step")
-  private JsonNullable<BigDecimal> step = JsonNullable.undefined();
+  private String step = null;
 
   @JsonProperty("reference_system")
   private Integer referenceSystem = null;
@@ -155,8 +155,8 @@ public class DimensionSpatial extends Dimension  {
     this.values = values;
   }
 
-  public DimensionSpatial step(BigDecimal step) {
-    this.step = JsonNullable.of(step);
+  public DimensionSpatial step(String step) {
+    this.step = step;
     return this;
   }
 
@@ -168,11 +168,11 @@ public class DimensionSpatial extends Dimension  {
 
   @Valid
 
-  public JsonNullable<BigDecimal> getStep() {
+  public String getStep() {
     return step;
   }
 
-  public void setStep(JsonNullable<BigDecimal> step) {
+  public void setStep(String step) {
     this.step = step;
   }
 

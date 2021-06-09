@@ -9,7 +9,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-import org.openapitools.jackson.nullable.JsonNullable;
+//import org.openapitools.jackson.nullable.JsonNullable;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -73,7 +73,7 @@ public class SpatialDimension   {
   private List<BigDecimal> values = null;
 
   @JsonProperty("step")
-  private JsonNullable<BigDecimal> step = JsonNullable.undefined();
+  private String step;
 
   @JsonProperty("reference_system")
   private String referenceSystem = null;
@@ -157,8 +157,8 @@ public class SpatialDimension   {
     this.values = values;
   }
 
-  public SpatialDimension step(BigDecimal step) {
-    this.step = JsonNullable.of(step);
+  public SpatialDimension step(String step) {
+    this.step = step;
     return this;
   }
 
@@ -170,11 +170,11 @@ public class SpatialDimension   {
 
   @Valid
 
-  public JsonNullable<BigDecimal> getStep() {
+  public String getStep() {
     return step;
   }
 
-  public void setStep(JsonNullable<BigDecimal> step) {
+  public void setStep(String step) {
     this.step = step;
   }
 

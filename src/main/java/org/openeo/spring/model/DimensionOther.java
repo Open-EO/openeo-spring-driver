@@ -28,7 +28,7 @@ public class DimensionOther extends Dimension  {
   private List<String> values = null;
 
   @JsonProperty("step")
-  private JsonNullable<BigDecimal> step = JsonNullable.undefined();
+  private String step = null;
 
   @JsonProperty("unit")
   private String unit;
@@ -94,8 +94,8 @@ public class DimensionOther extends Dimension  {
     this.values = values;
   }
 
-  public DimensionOther step(BigDecimal step) {
-    this.step = JsonNullable.of(step);
+  public DimensionOther step(String step) {
+    this.step = step;
     return this;
   }
 
@@ -107,11 +107,11 @@ public class DimensionOther extends Dimension  {
 
   @Valid
 
-  public JsonNullable<BigDecimal> getStep() {
+  public String getStep() {
     return step;
   }
 
-  public void setStep(JsonNullable<BigDecimal> step) {
+  public void setStep(String step) {
     this.step = step;
   }
 
