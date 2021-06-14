@@ -14,6 +14,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
@@ -3025,7 +3026,8 @@ public class WCPSQueryFactory {
 			String templower = null;
 			String tempupper = null;
 			try {
-				templower = collection.getCubeColonDimensions().get(0).toString();
+//				templower = collection.getCubeColonDimensions().get(0).toString();
+				templower = temporalDimension.getExtent().get(0).toString();
 				tempupper = temporalDimension.getExtent().get(1).toString();
 				log.debug(" TempUpper : "+ tempupper + " TempLower : " + templower);
 				if (templower.contentEquals("null")) {
@@ -3047,16 +3049,23 @@ public class WCPSQueryFactory {
 					log.debug("Dates are identical. To date is set to null!");
 				}
 				Filter dateFilter = null;
-				DateFormat toDateNewFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+				List<SimpleDateFormat> knownPatterns = new ArrayList<SimpleDateFormat>();
+				knownPatterns.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss'Z'"));
+				knownPatterns.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+				knownPatterns.add(new SimpleDateFormat("yyyy-MM-dd"));
 				Date toDateNew;
-				if (tempupper != null) {try {
-					toDateNew = toDateNewFormat.parse(tempupper);
-					toDateNew.setTime(toDateNew.getTime() - 1);
-					tempupper = toDateNewFormat.format(toDateNew);
-					log.debug("To Date :"+tempupper);
-				} catch (ParseException e) {
-					e.printStackTrace();
-				}
+				if (tempupper != null) {
+					for (SimpleDateFormat pattern : knownPatterns) {
+					    try {
+					    	toDateNew = pattern.parse(tempupper);
+							toDateNew.setTime(toDateNew.getTime() - 1);
+							tempupper = pattern.format(toDateNew);
+							log.debug("To Date :"+tempupper);
+
+					    } catch (ParseException pe) {
+					    	log.error("couldn't parse date: " + pe.getMessage());
+					    }
+					}
 				}
 				for (Filter filter : this.filters) {
 					String axisUpperCase = filter.getAxis().replace("_"+ collectionID, "").toUpperCase();
