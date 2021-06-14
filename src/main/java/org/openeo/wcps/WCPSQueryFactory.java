@@ -3018,9 +3018,12 @@ public class WCPSQueryFactory {
 			JSONObject jsonresp = null;
 			Collection collection = collectionMap.get(collectionID);
 			DimensionTemporal temporalDimension = null;
-			for(Dimension currentDimension: collection.getCubeColonDimensions().values()) {
+			String temporalDimensionName = null;
+			for(String currentDimensionName: collection.getCubeColonDimensions().keySet()) {
+				Dimension currentDimension = collection.getCubeColonDimensions().get(currentDimensionName);
 				if(currentDimension.getType() == Dimension.TypeEnum.TEMPORAL) {
 					temporalDimension = (DimensionTemporal) currentDimension;
+					temporalDimensionName = currentDimensionName;
 				}
 			}
 			String templower = null;
@@ -3061,9 +3064,10 @@ public class WCPSQueryFactory {
 							toDateNew.setTime(toDateNew.getTime() - 1);
 							tempupper = pattern.format(toDateNew);
 							log.debug("To Date :"+tempupper);
-
+							break;
 					    } catch (ParseException pe) {
-					    	log.error("couldn't parse date: " + pe.getMessage());
+					    	log.debug("couldn't parse date: " + pe.getMessage());
+					    	continue;
 					    }
 					}
 				}
@@ -3074,14 +3078,7 @@ public class WCPSQueryFactory {
 					}
 				}
 				this.filters.remove(dateFilter);
-				String tempAxis = null;
-				for (String tempAxis1 : jsonresp.getJSONObject("cube:dimensions").keySet()) {
-					String tempAxis1UpperCase = tempAxis1.toUpperCase();
-					if (tempAxis1UpperCase.contentEquals("DATE") || tempAxis1UpperCase.contentEquals("TIME") || tempAxis1UpperCase.contentEquals("ANSI") || tempAxis1UpperCase.contentEquals("UNIX")) {
-						tempAxis = tempAxis1;
-					}
-				}
-				this.filters.add(new Filter(tempAxis+"_"+collectionID, templower, tempupper));				
+				this.filters.add(new Filter(temporalDimensionName+"_"+collectionID, templower, tempupper));				
 			}
 		}
 		
