@@ -3258,7 +3258,7 @@ public class WCPSQueryFactory {
 			double[] c2 = null;
 			c1 = tx.TransformPoint(Double.parseDouble(bottom), Double.parseDouble(left));
 			c2 = tx.TransformPoint(Double.parseDouble(top), Double.parseDouble(right));
-			if (srs==3035) {
+			if (srs==3035 || srs==4326) {
 				left = Double.toString(c1[1]);
 				bottom = Double.toString(c1[0]);
 				right = Double.toString(c2[1]);
@@ -3427,7 +3427,7 @@ public class WCPSQueryFactory {
 					c1 = tx.TransformPoint(Double.parseDouble(bottom), Double.parseDouble(left));
 					c2 = tx.TransformPoint(Double.parseDouble(top), Double.parseDouble(right));
 					//TODO include other CRS exceptions of different axis order
-					if (srs==3035) {
+					if (srs==3035 || srs==4326) {
 						left = Double.toString(c1[1]);
 						bottom = Double.toString(c1[0]);
 						right = Double.toString(c2[1]);
