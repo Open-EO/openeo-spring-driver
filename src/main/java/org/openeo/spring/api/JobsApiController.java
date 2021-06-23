@@ -394,7 +394,7 @@ public class JobsApiController implements JobsApi {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			log.debug("The job " + jobId + " was successfully requested.");
-			log.debug(job.toString());
+			log.trace(job.toString());
 			return new ResponseEntity<Job>(job, HttpStatus.OK);
 		} else {
 			Error error = new Error();
