@@ -1,5 +1,6 @@
 package org.openeo.spring.api;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -7,6 +8,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.openeo.spring.model.DefaultOpenIDConnectClient;
+import org.openeo.spring.model.Error;
 import org.openeo.spring.model.OpenIDConnectProvider;
 import org.openeo.spring.model.OpenIDConnectProviders;
 import org.openeo.spring.model.DefaultOpenIDConnectClient.GrantTypesEnum;
@@ -51,38 +53,20 @@ public class CredentialsApiController implements CredentialsApi {
     
     @GetMapping(value = "/credentials/oidc", produces = { "application/json" })
     @Override
-    public ResponseEntity<OpenIDConnectProviders>  authenticateOidc() {
+    public ResponseEntity<?>  authenticateOidc() {
     	ObjectMapper mapper = new ObjectMapper();
-    	OpenIDConnectProviders providers = new OpenIDConnectProviders();
-    	OpenIDConnectProvider provider = new OpenIDConnectProvider();
-    	DefaultOpenIDConnectClient defaultClient =  new DefaultOpenIDConnectClient();
-    	defaultClient.addGrantTypesItem(GrantTypesEnum.AUTHORIZATION_CODE_PKCE);
-    	defaultClient.addGrantTypesItem(GrantTypesEnum.REFRESH_TOKEN);
-    	defaultClient.id("openEO_TEST");    	
-    	provider.setId("Eurac_EDP_Keycloak");
-    	provider.addScopesItem("email");
-    	provider.addScopesItem("profile");
-    	provider.addScopesItem("roles");
-    	provider.addScopesItem("web-origins");
-    	provider.addScopesItem("address");
-    	provider.addScopesItem("microprofile-jwt");
-    	provider.addScopesItem("offline_access");
-    	provider.addScopesItem("phone");
-    	try {
-    		defaultClient.addRedirectUrlsItem(new URI("https://editor.openeo.org/"));
-	    	defaultClient.addRedirectUrlsItem(new URI("http://localhost:1410/*"));
-	    	defaultClient.addRedirectUrlsItem(new URI("https://10.8.244.204:9443/editor"));
-	    	defaultClient.addRedirectUrlsItem(new URI("https://10.8.244.194:8443/*"));
-			provider.setIssuer(new URI(oidcEndpoint));
-		} catch (URISyntaxException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+
+    	OpenIDConnectProviders providers;
+		try {
+			providers = mapper.readValue(oidcProvidersFile.getInputStream(), OpenIDConnectProviders.class);
+		} catch (IOException e) {
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("The list of oidc providers is currently not available!");
+			log.error("The list of oidc providers is currently not available!");
+			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-    	provider.addDefaultClientsItem(defaultClient);
-    	provider.setTitle("Eurac EDP Keycloak");
-    	provider.setDescription("Keycloak server linking to the eurac active directory. This service can be used with Eurac and general MS accounts");
-    	providers.addProvidersItem(provider);
-    	
+   
     	return new ResponseEntity<OpenIDConnectProviders>(providers, HttpStatus.OK);
     }
 
