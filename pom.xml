@@ -22,6 +22,7 @@
 		<keycloak.version>12.0.4</keycloak.version>
 		<tomcat.dbcp.version>9.0.37</tomcat.dbcp.version>
 		<jackson.nullable.version>0.2.1</jackson.nullable.version>
+		<spring.security.version>5.5.1</spring.security.version>
 	</properties>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -114,17 +115,17 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-core</artifactId>
-			<version>5.5.1</version>
+			<version>${spring.security.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-web</artifactId>
-			<version>5.5.1</version>
+			<version>${spring.security.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-config</artifactId>
-			<version>5.5.1</version>
+			<version>${spring.security.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springdoc</groupId>
