@@ -29,11 +29,13 @@ import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.BatchJobEstimate;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobs;
+import org.openeo.spring.model.EngineTypes;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.LogEntries;
+import org.openeo.spring.api.ResultApiController;
 import org.openeo.wcps.ConvenienceHelper;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
@@ -91,6 +93,9 @@ public class JobsApiController implements JobsApi {
 	
 	@Autowired
 	private AuthzService authzService;
+	
+	@Autowired
+	private ResultApiController resultApiController;
 
 	JobDAO jobDAO;
 
@@ -171,6 +176,18 @@ public class JobsApiController implements JobsApi {
 		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
+		
+		EngineTypes resultEngine = null;
+		try {
+			resultEngine = resultApiController.checkGraphValidityAndEngine(processGraph);
+		} catch (Exception e) {
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage(e.getMessage());
+			log.error(error.getMessage());
+			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
 		log.trace("Process Graph attached: " + processGraph.toString(4));
 		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
 		jobDAO.save(job);
