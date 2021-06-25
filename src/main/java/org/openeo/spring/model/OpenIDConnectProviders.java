@@ -1,32 +1,32 @@
 package org.openeo.spring.model;
 
+import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-
+import org.openeo.spring.model.OpenIDConnectProvider;
+import org.openapitools.jackson.nullable.JsonNullable;
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.*;
 
 /**
- * OpenIDProviders
+ * OpenIDConnectProviders
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class OpenIDProviders   {
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2021-06-23T11:15:01.633381875+02:00[Europe/Rome]")
+public class OpenIDConnectProviders   {
   @JsonProperty("providers")
   @Valid
-  private List<OpenIDProvider> providers = new ArrayList<>();
+  private List<OpenIDConnectProvider> providers = new ArrayList<>();
 
-  public OpenIDProviders providers(List<OpenIDProvider> providers) {
+  public OpenIDConnectProviders providers(List<OpenIDConnectProvider> providers) {
     this.providers = providers;
     return this;
   }
 
-  public OpenIDProviders addProvidersItem(OpenIDProvider providersItem) {
+  public OpenIDConnectProviders addProvidersItem(OpenIDConnectProvider providersItem) {
     this.providers.add(providersItem);
     return this;
   }
@@ -40,25 +40,25 @@ public class OpenIDProviders   {
 
   @Valid
 @Size(min=1) 
-  public List<OpenIDProvider> getProviders() {
+  public List<OpenIDConnectProvider> getProviders() {
     return providers;
   }
 
-  public void setProviders(List<OpenIDProvider> providers) {
+  public void setProviders(List<OpenIDConnectProvider> providers) {
     this.providers = providers;
   }
 
 
   @Override
-  public boolean equals(java.lang.Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    OpenIDProviders openIDProviders = (OpenIDProviders) o;
-    return Objects.equals(this.providers, openIDProviders.providers);
+    OpenIDConnectProviders openIDConnectProviders = (OpenIDConnectProviders) o;
+    return Objects.equals(this.providers, openIDConnectProviders.providers);
   }
 
   @Override
@@ -69,7 +69,7 @@ public class OpenIDProviders   {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class OpenIDProviders {\n");
+    sb.append("class OpenIDConnectProviders {\n");
     
     sb.append("    providers: ").append(toIndentedString(providers)).append("\n");
     sb.append("}");
@@ -80,7 +80,7 @@ public class OpenIDProviders   {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(java.lang.Object o) {
+  private String toIndentedString(Object o) {
     if (o == null) {
       return "null";
     }
