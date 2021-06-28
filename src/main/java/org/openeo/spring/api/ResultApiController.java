@@ -233,90 +233,98 @@ public class ResultApiController implements ResultApi {
 		boolean containsSameEngineCollections = false;
 		EngineTypes selectedEngineType = null;
 		
-		// The following loop checks if the collections requested in the load_collection calls are provided by the same engine and tells us which to use
-		for (EngineTypes enType: EngineTypes.values()) {
-			for (JSONObject loadCollectionNode: loadCollectionNodes) {
-				collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString(); // The collection id requested in the process graph
-	
-				Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
-				Collection collection = null;
-				
-				for (Collection coll: engineCollections.getCollections()) {
-					if (coll.getId().equals(collectionID)) {
-						collection = coll; // We found the requested collection in the current engine of the loop
+		if(!loadCollectionNodes.isEmpty()){
+			// The following loop checks if the collections requested in the load_collection calls are provided by the same engine and tells us which to use
+			for (EngineTypes enType: EngineTypes.values()) {
+				for (JSONObject loadCollectionNode: loadCollectionNodes) {
+					collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString(); // The collection id requested in the process graph
+		
+					Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
+					Collection collection = null;
+					
+					for (Collection coll: engineCollections.getCollections()) {
+						if (coll.getId().equals(collectionID)) {
+							collection = coll; // We found the requested collection in the current engine of the loop
+							break;
+						}
+					}
+					if (collection == null) {
+						containsSameEngineCollections = false;
 						break;
 					}
+					else {
+						selectedEngineType = enType;
+						containsSameEngineCollections = true;
+					}
 				}
-				if (collection == null) {
-					containsSameEngineCollections = false;
-					break;
-				}
-				else {
-					selectedEngineType = enType;
-					containsSameEngineCollections = true;
-				}
-			}
-			if (containsSameEngineCollections) {
-				break; // We don't need to check anything else, we found that the required collections are in the current engine/back-end
-			}
-		}
-
-		//TODO Check that all processes are available at the back-end before sending the request
-		if (containsSameEngineCollections && selectedEngineType == EngineTypes.ODC_DASK) {
-	    	ObjectMapper mapper = new ObjectMapper();
-			Processes processesListODC = new Processes();
-			try {
-				processesListODC = mapper.readValue(processesFileODC.getInputStream(), Processes.class);
-			} catch (Exception e) {
-				addStackTraceAndErrorToLog(e);
-			}
-			List<String> processesList = new ArrayList<>();
-			List<String> missingProcessesList = new ArrayList<>();
-			for (Process proc: processesListODC.getProcesses()) {
-				processesList.add(proc.getId());
-			}
-			for (String processNodeKey : processGraphJSON.keySet()) {
-				JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
-				String processID = processNode.getString("process_id");
-				if (!processesList.contains(processID)) {
-					missingProcessesList.add(processID);
+				if (containsSameEngineCollections) {
+					break; // We don't need to check anything else, we found that the required collections are in the current engine/back-end
 				}
 			}
-			// If process_id not in current engine processes list return/raise error
-			if (missingProcessesList.isEmpty()==false) {
-				throw new Exception("Selected Collection from ODC. Processes " + missingProcessesList.toString()+ " not found in ODC Processes! Can't run the provided process graph.");
-				}
-		}
-		else if(containsSameEngineCollections && selectedEngineType == EngineTypes.WCPS) {
-	    	ObjectMapper mapper = new ObjectMapper();
-			Processes processesListODC = new Processes();
-			try {
-				processesListODC = mapper.readValue(processesFileWCPS.getInputStream(), Processes.class);
-			} catch (Exception e) {
-				addStackTraceAndErrorToLog(e);
-			}
-			List<String> processesList = new ArrayList<>();
-			List<String> missingProcessesList = new ArrayList<>();
-			for (Process proc: processesListODC.getProcesses()) {
-				processesList.add(proc.getId());
-			}
-			for (String processNodeKey : processGraphJSON.keySet()) {
-				JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
-				String processID = processNode.getString("process_id");
-				if (!processesList.contains(processID)) {
-					missingProcessesList.add(processID);
-				}
-				// If process_id not in current engine processes list return/raise error
-			}
-			if (missingProcessesList.isEmpty()==false) {
-				throw new Exception("Selected collection from WCPS. Processes " + missingProcessesList.toString()+ " not found in WCPS Processes! Can't run the provided process graph.");
-				}
+		checkProcessesAvailability(processGraphJSON,selectedEngineType);
 		}
 		else {
+			throw new Exception("The submitted job contains no load_collection process!");
+		}
+		if(!containsSameEngineCollections){
 			throw new Exception("The submitted job contains collections from two different engines, not supported!");
 		}
 		return selectedEngineType;
 	}
+	
+	boolean checkProcessesAvailability(JSONObject processGraphJSON, EngineTypes engine) throws Exception {
+		log.info(processGraphJSON);
+		ObjectMapper mapper = new ObjectMapper();
+		Processes processesAvailableList = new Processes();
+		if(engine==EngineTypes.ODC_DASK) {
+			try {
+				processesAvailableList = mapper.readValue(processesFileODC.getInputStream(), Processes.class);
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+			}
+		}
+		else if(engine==EngineTypes.WCPS){
+			try {
+				processesAvailableList = mapper.readValue(processesFileWCPS.getInputStream(), Processes.class);
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+			}
+		}
+		else {
+			throw new Exception("Selected engine " + engine.toString() + " not found!");
+		}
+		List<String> processesList = new ArrayList<>();
+		List<String> missingProcessesList = new ArrayList<>();
+		for (Process proc: processesAvailableList.getProcesses()) {
+			processesList.add(proc.getId());
+		}
+		for (String processNodeKey : processGraphJSON.keySet()) {
+			JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
+			String processID = processNode.getString("process_id");
+			if(processID.equals("apply")) {
+				//We need to check the availability of the processes called in the sub process graph
+				checkProcessesAvailability(processNode.getJSONObject("arguments").getJSONObject("process").getJSONObject("process_graph"),engine);
+			}
+			if(processID.equals("reduce_dimension")) {
+				log.info("inside reduce_dimension case");
+				log.info(processNode);
+				//We need to check the availability of the processes called in the sub process graph
+				checkProcessesAvailability(processNode.getJSONObject("arguments").getJSONObject("reducer").getJSONObject("process_graph"),engine);
+			}
+			log.info(processNode);
+			log.info(processID);
+			if (!processesList.contains(processID)) {
+				missingProcessesList.add(processID);
+			}
+			// If process_id not in current engine processes list return/raise error
+		}
+		log.info(missingProcessesList);
+		if (missingProcessesList.isEmpty()==false) {
+			throw new Exception("Selected collection from " + engine.toString() + ". Processes " + missingProcessesList.toString()+ " not found in " + engine.toString() + " Processes! Can't run the provided process graph.");
+			}
+		return true;
+	}
+	
 	
 	private void addStackTraceAndErrorToLog(Exception e) {
 		log.error(e.getMessage());
