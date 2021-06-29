@@ -2177,12 +2177,13 @@ public class WCPSQueryFactory {
 		StringBuilder resultBuilder = new StringBuilder("");
 		resultBuilder.append(payload);
 		log.info("Collection Dims : " + collDims2D);
-		if (this.outputFormat.equals("netcdf")) {
+		if (this.outputFormat.equals("nc")) {
+			// Rasdaman query for netCDF requires "netcdf" and does not work with "nc"
 			if (collDims2D) {
-				resultBuilder.append(", \"" + this.outputFormat + "\" ," + "\"{ \\\"transpose\\\": [0,1] }\"" + ")");
+				resultBuilder.append(", \"" + "netcdf" + "\" ," + "\"{ \\\"transpose\\\": [0,1] }\"" + ")");
 			}
 			else if (!collDims2D) {
-				resultBuilder.append(", \"" + this.outputFormat + "\" ," + "\"{ \\\"transpose\\\": [1,2] }\"" + ")");
+				resultBuilder.append(", \"" + "netcdf" + "\" ," + "\"{ \\\"transpose\\\": [1,2] }\"" + ")");
 			}			
 		}
 		else {
@@ -2827,6 +2828,7 @@ public class WCPSQueryFactory {
 	}
 
 	// Get output format of save_result Process
+	// TODO move outside WCPSQueryFactory
 	private String getFormatFromSaveResultNode(JSONObject saveResultNode) {
 		JSONObject saveResultArguments = saveResultNode.getJSONObject("arguments");
 		String format = saveResultArguments.getString("format");

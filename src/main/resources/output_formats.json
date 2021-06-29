@@ -2,7 +2,7 @@
     "netCDF": {
             "gis_data_types": [ "raster" ],
             "mime-type": "application/netcdf",
-            "rasdaman_name": "netcdf"
+            "rasdaman_name": "nc"
         },
         "GTiff": {
             "gis_data_types": [ "raster" ],
