@@ -273,7 +273,6 @@ public class ResultApiController implements ResultApi {
 	}
 	
 	boolean checkProcessesAvailability(JSONObject processGraphJSON, EngineTypes engine) throws Exception {
-		log.info(processGraphJSON);
 		ObjectMapper mapper = new ObjectMapper();
 		Processes processesAvailableList = new Processes();
 		if(engine==EngineTypes.ODC_DASK) {
@@ -306,13 +305,9 @@ public class ResultApiController implements ResultApi {
 				checkProcessesAvailability(processNode.getJSONObject("arguments").getJSONObject("process").getJSONObject("process_graph"),engine);
 			}
 			if(processID.equals("reduce_dimension")) {
-				log.info("inside reduce_dimension case");
-				log.info(processNode);
 				//We need to check the availability of the processes called in the sub process graph
 				checkProcessesAvailability(processNode.getJSONObject("arguments").getJSONObject("reducer").getJSONObject("process_graph"),engine);
 			}
-			log.info(processNode);
-			log.info(processID);
 			if (!processesList.contains(processID)) {
 				missingProcessesList.add(processID);
 			}

@@ -93,6 +93,9 @@ public class Job implements Serializable {
 
 	@JsonProperty("budget")
 	private BigDecimal budget = null;
+	
+	@JsonProperty("engine")
+	private EngineTypes engine = null;
 
 	public Job id(UUID id) {
 		this.id = id;
@@ -185,6 +188,15 @@ public class Job implements Serializable {
 	public void setProcess(Process process) {
 		process.setJob(this);
 		this.process = process;
+	}
+
+	public EngineTypes getEngine() {
+		return engine;
+	}
+
+	public void setEngine(EngineTypes engine) {
+		process.setJob(this);
+		this.engine = engine;
 	}
 	
 

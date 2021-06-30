@@ -28,16 +28,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.openeo.spring.api.ResultApiController;
 import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.EngineTypes;
+import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
 import org.openeo.wcps.ConvenienceHelper;
@@ -50,6 +53,9 @@ import org.openeo.wcps.events.UDFEvent;
 import org.openeo.wcps.events.UDFEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -112,10 +118,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	}
 
 	public EngineTypes getProcessingEngine(Job job) {
-
-		//TODO find the most suitable engine to execute the job
-		
-		return EngineTypes.WCPS;
+		return job.getEngine();	
 	}
 	
 	@Override
@@ -130,7 +133,6 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 			processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
 			JSONArray nodesSortedArray = getProcessesNodesSequence();
-			//TODO Check to which engine we need to send the job
 			
 			JSONArray processesSequence = new JSONArray();
 
@@ -407,11 +409,14 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				}
 			}
 
-			else {
+			else if(job.getEngine()==EngineTypes.WCPS){
 				WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraphJSON, openEOEndpoint, wcpsEndpoint, collectionMap);
 				URL url = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages"
 						+ "&QUERY=" + URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 				executeWCPS(url, job, wcpsFactory);
+			}
+			else if(job.getEngine()==EngineTypes.ODC_DASK) {
+				executeODC(job);
 			}
 		} catch (MalformedURLException e) {
 			log.error("An error occured when running job with udf: " + e.getMessage());
@@ -616,6 +621,156 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		jobDAO.update(job);
 		log.debug("The following job was set to status finished: \n" + job.toString());
 	}
+	private void executeODC(Job job) {
+		
+		BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
+		
+		//Skip computing if result is already available.
+		if(batchJobResult != null) {
+			return;
+		}else {
+			batchJobResult = new BatchJobResult();
+		}
+
+			job.setUpdated(OffsetDateTime.now());
+			job.setStatus(JobStates.RUNNING);
+			jobDAO.update(job);
+			JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
+
+			JSONObject process = new JSONObject();
+			process.put("id", "ODC-graph");
+			process.put("process_graph", processGraphJSON);
+			
+			URL url;
+			HttpURLConnection conn = null;
+			try {
+				url = new URL(odcEndpoint);
+				conn = (HttpURLConnection) url.openConnection();
+				conn.setRequestMethod("POST");
+				conn.setRequestProperty("Content-Type", "application/json; utf-8");
+				conn.setDoOutput(true);
+				log.debug("+++ Successfully connected to ODC!");
+			} catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage("Not possible to establish connection with ODC Endpoint!");
+				log.error(error.getMessage());
+				job.setStatus(JobStates.ERROR);
+				jobDAO.update(job);
+				return;
+			}
+			
+			String jobResultPath = tmpDir + job.getId() + "/";
+			File jobResultDirectory = new File(jobResultPath);
+			if(!jobResultDirectory.exists()) {
+				jobResultDirectory.mkdir();
+			}
+
+			String dataFormat = getSaveNodeFormat();
+			String dataFileName = "result";
+			if(dataFormat.equalsIgnoreCase("netcdf")) {
+				dataFileName = "result.nc";
+				}
+			else if(dataFormat.equalsIgnoreCase("gtiff") || dataFormat.equalsIgnoreCase("geotiff")) {
+				dataFileName = "result.tif";
+				}
+			else if(dataFormat.equalsIgnoreCase("png")){
+				dataFileName = "result.png";
+				}
+			else if(dataFormat.equalsIgnoreCase("json")){
+				dataFileName = "result.json";
+				}
+			log.debug("The output file will be saved here: \n" + (jobResultPath + dataFileName).toString());
+			
+			String dataMimeType = "application/octet-stream";
+			try {
+				try (OutputStream os = conn.getOutputStream()) {
+					byte[] requestBody = process.toString().getBytes("utf-8");
+					os.write(requestBody, 0, requestBody.length);
+				}
+				InputStream is = conn.getInputStream();
+				dataMimeType = conn.getContentType();
+				byte[] response = IOUtils.toByteArray(is);
+				FileOutputStream fileOutputStream = new FileOutputStream(jobResultPath + dataFileName);
+				fileOutputStream.write(response, 0, response.length); 
+				log.debug("File saved correctly");
+				fileOutputStream.close();
+			} catch (IOException e) {
+				log.error("An error occured when downloading the file of the current job: " + e.getMessage());
+				job.setStatus(JobStates.ERROR);
+				jobDAO.update(job);
+				return;
+			}
+					
+			batchJobResult.setId(job.getId());
+			batchJobResult.bbox(null);
+			batchJobResult.setStacVersion("1.0.0");
+			batchJobResult.setGeometry(null);
+			LinkedHashMap<String, Asset> assetMap = new LinkedHashMap<String, Asset>();
+
+			// Data Asset
+			Asset dataAsset = new Asset();
+			dataAsset.setHref(openEOPublicEndpoint + "/download/" + job.getId() + "/" + dataFileName);
+			log.debug("Mime type is: " + dataMimeType);
+			dataAsset.setType(dataMimeType);
+			dataAsset.setTitle(dataFileName);
+			List<String> dataAssetRoles = new ArrayList<String>();
+			dataAssetRoles.add("data");
+			dataAsset.setRoles(dataAssetRoles);
+			assetMap.put(dataFileName, dataAsset);
+
+			// Process Asset
+			Asset processAsset = new Asset();
+			String processFileName = "process.json";
+			String processFilePath = tmpDir + job.getId() + "/" + processFileName;
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				mapper.writeValue(new File(processFilePath), job.getProcess());
+			} catch (JsonGenerationException e) {
+				log.error("An error occured when generating json of process: " + e.getMessage());
+				StringBuilder builder = new StringBuilder();
+				for (StackTraceElement element : e.getStackTrace()) {
+					builder.append(element.toString() + "\n");
+				}
+				log.error(builder.toString());
+			} catch (JsonMappingException e) {
+				log.error("An error occured when mapping process.class to json: " + e.getMessage());
+				StringBuilder builder = new StringBuilder();
+				for (StackTraceElement element : e.getStackTrace()) {
+					builder.append(element.toString() + "\n");
+				}
+				log.error(builder.toString());
+			} catch (IOException e) {
+				log.error("An error occured when writing process to file: " + e.getMessage());
+				StringBuilder builder = new StringBuilder();
+				for (StackTraceElement element : e.getStackTrace()) {
+					builder.append(element.toString() + "\n");
+				}
+				log.error(builder.toString());
+			}
+			processAsset.setHref(openEOPublicEndpoint + "/download/" + job.getId() + "/" + processFileName);
+			String processMimeType = "application/json";
+			log.debug("Mime type is: " + processMimeType);
+			processAsset.setType(processMimeType);
+			processAsset.setTitle(processFileName);
+			List<String> processAssetRoles = new ArrayList<String>();
+			processAssetRoles.add("process");
+			processAsset.setRoles(processAssetRoles);
+			assetMap.put(processFileName, processAsset);
+
+			batchJobResult.setAssets(assetMap);
+			log.debug(batchJobResult.toString());
+			resultDAO.save(batchJobResult);
+			log.debug("Result Stored in DB");
+
+			job.setStatus(JobStates.FINISHED);
+			job.setUpdated(OffsetDateTime.now());
+			job.setProgress(new BigDecimal(100));
+			jobDAO.update(job);
+			log.debug("The following job was set to status finished: \n" + job.toString());
+
+	}
 
 	public JSONArray getProcessesNodesSequence() {
 		JSONArray nodesArray = new JSONArray();
@@ -703,6 +858,23 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			if (processID.equals("save_result")) {
 				log.debug("Save Process Node key found is: " + processNodeKey);
 				return processNodeKey;
+			}
+		}
+		return null;
+	}
+	
+	private String getSaveNodeFormat() {
+		for (String processNodeKey : processGraphJSON.keySet()) {
+			JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);
+			String processID = null;
+			try {
+				 processID = processNode.getString("process_id");
+			}catch(JSONException e) {
+				log.error("process_id not found!");
+			}
+			if (processID.equals("save_result")) {
+				String outputFormat = processNode.getJSONObject("arguments").getString("format");
+				return outputFormat;
 			}
 		}
 		return null;
@@ -851,5 +1023,12 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			log.error(builderNested.toString());
 		}
 	}
-
+	private void addStackTraceAndErrorToLog(Exception e) {
+		log.error(e.getMessage());
+		StringBuilder builder = new StringBuilder();
+		for (StackTraceElement element : e.getStackTrace()) {
+			builder.append(element.toString() + "\n");
+		}
+		log.error(builder.toString());
+	}
 }
