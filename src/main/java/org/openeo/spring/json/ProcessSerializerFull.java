@@ -63,10 +63,10 @@ public class ProcessSerializerFull extends StdSerializer<Process>{
 		if(examples != null) {
 			gen.writeObjectField("examples", examples.toList());
 		}
-		JSONObject processGraph = (JSONObject) value.getProcessGraph();		
-		if(processGraph != null) {
-			gen.writeObjectField("process_graph", processGraph.toMap());
-		}
+//		JSONObject processGraph = (JSONObject) value.getProcessGraph();		
+//		if(processGraph != null) {
+//			gen.writeObjectField("process_graph", processGraph.toMap());
+//		}
 		gen.writeEndObject();
 	}
 
