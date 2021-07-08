@@ -23,6 +23,8 @@ springfox.documentation.swagger.v2.path=/api-docs
 spring.jackson.date-format=org.openeo.spring.RFC3339DateFormat
 spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS=false
 spring.h2.console.enabled=true
+spring.datasource.username=my_username
+spring.datasource.initialization-mode
 
 server.port=8443
 server.ssl.key-store-type=PKCS12
@@ -39,7 +41,8 @@ org.openeo.tmp.file.expiry=60
 org.openeo.file.expiry=1
 org.openeo.querycollectionsonstartup=true
 
-org.openeo.oidc.configuration.endpoint=https://my_openeo.url/auth/realms/openeo/
+org.openeo.oidc.configuration.endpoint=https://my_keycloak.url/auth/realms/openeo/
+org.openeo.oidc.providers.list=classpath:oidc_providers.json
 
 org.openeo.wcps.endpoint=http://my_wcps_server:8080
 org.openeo.wcps.provider.name=My Company
@@ -59,6 +62,66 @@ org.openeo.udf.r.endpoint=http://my_openeo_R_udf_service.url
 org.openeo.udf.dir=/my/udf/working/directory/
 org.openeo.udf.importscript=/my/udf/import/script/import_udf.sh
 ```
+Further files needed are for connection with keycloak: keycloak.json
+```
+{
+	"realm": "my_realm",
+	"auth-server-url": "https://my_keycloak.url/auth",
+	"ssl-required": "external",
+	"resource": "my_client_id",
+	"verify-token-audience": false,
+	"credentials": {
+		"secret": "my_secret"
+	},
+	"use-resource-role-mappings": true,
+	"confidential-port": 0,
+	"policy-enforcer": {
+		"enforcement-mode" : "PERMISSIVE",
+		"claim-information-point": {
+			"claims": {
+				"claim-from-relativePath": "{request.relativePath}"
+			}
+		}
+	}
+}
+```
+and for the support of default client id configuration: oidc_providers.json
+```
+{
+	"providers": [
+		{
+			"id": "my_default_provider",
+			"issuer": "https://my_keycloak.url/auth/realms/my_realm",
+			"scopes": [
+				"email",
+				"profile",
+				"roles",
+				"web-origins",
+				"address",
+				"microprofile-jwt",
+				"offline_access",
+				"phone"
+			],
+			"title": "My Deault Provider",
+			"description": "Some more information about my default oidc provider and setup.",
+			"default_clients": [
+				{
+					"id": "my_client_id",
+					"grant_types": [
+						"authorization_code+pkce",
+						"refresh-token"
+					],
+					"redirect_urls": [
+						"https://editor.openeo.org/",
+						"http://localhost:1410/*"
+					]
+				}
+			]
+		}
+	]
+}
+```
+
 ## Logging
 All logging can be controlled through log4j2.
 For tweaking of log level and file output modify
