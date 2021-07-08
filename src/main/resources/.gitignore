@@ -9,3 +9,6 @@
 /keycloak_openEO.json
 /collections_odc.json
 /collections_wcps.json
+/keycloak-ks.jks
+/keycloak_openEO_TEST.json
+/oidc_providers.json

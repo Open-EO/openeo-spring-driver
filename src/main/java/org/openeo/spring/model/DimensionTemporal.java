@@ -98,7 +98,8 @@ public class DimensionTemporal extends Dimension  {
   @ApiModelProperty(value = "The space between the temporal instances as [ISO 8601 duration](https://en.wikipedia.org/wiki/ISO_8601#Durations), e.g. `P1D`. Use `null` for irregularly spaced steps.")
 
 
-  public String getStep() {
+  public String get
+() {
     return step;
   }
 

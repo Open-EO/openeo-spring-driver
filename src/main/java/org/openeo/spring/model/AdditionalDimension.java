@@ -30,7 +30,7 @@ public class AdditionalDimension  extends Dimension {
   private List<String> values = null;
 
   @JsonProperty("step")
-  private JsonNullable<Integer> step = JsonNullable.undefined();
+  private String step = null;
 
   @JsonProperty("unit")
   private String unit;
@@ -96,8 +96,8 @@ public class AdditionalDimension  extends Dimension {
     this.values = values;
   }
 
-  public AdditionalDimension step(Integer step) {
-    this.step = JsonNullable.of(step);
+  public AdditionalDimension step(String step) {
+    this.step = step;
     return this;
   }
 
@@ -109,11 +109,11 @@ public class AdditionalDimension  extends Dimension {
 
   @Valid
 
-  public JsonNullable<Integer> getStep() {
+  public String getStep() {
     return step;
   }
 
-  public void setStep(JsonNullable<Integer> step) {
+  public void setStep(String step) {
     this.step = step;
   }
 

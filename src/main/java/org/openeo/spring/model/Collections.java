@@ -18,6 +18,7 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Collections   {
+	
   @JsonProperty("collections")
   @Valid
   private List<Collection> collections = new ArrayList<>();

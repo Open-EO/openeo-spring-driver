@@ -42,7 +42,7 @@ public class CollectionSummaries   {
 	@JsonProperty("sat:orbit_state")
 	private List<String> orbitState;
 
-	@JsonProperty("eo:gsd")
+	@JsonProperty("gsd")
 	private List<Double> gsd;
 
 	@JsonProperty("proj:epsg")
@@ -300,7 +300,7 @@ public class CollectionSummaries   {
 		sb.append("    instruments: ").append(toIndentedString(instruments)).append("\n");
 		sb.append("    eo:cloud cover: ").append(toIndentedString(cloudCover)).append("\n");
 		sb.append("    sat:orbit_state: ").append(toIndentedString(orbitState)).append("\n");
-		sb.append("    eo:gsd: ").append(toIndentedString(gsd)).append("\n");
+		sb.append("    gsd: ").append(toIndentedString(gsd)).append("\n");
 		sb.append("    proj:epsg: ").append(toIndentedString(epsg)).append("\n");
 		sb.append("    eo:bands: ").append(toIndentedString(bands)).append("\n");
 		sb.append("}");

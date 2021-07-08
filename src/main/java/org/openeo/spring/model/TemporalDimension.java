@@ -8,7 +8,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-import org.openapitools.jackson.nullable.JsonNullable;
+//import org.openapitools.jackson.nullable.JsonNullable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -30,7 +30,7 @@ public class TemporalDimension   {
   private List<String> extent = new ArrayList<>();
 
   @JsonProperty("step")
-  private JsonNullable<String> step = JsonNullable.undefined();
+  private String step = null;
 
   public TemporalDimension values(List<String> values) {
     this.values = values;
@@ -87,7 +87,7 @@ public class TemporalDimension   {
   }
 
   public TemporalDimension step(String step) {
-    this.step = JsonNullable.of(step);
+    this.step = step;
     return this;
   }
 
@@ -98,11 +98,11 @@ public class TemporalDimension   {
   @ApiModelProperty(value = "The space between the temporal instances as [ISO 8601 duration](https://en.wikipedia.org/wiki/ISO_8601#Durations), e.g. `P1D`. Use `null` for irregularly spaced steps.")
 
 
-  public JsonNullable<String> getStep() {
+  public String getStep() {
     return step;
   }
 
-  public void setStep(JsonNullable<String> step) {
+  public void setStep(String step) {
     this.step = step;
   }
 

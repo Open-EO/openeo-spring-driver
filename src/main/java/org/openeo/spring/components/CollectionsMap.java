@@ -9,9 +9,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class CollectionsMap extends HashMap<EngineTypes, Collections> {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 5883454050146323835L;
 
 	public CollectionsMap() {

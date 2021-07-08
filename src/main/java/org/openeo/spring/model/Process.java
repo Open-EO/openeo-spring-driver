@@ -47,7 +47,8 @@ public class Process implements Serializable{
 	/**
 	 * 
 	 */
-	@JsonProperty("engine")
+	//@JsonProperty("engine")
+	@JsonIgnore
 	@Embedded
 	private List<EngineTypes> engine = null;
 	
@@ -608,7 +609,7 @@ public class Process implements Serializable{
 		StringBuilder sb = new StringBuilder();
 		sb.append("class Process {\n");
 
-		sb.append("    engine: ").append(toIndentedString(engine)).append("\n");
+		//sb.append("    engine: ").append(toIndentedString(engine)).append("\n");
 		sb.append("    id: ").append(toIndentedString(id)).append("\n");
 		sb.append("    summary: ").append(toIndentedString(summary)).append("\n");
 		sb.append("    description: ").append(toIndentedString(description)).append("\n");

@@ -54,7 +54,7 @@ public class Collection   {
   @JsonProperty("license")
   private String license;
   
-  @JsonProperty("citation")
+  @JsonProperty("sci:citation")
   private String citation;
 
   @JsonProperty("providers")

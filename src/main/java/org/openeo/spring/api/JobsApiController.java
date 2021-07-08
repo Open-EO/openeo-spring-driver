@@ -29,11 +29,13 @@ import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.BatchJobEstimate;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobs;
+import org.openeo.spring.model.EngineTypes;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.LogEntries;
+import org.openeo.spring.api.ResultApiController;
 import org.openeo.wcps.ConvenienceHelper;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
@@ -91,6 +93,9 @@ public class JobsApiController implements JobsApi {
 	
 	@Autowired
 	private AuthzService authzService;
+	
+	@Autowired
+	private ResultApiController resultApiController;
 
 	JobDAO jobDAO;
 
@@ -171,6 +176,19 @@ public class JobsApiController implements JobsApi {
 		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
+		
+		try {
+			EngineTypes resultEngine = null;
+			resultEngine = resultApiController.checkGraphValidityAndEngine(processGraph);
+			job.setEngine(resultEngine);
+		} catch (Exception e) {
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage(e.getMessage());
+			log.error(error.getMessage());
+			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
 		log.trace("Process Graph attached: " + processGraph.toString(4));
 		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
 		jobDAO.save(job);
@@ -394,7 +412,7 @@ public class JobsApiController implements JobsApi {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			log.debug("The job " + jobId + " was successfully requested.");
-			log.debug(job.toString());
+			log.trace(job.toString());
 			return new ResponseEntity<Job>(job, HttpStatus.OK);
 		} else {
 			Error error = new Error();
@@ -600,7 +618,7 @@ public class JobsApiController implements JobsApi {
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
 		BatchJobResult result = resultDAO.findOne(UUID.fromString(jobId));
 		if (result != null) {
-			log.debug(result.toString());
+			log.trace(result.toString());
 			return new ResponseEntity<BatchJobResult>(result, HttpStatus.OK);
 		} else {
 			Error error = new Error();
@@ -705,6 +723,27 @@ public class JobsApiController implements JobsApi {
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
+			if (job.getStatus() == JobStates.FINISHED) {
+				Error error = new Error();
+				error.setCode("400");
+				error.setMessage("The requested job " + jobId + " has been finished and can't be restarted. Please create a new job.");
+				log.error(error.getMessage());
+				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			}
+			if (job.getStatus() == JobStates.QUEUED)  {
+				Error error = new Error();
+				error.setCode("400");
+				error.setMessage("The requested job " + jobId + " is queued and can't be restarted before finishing.");
+				log.error(error.getMessage());
+				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			}
+			if (job.getStatus() == JobStates.RUNNING)  {
+				Error error = new Error();
+				error.setCode("400");
+				error.setMessage("The requested job " + jobId + " is running and can't be restarted before finishing.");
+				log.error(error.getMessage());
+				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			}
 			job.setStatus(JobStates.QUEUED);
 			job.setUpdated(OffsetDateTime.now());
 			jobDAO.update(job);
@@ -811,11 +850,30 @@ public class JobsApiController implements JobsApi {
 		
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
-			job.setProcess(updateBatchJobRequest.getProcess());
-			job.setBudget(updateBatchJobRequest.getBudget());
-			job.setPlan(updateBatchJobRequest.getPlan());
-			job.setDescription(updateBatchJobRequest.getDescription());
-			job.setTitle(updateBatchJobRequest.getTitle());
+			if (job.getStatus()==JobStates.QUEUED || job.getStatus()==JobStates.RUNNING) {
+				Error error = new Error();
+				error.setCode("400");
+				error.setMessage("JobLocked: The requested job " + jobId + " is queued or running, not possible to update it now.");
+				return new ResponseEntity<Error>(error, HttpStatus.FORBIDDEN);
+				}
+			if(updateBatchJobRequest.getEngine() != null) {
+				job.setEngine(updateBatchJobRequest.getEngine());
+			}
+			if(updateBatchJobRequest.getProcess() != null) {
+				job.setProcess(updateBatchJobRequest.getProcess());
+			}
+			if(updateBatchJobRequest.getBudget() != null) {
+				job.setBudget(updateBatchJobRequest.getBudget());
+			}
+			if(updateBatchJobRequest.getPlan() != null) {
+				job.setPlan(updateBatchJobRequest.getPlan());
+			}
+			if(updateBatchJobRequest.getDescription() != null) {
+				job.setDescription(updateBatchJobRequest.getDescription());
+			}
+			if(updateBatchJobRequest.getTitle() != null) {
+				job.setTitle(updateBatchJobRequest.getTitle());
+			}
 			job.setUpdated(OffsetDateTime.now());
 			jobDAO.update(job);
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
