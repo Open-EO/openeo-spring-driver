@@ -1,17 +1,12 @@
 package org.openeo.spring.api;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.openeo.spring.model.DefaultOpenIDConnectClient;
 import org.openeo.spring.model.Error;
-import org.openeo.spring.model.OpenIDConnectProvider;
 import org.openeo.spring.model.OpenIDConnectProviders;
-import org.openeo.spring.model.DefaultOpenIDConnectClient.GrantTypesEnum;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -31,15 +26,9 @@ public class CredentialsApiController implements CredentialsApi {
     private final NativeWebRequest request;
     
     private final Logger log = LogManager.getLogger(CredentialsApiController.class);
-    
-    @Value("${org.openeo.oidc.configuration.endpoint}")
-	private String oidcEndpoint;
-    
-    @Value("${keycloak.auth-server-url}")
-    private String oidcProvider;
-    
+   
     @Value("${org.openeo.oidc.providers.list}")
-	Resource oidcProvidersFile;
+	private Resource oidcProvidersFile;
 
     @org.springframework.beans.factory.annotation.Autowired
     public CredentialsApiController(NativeWebRequest request) {
@@ -55,15 +44,21 @@ public class CredentialsApiController implements CredentialsApi {
     @Override
     public ResponseEntity<?>  authenticateOidc() {
     	ObjectMapper mapper = new ObjectMapper();
-
+    	
     	OpenIDConnectProviders providers;
 		try {
+			log.debug(oidcProvidersFile.getFilename());
 			providers = mapper.readValue(oidcProvidersFile.getInputStream(), OpenIDConnectProviders.class);
 		} catch (IOException e) {
+			log.error("The list of oidc providers is currently not available! " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
 			Error error = new Error();
 			error.setCode("500");
 			error.setMessage("The list of oidc providers is currently not available!");
-			log.error("The list of oidc providers is currently not available!");
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
    
