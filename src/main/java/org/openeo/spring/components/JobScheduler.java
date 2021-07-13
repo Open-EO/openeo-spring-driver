@@ -694,7 +694,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
 
 			JSONObject process = new JSONObject();
-			process.put("id", "ODC-graph");
+			process.put("id", job.getId());
 			process.put("process_graph", processGraphJSON);
 			
 			URL url;
