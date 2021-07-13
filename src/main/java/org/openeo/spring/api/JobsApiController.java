@@ -21,6 +21,7 @@ import javax.validation.constraints.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
 import org.openeo.spring.components.JobScheduler;
@@ -160,11 +161,12 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs", produces = { "application/json" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
-		ResponseEntity<?> respEnty;
+//		ThreadContext.put("jobid", job.getId().toString()); 
 		AccessToken token = null;
 		if(principal != null) {
 			token = TokenUtil.getAccessToken(principal);
 			job.setOwnerPrincipal(token.getPreferredUsername());
+			ThreadContext.put("userid", token.getPreferredUsername());
 		}
 		//TODO add validity check of the job using ValidationApiController
 //    	UUID jobID = UUID.randomUUID();
@@ -186,6 +188,7 @@ public class JobsApiController implements JobsApi {
 			error.setCode("500");
 			error.setMessage(e.getMessage());
 			log.error(error.getMessage());
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
@@ -210,12 +213,14 @@ public class JobsApiController implements JobsApi {
 			URI jobUrl;
 			try {
 				jobUrl = new URI(openEOPublicEndpoint + "/jobs/" + job.getId().toString());
+				ThreadContext.clearMap();
 				return ResponseEntity.created(jobUrl).header("OpenEO-Identifier", job.getId().toString()).body(job);
 			} catch (URISyntaxException e) {
 				Error error = new Error();
 				error.setCode("500");
 				error.setMessage("The submitted job " + job.toString() + " has an invalid URI");
 				log.error("The submitted job " + job.toString() + " has an invalid URI");
+				ThreadContext.clearMap();
 				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 			
@@ -224,6 +229,7 @@ public class JobsApiController implements JobsApi {
 			error.setCode("500");
 			error.setMessage("The submitted job " + job.toString() + " was not saved persistently");
 			log.error("The submitted job " + job.toString() + " was not saved persistently");
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -409,15 +415,18 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs/{job_id}", produces = { "application/json" }, method = RequestMethod.GET)
 	public ResponseEntity<?> describeJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
+		ThreadContext.put("jobid", jobId);
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			log.debug("The job " + jobId + " was successfully requested.");
 			log.trace(job.toString());
+			ThreadContext.clearMap();
 			return new ResponseEntity<Job>(job, HttpStatus.OK);
 		} else {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
 	}

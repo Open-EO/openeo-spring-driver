@@ -489,13 +489,13 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		}
 	}
 
-	private void executeWCPS(URL url, Job job, WCPSQueryFactory wcpsQuery) {
+	private Error executeWCPS(URL url, Job job, WCPSQueryFactory wcpsQuery) {
 		
 		BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
 		
 		//Skip computing if result is already available.
 		if(batchJobResult != null) {
-			return;
+			return null;
 		}else {
 			batchJobResult = new BatchJobResult();
 		}
@@ -514,8 +514,42 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		}
 		String dataFileName = "data." + wcpsQuery.getOutputFormat();
 		log.debug("The output file will be saved here: \n" + (tmpDir + dataFileName).toString());
+		
+		HttpURLConnection connection = null;
+		
+		try {
+			connection = (HttpURLConnection) url.openConnection();
+			InputStream errorStream = connection.getErrorStream();
+			if (errorStream != null) {
+				BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream));
+				StringBuilder errorMessage = new StringBuilder();
+				String line;
+				while ((line = reader.readLine()) != null) {
+					log.error(line);
+					errorMessage.append(line);
+					errorMessage.append(System.getProperty("line.separator"));
+				}
+				log.error("An error occured when requesting data from rasdaman: " + errorMessage.toString());
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage("An error occured when requesting data from rasdaman: " + errorMessage.toString());
+				return error;
+			}
+		} catch (IOException e) {
+			log.error("An error occured when opening connection to rasdaman: " + e.getMessage());
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("An error occured when opening connection to rasdaman: " + e.getMessage());
+			return error;
+		}
+		
 
-		try (BufferedInputStream in = new BufferedInputStream(url.openStream());
+		try (BufferedInputStream in = new BufferedInputStream(connection.getInputStream());
 				FileOutputStream fileOutputStream = new FileOutputStream(jobResultPath + dataFileName)) {
 			byte dataBuffer[] = new byte[1024];
 			int bytesRead;
@@ -555,6 +589,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("An error occured when getting mime type in json: " + e.getMessage());
+			return error;
 		} catch (IOException e) {
 			log.error("An error occured when reading output formats file: " + e.getMessage());
 			StringBuilder builder = new StringBuilder();
@@ -562,6 +600,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("An error occured when reading output formats file: " + e.getMessage());
+			return error;
 		}
 		log.debug("Mime type is: " + dataMimeType);
 		dataAsset.setType(dataMimeType);
@@ -585,6 +627,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("An error occured when generating json of process: " + e.getMessage());
+			return error;
 		} catch (JsonMappingException e) {
 			log.error("An error occured when mapping process.class to json: " + e.getMessage());
 			StringBuilder builder = new StringBuilder();
@@ -592,6 +638,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("An error occured when mapping process.class to json: " + e.getMessage());
+			return error;
 		} catch (IOException e) {
 			log.error("An error occured when writing process to file: " + e.getMessage());
 			StringBuilder builder = new StringBuilder();
@@ -599,6 +649,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("An error occured when writing process to file: " + e.getMessage());
+			return error;
 		}
 		processAsset.setHref(openEOPublicEndpoint + "/download/" + job.getId() + "/" + processFileName);
 		String processMimeType = "application/json";
@@ -620,7 +674,9 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		job.setProgress(new BigDecimal(100));
 		jobDAO.update(job);
 		log.debug("The following job was set to status finished: \n" + job.toString());
+		return null;
 	}
+	
 	private void executeODC(Job job) {
 		
 		BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
@@ -769,7 +825,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			job.setProgress(new BigDecimal(100));
 			jobDAO.update(job);
 			log.debug("The following job was set to status finished: \n" + job.toString());
-
+			
 	}
 
 	public JSONArray getProcessesNodesSequence() {
