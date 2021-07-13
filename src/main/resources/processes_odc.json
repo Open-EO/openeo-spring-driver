@@ -1,6 +1,518 @@
 {
   "processes": [
     {
+      "id": "sd",
+      "summary": "Standard deviation",
+      "description": "Computes the sample standard deviation, which quantifies the amount of variation of an array of numbers. It is defined to be the square root of the corresponding variance (see ``variance()``).\n\nA low standard deviation indicates that the values tend to be close to the expected value, while a high standard deviation indicates that the values are spread out over a wider range.\n\nAn array without non-`null` elements resolves always with `null`.",
+      "categories": [
+        "math",
+        "reducer"
+      ],
+      "parameters": [
+        {
+          "name": "data",
+          "description": "An array of numbers.",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ignore_nodata",
+          "description": "Indicates whether no-data values are ignored or not. Ignores them by default. Setting this flag to `false` considers no-data values so that `null` is returned if any value is such a value.",
+          "schema": {
+            "type": "boolean"
+          },
+          "default": true,
+          "optional": true
+        }
+      ],
+      "returns": {
+        "description": "The computed sample standard deviation.",
+        "schema": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "arguments": {
+            "data": [
+              -1,
+              1,
+              3,
+              null
+            ]
+          },
+          "returns": 2
+        },
+        {
+          "arguments": {
+            "data": [
+              -1,
+              1,
+              3,
+              null
+            ],
+            "ignore_nodata": false
+          },
+          "returns": null
+        },
+        {
+          "description": "The input array is empty: return `null`.",
+          "arguments": {
+            "data": []
+          },
+          "returns": null
+        }
+      ],
+      "links": [
+        {
+          "rel": "about",
+          "href": "http://mathworld.wolfram.com/StandardDeviation.html",
+          "title": "Standard deviation explained by Wolfram MathWorld"
+        }
+      ],
+      "process_graph": {
+        "variance": {
+          "process_id": "variance",
+          "arguments": {
+            "data": {
+              "from_parameter": "data"
+            },
+            "ignore_nodata": {
+              "from_parameter": "ignore_nodata"
+            }
+          }
+        },
+        "power": {
+          "process_id": "power",
+          "arguments": {
+            "base": {
+              "from_node": "variance"
+            },
+            "p": 0.5
+          },
+          "result": true
+        }
+      }
+    },
+    {
+      "id": "load_result",
+      "summary": "Load batch job results",
+      "description": "Loads batch job results by job id from the server-side user workspace. The job must have been stored by the authenticated user on the back-end currently connected to.",
+      "categories": [
+        "cubes",
+        "import"
+      ],
+      "experimental": true,
+      "parameters": [
+        {
+          "name": "id",
+          "description": "The id of a batch job with results.",
+          "schema": {
+            "type": "string",
+            "subtype": "job-id",
+            "pattern": "^[\\w\\-\\.~]+$"
+          }
+        }
+      ],
+      "returns": {
+        "description": "A data cube for further processing.",
+        "schema": {
+          "type": "object",
+          "subtype": "raster-cube"
+        }
+      }
+    },
+    {
+      "id": "clip",
+      "summary": "Clip a value between a minimum and a maximum",
+      "description": "Clips a number between specified minimum and maximum values. A value larger than the maximum value is set to the maximum value, a value lower than the minimum value is set to the minimum value.\n\nThe no-data value `null` is passed through and therefore gets propagated.",
+      "categories": [
+        "math"
+      ],
+      "parameters": [
+        {
+          "name": "x",
+          "description": "A number.",
+          "schema": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        {
+          "name": "min",
+          "description": "Minimum value. If the value is lower than this value, the process will return the value of this parameter.",
+          "schema": {
+            "type": "number"
+          }
+        },
+        {
+          "name": "max",
+          "description": "Maximum value. If the value is greater than this value, the process will return the value of this parameter.",
+          "schema": {
+            "type": "number"
+          }
+        }
+      ],
+      "returns": {
+        "description": "The value clipped to the specified range.",
+        "schema": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "arguments": {
+            "x": -5,
+            "min": -1,
+            "max": 1
+          },
+          "returns": -1
+        },
+        {
+          "arguments": {
+            "x": 10.001,
+            "min": 1,
+            "max": 10
+          },
+          "returns": 10
+        },
+        {
+          "arguments": {
+            "x": 0.000001,
+            "min": 0,
+            "max": 0.02
+          },
+          "returns": 0.000001
+        },
+        {
+          "arguments": {
+            "x": null,
+            "min": 0,
+            "max": 1
+          },
+          "returns": null
+        }
+      ],
+      "process_graph": {
+        "min": {
+          "process_id": "min",
+          "arguments": {
+            "data": [
+              {
+                "from_parameter": "max"
+              },
+              {
+                "from_parameter": "x"
+              }
+            ]
+          }
+        },
+        "max": {
+          "process_id": "max",
+          "arguments": {
+            "data": [
+              {
+                "from_parameter": "min"
+              },
+              {
+                "from_node": "min"
+              }
+            ]
+          },
+          "result": true
+        }
+      }
+    },
+    {
+      "id": "fit_curve",
+      "summary": "Curve fitting",
+      "description": "Use non-linear least squares to fit a model function `y = f(x, parameters)` to data.\n\nThe process throws an `InvalidValues` exception if invalid values are encountered. Invalid values are finite numbers (see also ``is_valid()``).",
+      "categories": [
+        "cubes",
+        "math"
+      ],
+      "experimental": true,
+      "parameters": [
+        {
+          "name": "data",
+          "description": "A data cube.",
+          "schema": {
+            "type": "object",
+            "subtype": "raster-cube"
+          }
+        },
+        {
+          "name": "parameters",
+          "description": "Defined the number of parameters for the model function and provides an initial guess for them. At least one parameter is required.",
+          "schema": [
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "title": "Data Cube with optimal values from a previous result of this process.",
+              "type": "object",
+              "subtype": "raster-cube"
+            }
+          ]
+        },
+        {
+          "name": "function",
+          "description": "The model function. It must take the parameters to fit as array through the first argument and the independent variable `x` as the second argument.\n\nIt is recommended to store the model function as a user-defined process on the back-end to be able to re-use the model function with the computed optimal values for the parameters afterwards.",
+          "schema": {
+            "type": "object",
+            "subtype": "process-graph",
+            "parameters": [
+              {
+                "name": "x",
+                "description": "The value for the independent variable `x`.",
+                "schema": {
+                  "type": [
+                    "number"
+                  ]
+                }
+              },
+              {
+                "name": "parameters",
+                "description": "The parameters for the model function, contains at least one parameter.",
+                "schema": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              }
+            ],
+            "returns": {
+              "description": "The computed value `y` value for the given independent variable `x` and the parameters.",
+              "schema": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        {
+          "name": "dimension",
+          "description": "The name of the dimension for curve fitting. Must be a dimension with labels that have a order (i.e. numerical labels or a temporal dimension). Fails with a `DimensionNotAvailable` exception if the specified dimension does not exist.",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "returns": {
+        "description": "A data cube with the optimal values for the parameters.",
+        "schema": {
+          "type": "object",
+          "subtype": "raster-cube"
+        }
+      },
+      "exceptions": {
+        "InvalidValues": {
+          "message": "At least one of the values is not a finite number."
+        },
+        "DimensionNotAvailable": {
+          "message": "A dimension with the specified name does not exist."
+        }
+      }
+    },
+    {
+      "id": "predict_curve",
+      "summary": "Predict values",
+      "description": "Predict values using a model function and pre-computed parameters.",
+      "categories": [
+        "cubes",
+        "math"
+      ],
+      "experimental": true,
+      "parameters": [
+        {
+          "name": "data",
+          "description": "A data cube to predict values for.",
+          "schema": {
+            "type": "object",
+            "subtype": "raster-cube"
+          }
+        },
+        {
+          "name": "parameters",
+          "description": "A data cube with optimal values from a result of e.g. ``fit_curve()``.",
+          "schema": {
+            "type": "object",
+            "subtype": "raster-cube"
+          }
+        },
+        {
+          "name": "function",
+          "description": "The model function. It must take the parameters to fit as array through the first argument and the independent variable `x` as the second argument.\n\nIt is recommended to store the model function as a user-defined process on the back-end.",
+          "schema": {
+            "type": "object",
+            "subtype": "process-graph",
+            "parameters": [
+              {
+                "name": "x",
+                "description": "The value for the independent variable `x`.",
+                "schema": {
+                  "type": [
+                    "number"
+                  ]
+                }
+              },
+              {
+                "name": "parameters",
+                "description": "The parameters for the model function, contains at least one parameter.",
+                "schema": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              }
+            ],
+            "returns": {
+              "description": "The computed value `y` value for the given independent variable `x` and the parameters.",
+              "schema": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        {
+          "name": "dimension",
+          "description": "The name of the dimension for predictions. Fails with a `DimensionNotAvailable` exception if the specified dimension does not exist.",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "labels",
+          "description": "The labels to predict values for. If no labels are given, predicts values only for no-data (`null`) values in the data cube.",
+          "optional": true,
+          "default": null,
+          "schema": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string",
+                    "format": "date",
+                    "subtype": "date"
+                  },
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "subtype": "date-time"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "returns": {
+        "description": "A data cube with the predicted values.",
+        "schema": {
+          "type": "object",
+          "subtype": "raster-cube"
+        }
+      },
+      "exceptions": {
+        "DimensionNotAvailable": {
+          "message": "A dimension with the specified name does not exist."
+        }
+      }
+    },
+    {
+      "id": "dimension_labels",
+      "summary": "Get the dimension labels",
+      "description": "Returns all labels for a dimension in the data cube. The labels have the same order as in the data cube.",
+      "categories": [
+        "cubes"
+      ],
+      "parameters": [
+        {
+          "name": "data",
+          "description": "The data cube.",
+          "schema": {
+            "type": "object",
+            "subtype": "raster-cube"
+          }
+        },
+        {
+          "name": "dimension",
+          "description": "The name of the dimension to get the labels for.",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "returns": {
+        "description": "The labels as array.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "pi",
+      "summary": "Pi (??)",
+      "description": "The real number Pi (??) is a mathematical constant that is the ratio of the circumference of a circle to its diameter. The numerical value is approximately *3.14159*.",
+      "categories": [
+        "math > constants",
+        "math > trigonometric"
+      ],
+      "parameters": [],
+      "returns": {
+        "description": "The numerical value of Pi.",
+        "schema": {
+          "type": "number"
+        }
+      },
+      "links": [
+        {
+          "rel": "about",
+          "href": "http://mathworld.wolfram.com/Pi.html",
+          "title": "Mathematical constant Pi explained by Wolfram MathWorld"
+        }
+      ]
+    },
+    {
       "id": "rename_labels",
       "summary": "Rename dimension labels",
       "description": "Renames the labels of the specified dimension in the data cube from `source` to `target`.\n\nIf the array for the source labels is empty (the default), the dimension labels are expected to be enumerated with zero-based numbering (0,1,2,3,...) so that the dimension labels directly map to the indices of the array specified for the parameter `target`. If the dimension labels are not enumerated and the `target` parameter is not specified, a `LabelsNotEnumerated` is thrown. The number of source and target labels must be equal, otherwise the error `LabelMismatch` is thrown.\n\nThis process doesn't change the order of the labels and their corresponding data.",

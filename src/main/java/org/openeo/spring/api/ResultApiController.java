@@ -131,7 +131,7 @@ public class ResultApiController implements ResultApi {
 		}
 		if (resultEngine == EngineTypes.ODC_DASK) {
 			JSONObject process = new JSONObject();
-			process.put("id", "ODC-graph");
+			process.put("id", "None");
 			process.put("process_graph", processGraphJSON);
 			URL url;
 			HttpURLConnection conn;
