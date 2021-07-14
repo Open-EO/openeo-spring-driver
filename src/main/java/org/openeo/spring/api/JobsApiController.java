@@ -195,6 +195,7 @@ public class JobsApiController implements JobsApi {
 		log.trace("Process Graph attached: " + processGraph.toString(4));
 		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
 		jobDAO.save(job);
+		ThreadContext.put("jobid", job.getId().toString());
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			log.info("job saved to database: " + mapper.writeValueAsString(job));
@@ -309,6 +310,7 @@ public class JobsApiController implements JobsApi {
 				}
 			}
 		});
+		//TODO query elastic search endpoint here for all log information regarding a job queued for processing.
 		return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
 	}
@@ -648,6 +650,7 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> downloadResult(
 			@Parameter(description = "Id of job that has created the result", required = true) @PathVariable("job_id") String jobID,
 			@Parameter(description = "name of file of result", required = true) @PathVariable("file_name") String fileName) {
+		ThreadContext.put("jobid", jobID);
 		byte[] response = null;
 		log.debug("job-id: " + jobID);
 		log.debug("file-name: " + fileName);
@@ -659,6 +662,7 @@ public class JobsApiController implements JobsApi {
 			response = IOUtils.toByteArray(new FileInputStream(userFile));
 			log.debug("File found and converted in bytes for download");
 			//Content-Disposition: inline; filename="myfile.txt"
+			ThreadContext.clearMap();
 			return ResponseEntity.ok().header("Content-Disposition", "inline; filename=\"" + fileName + "\"").contentType(MediaType.parseMediaType(mime)).body(response);
 		} catch (FileNotFoundException e) {
 			log.error("File not found:" + fileName);
@@ -670,6 +674,7 @@ public class JobsApiController implements JobsApi {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested file " + fileName + " could not be found.");
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -682,6 +687,7 @@ public class JobsApiController implements JobsApi {
 			Error error = new Error();
 			error.setCode("500");
 			error.setMessage("IOEXception error " + builder.toString());
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -730,6 +736,7 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs/{job_id}/results", produces = { "application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> startJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
+		ThreadContext.put("jobid", jobId);
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			if (job.getStatus() == JobStates.FINISHED) {
@@ -737,6 +744,7 @@ public class JobsApiController implements JobsApi {
 				error.setCode("400");
 				error.setMessage("The requested job " + jobId + " has been finished and can't be restarted. Please create a new job.");
 				log.error(error.getMessage());
+				ThreadContext.clearMap();
 				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 			}
 			if (job.getStatus() == JobStates.QUEUED)  {
@@ -744,6 +752,7 @@ public class JobsApiController implements JobsApi {
 				error.setCode("400");
 				error.setMessage("The requested job " + jobId + " is queued and can't be restarted before finishing.");
 				log.error(error.getMessage());
+				ThreadContext.clearMap();
 				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 			}
 			if (job.getStatus() == JobStates.RUNNING)  {
@@ -751,18 +760,21 @@ public class JobsApiController implements JobsApi {
 				error.setCode("400");
 				error.setMessage("The requested job " + jobId + " is running and can't be restarted before finishing.");
 				log.error(error.getMessage());
+				ThreadContext.clearMap();
 				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 			}
 			job.setStatus(JobStates.QUEUED);
 			job.setUpdated(OffsetDateTime.now());
 			jobDAO.update(job);
 			this.fireJobQueuedEvent(job.getId());
+			ThreadContext.clearMap();
 			return new ResponseEntity<Job>(HttpStatus.ACCEPTED);
 		} else {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
 			log.error("The requested job " + jobId + " could not be found.");
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
 
@@ -856,14 +868,15 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> updateJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId,
 			@Parameter(description = "", required = true) @Valid @RequestBody Job updateBatchJobRequest) {
-		
+		ThreadContext.put("jobid", jobId);
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			if (job.getStatus()==JobStates.QUEUED || job.getStatus()==JobStates.RUNNING) {
-				Error error = new Error();
-				error.setCode("400");
-				error.setMessage("JobLocked: The requested job " + jobId + " is queued or running, not possible to update it now.");
-				return new ResponseEntity<Error>(error, HttpStatus.FORBIDDEN);
+					Error error = new Error();
+					error.setCode("400");
+					error.setMessage("JobLocked: The requested job " + jobId + " is queued or running, not possible to update it now.");
+					ThreadContext.clearMap();
+					return new ResponseEntity<Error>(error, HttpStatus.FORBIDDEN);
 				}
 			if(updateBatchJobRequest.getEngine() != null) {
 				job.setEngine(updateBatchJobRequest.getEngine());
@@ -885,11 +898,13 @@ public class JobsApiController implements JobsApi {
 			}
 			job.setUpdated(OffsetDateTime.now());
 			jobDAO.update(job);
+			ThreadContext.clearMap();
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
 
@@ -910,6 +925,7 @@ public class JobsApiController implements JobsApi {
 	}
 
 	private void fireJobQueuedEvent(UUID jobId) {
+		ThreadContext.put("jobid", jobId.toString());
 		Object[] listeners = listenerList.getListenerList();
 		for (int i = listeners.length - 2; i >= 0; i -= 2) {
 			if (listeners[i] == JobEventListener.class) {
@@ -918,6 +934,7 @@ public class JobsApiController implements JobsApi {
 			}
 		}
 		log.debug("Job Queue Event fired for job: " + jobId);
+		ThreadContext.clearMap();
 	}
 
 }
