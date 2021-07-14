@@ -35,7 +35,7 @@
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
 		</Logger>
-		<Logger name="org.openeo.wcps.JobScheduler" level="debug"
+		<Logger name="org.openeo.spring.components.JobScheduler" level="debug"
 			additivity="false">
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />

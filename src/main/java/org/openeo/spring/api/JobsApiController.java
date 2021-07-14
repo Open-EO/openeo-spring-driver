@@ -4,8 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -88,6 +91,15 @@ public class JobsApiController implements JobsApi {
 
 	@Value("${org.openeo.tmp.dir}")
 	private String tmpDir;
+	
+	@Value("${co.elasticsearch.endpoint}")
+	private String elasticSearchEndpoint;
+	
+	@Value("${co.elasticsearch.service.name}")
+	private String serviceName;
+	
+	@Value("${co.elasticsearch.service.node.name}")
+	private String serviceNodeName;
 
 	@Autowired
 	private JobScheduler jobScheduler;
@@ -301,16 +313,19 @@ public class JobsApiController implements JobsApi {
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId,
 			@Parameter(description = "The last identifier (property `id` of a log entry) the client has received. If provided, the back-ends only sends the entries that occured after the specified identifier. If not provided or empty, start with the first entry.") @Valid @RequestParam(value = "offset", required = false) String offset,
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
-		getRequest().ifPresent(request -> {
-			for (MediaType mediaType : MediaType.parseMediaTypes(request.getHeader("Accept"))) {
-				if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-					String exampleString = "{ \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ], \"logs\" : [ { \"path\" : [ { \"process_id\" : \"run_udf\", \"parameter\" : \"udf\", \"node_id\" : \"runudf1\" }, { \"process_id\" : \"run_udf\", \"parameter\" : \"udf\", \"node_id\" : \"runudf1\" } ], \"code\" : \"SampleError\", \"data\" : \"\", \"level\" : \"error\", \"links\" : [ { \"href\" : \"https://example.openeo.org/docs/errors/SampleError\", \"rel\" : \"about\" } ], \"id\" : \"1\", \"message\" : \"Can't load the UDF file from the URL `https://example.com/invalid/file.txt`. Server responded with error 404.\" }, { \"path\" : [ { \"process_id\" : \"run_udf\", \"parameter\" : \"udf\", \"node_id\" : \"runudf1\" }, { \"process_id\" : \"run_udf\", \"parameter\" : \"udf\", \"node_id\" : \"runudf1\" } ], \"code\" : \"SampleError\", \"data\" : \"\", \"level\" : \"error\", \"links\" : [ { \"href\" : \"https://example.openeo.org/docs/errors/SampleError\", \"rel\" : \"about\" } ], \"id\" : \"1\", \"message\" : \"Can't load the UDF file from the URL `https://example.com/invalid/file.txt`. Server responded with error 404.\" } ] }";
-					ApiUtil.setExampleResponse(request, "application/json", exampleString);
-					break;
-				}
-			}
-		});
-		//TODO query elastic search endpoint here for all log information regarding a job queued for processing.
+		LogEntries logEntries = new LogEntries();
+		//TODO describe query
+		String elasticSearchQuery = "";
+		try {
+			//TODO query elastic search endpoint here for all log information regarding a job queued for processing.
+			URL url = new URL(elasticSearchEndpoint + URLEncoder.encode(elasticSearchQuery, "UTF-8").replace("+", "%20"));
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+		}catch(Exception e) {
+			//fix logging
+			e.printStackTrace();
+		}
+		//TODO implement logEntry and add to logEntries list and return result with pagination links
 		return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
 	}
