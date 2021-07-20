@@ -1,9 +1,13 @@
 package org.openeo.spring.api;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -25,6 +29,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.tomcat.util.json.JSONParser;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
 import org.openeo.spring.components.JobScheduler;
@@ -39,6 +45,8 @@ import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.LogEntries;
+import org.openeo.spring.model.LogEntry;
+import org.openeo.spring.model.LogEntry.LevelEnum;
 import org.openeo.spring.api.ResultApiController;
 import org.openeo.wcps.ConvenienceHelper;
 import org.openeo.wcps.events.JobEvent;
@@ -309,24 +317,94 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/jobs/{job_id}/logs", produces = { "application/json" }, method = RequestMethod.GET)
-	public ResponseEntity<LogEntries> debugJob(
+	public ResponseEntity<?> debugJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId,
 			@Parameter(description = "The last identifier (property `id` of a log entry) the client has received. If provided, the back-ends only sends the entries that occured after the specified identifier. If not provided or empty, start with the first entry.") @Valid @RequestParam(value = "offset", required = false) String offset,
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
 		LogEntries logEntries = new LogEntries();
 		//TODO describe query
-		String elasticSearchQuery = "";
+		String elasticSearchQuery = "filebeat-7.13.3-2021.07.13-000001/_search";
 		try {
 			//TODO query elastic search endpoint here for all log information regarding a job queued for processing.
-			URL url = new URL(elasticSearchEndpoint + URLEncoder.encode(elasticSearchQuery, "UTF-8").replace("+", "%20"));
+			URL url = new URL(elasticSearchEndpoint + "/" + elasticSearchQuery);
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
+			conn.setDoOutput(true);
+			conn.setRequestProperty("Content-Type", "application/json");
+			StringBuilder queryString = new StringBuilder();
+			queryString.append("{");
+			queryString.append("    \"query\":{");
+			queryString.append("            \"bool\":{");
+			queryString.append("                    \"filter\":[");
+			queryString.append("                            {\"term\": {\"service.name\":\"openeo\"}},");
+			queryString.append("                            {\"term\": {\"service.node.name\":\"alex_dev\"}},");
+			queryString.append("                            {\"term\": {\"jobid\":\"" + jobId + "\"}}");
+			queryString.append("                            ]");
+			queryString.append("                    }");
+			queryString.append("            },");
+			queryString.append("    \"fields\":[");
+			queryString.append("            \"@timestamp\",");
+			queryString.append("            \"message\",");
+			//queryString.append("            \"_id\",");
+			queryString.append("            \"log.level\",");
+			queryString.append("            \"log.logger\"");
+			queryString.append("    ],");
+			queryString.append("    \"_source\": false");
+			queryString.append("}");
+			OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream());
+			out.write(queryString.toString());
+			out.close();
+			InputStream errorStream = conn.getErrorStream();
+			if (errorStream != null) {
+				BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream));
+				StringBuilder errorMessage = new StringBuilder();
+				String line;
+				while ((line = reader.readLine()) != null) {
+					log.error(line);
+					errorMessage.append(line);
+					errorMessage.append(System.getProperty("line.separator"));
+				}
+				log.error("An error occured when requesting data from rasdaman: " + errorMessage.toString());
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage("An error occured when requesting data from rasdaman: " + errorMessage.toString());
+				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			}else {
+				BufferedReader in = new BufferedReader(new InputStreamReader( conn.getInputStream()));
+				String decodedString;
+				while ((decodedString = in.readLine()) != null) {
+					log.trace(decodedString);
+				}
+				JSONParser parser = new JSONParser(decodedString);
+				//TODO create log result as json mappable object in domain model and map directly using annotations.
+				//automatic parsing as below is currently failing...
+				JSONObject logResult = (JSONObject) parser.anything();
+				JSONArray results =  logResult.getJSONObject("hits").getJSONArray("hits");
+				results.forEach(item -> {
+					JSONObject logEntryItem = (JSONObject) item;
+					LogEntry logEntry = new LogEntry();
+					logEntry.setId(logEntryItem.getString("_id"));
+					String logLevel = logEntryItem.getString("log.level");
+					logEntry.setLevel(LevelEnum.valueOf(logLevel.toLowerCase()));
+					logEntry.setMessage(logEntryItem.getString("message"));
+					logEntries.addLogsItem(logEntry);
+				});
+				in.close();
+			}
 		}catch(Exception e) {
-			//fix logging
-			e.printStackTrace();
+			log.error("IOEXception error");
+			StringBuilder builder = new StringBuilder();
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("IOEXception error " + builder.toString());
+			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		//TODO implement logEntry and add to logEntries list and return result with pagination links
-		return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+		return new ResponseEntity<LogEntries>(logEntries, HttpStatus.OK);
 
 	}
 
