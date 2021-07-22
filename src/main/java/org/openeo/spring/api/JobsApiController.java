@@ -1,6 +1,7 @@
 package org.openeo.spring.api;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -8,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringBufferInputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -345,7 +347,6 @@ public class JobsApiController implements JobsApi {
 			queryString.append("    \"fields\":[");
 			queryString.append("            \"@timestamp\",");
 			queryString.append("            \"message\",");
-			//queryString.append("            \"_id\",");
 			queryString.append("            \"log.level\",");
 			queryString.append("            \"log.logger\"");
 			queryString.append("    ],");
@@ -364,43 +365,45 @@ public class JobsApiController implements JobsApi {
 					errorMessage.append(line);
 					errorMessage.append(System.getProperty("line.separator"));
 				}
-				log.error("An error occured when requesting data from rasdaman: " + errorMessage.toString());
+				log.error("An error when accessing logs from elastic stac: " + errorMessage.toString());
 				Error error = new Error();
 				error.setCode("500");
-				error.setMessage("An error occured when requesting data from rasdaman: " + errorMessage.toString());
+				error.setMessage("An error when accessing logs from elastic stac: " + errorMessage.toString());
 				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 			}else {
-				BufferedReader in = new BufferedReader(new InputStreamReader( conn.getInputStream()));
-				String decodedString;
-				while ((decodedString = in.readLine()) != null) {
-					log.trace(decodedString);
-				}
-				JSONParser parser = new JSONParser(decodedString);
+				ByteArrayOutputStream result = new ByteArrayOutputStream();
+				byte[] buffer = new byte[1024];
+				 for (int length; (length = conn.getInputStream().read(buffer)) != -1; ) {
+				     result.write(buffer, 0, length);
+				 }
+				log.trace(result.toString());
 				//TODO create log result as json mappable object in domain model and map directly using annotations.
 				//automatic parsing as below is currently failing...
-				JSONObject logResult = (JSONObject) parser.anything();
+				JSONObject logResult = new JSONObject(result.toString());
 				JSONArray results =  logResult.getJSONObject("hits").getJSONArray("hits");
 				results.forEach(item -> {
 					JSONObject logEntryItem = (JSONObject) item;
+					JSONObject logInfoFields =  logEntryItem.getJSONObject("fields");
+					log.trace(logEntryItem.toString());
+					log.trace(logInfoFields.toString());
 					LogEntry logEntry = new LogEntry();
+					String logLevel = logInfoFields.getJSONArray("log.level").getString(0);
+					logEntry.setLevel(LevelEnum.valueOf(logLevel.toUpperCase()));
+					logEntry.setMessage(logInfoFields.getJSONArray("message").getString(0));
 					logEntry.setId(logEntryItem.getString("_id"));
-					String logLevel = logEntryItem.getString("log.level");
-					logEntry.setLevel(LevelEnum.valueOf(logLevel.toLowerCase()));
-					logEntry.setMessage(logEntryItem.getString("message"));
 					logEntries.addLogsItem(logEntry);
 				});
-				in.close();
 			}
 		}catch(Exception e) {
-			log.error("IOEXception error");
-			StringBuilder builder = new StringBuilder();
+			log.error("An error when accessing logs from elastic stac: " + e.getMessage());
+			StringBuilder builder = new StringBuilder(e.getMessage());
 			for (StackTraceElement element : e.getStackTrace()) {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
 			Error error = new Error();
 			error.setCode("500");
-			error.setMessage("IOEXception error " + builder.toString());
+			error.setMessage("An error when accessing logs from elastic stac: " + builder.toString());
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		//TODO implement logEntry and add to logEntries list and return result with pagination links

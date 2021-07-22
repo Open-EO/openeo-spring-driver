@@ -38,7 +38,11 @@ public class LogEntry   {
     
     INFO("info"),
     
+    TRACE("trace"),
+    
     DEBUG("debug");
+	  
+	 
 
     private String value;
 
