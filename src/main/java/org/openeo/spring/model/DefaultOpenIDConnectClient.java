@@ -32,6 +32,8 @@ public class DefaultOpenIDConnectClient   {
     
     URN_IETF_PARAMS_OAUTH_GRANT_TYPE_DEVICE_CODE_PKCE("urn:ietf:params:oauth:grant-type:device_code+pkce"),
     
+    URN_IETF_PARAMS_OAUTH_GRANT_TYPE_DEVICE_CODE("urn:ietf:params:oauth:grant-type:device_code"),
+    
     REFRESH_TOKEN("refresh_token");
 
     private String value;
