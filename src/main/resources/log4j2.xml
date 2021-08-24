@@ -8,10 +8,11 @@
 			</EcsLayout>
 		</File>
 		<Console name="STDOUT" target="SYSTEM_OUT">
-			<EcsLayout serviceName="openeo" serviceNodeName="alex_dev" stackTraceAsArray="true">
-			    <KeyValuePair key="jobid" value="$${ctx:jobid}"/>
-			    <KeyValuePair key="userid" value="$${ctx:userid}"/>
-			</EcsLayout>
+			<PatternLayout pattern="%p %d{ISO8601} [%t] %r %c %m%n"/>
+<!-- 			<EcsLayout serviceName="openeo" serviceNodeName="alex_dev" stackTraceAsArray="true"> -->
+<!-- 			    <KeyValuePair key="jobid" value="$${ctx:jobid}"/> -->
+<!-- 			    <KeyValuePair key="userid" value="$${ctx:userid}"/> -->
+<!-- 			</EcsLayout> -->
 		</Console>
 	</Appenders>
 	<Loggers>
@@ -21,6 +22,16 @@
 			<AppenderRef ref="FILE" />
 		</Logger>
 		<Logger name="org.openeo.spring.api.CollectionsApiController" level="error"
+			additivity="false">
+			<AppenderRef ref="STDOUT" />
+			<AppenderRef ref="FILE" />
+		</Logger>
+		<Logger name="org.openeo.spring.api.CredentialsApiController" level="trace"
+			additivity="false">
+			<AppenderRef ref="STDOUT" />
+			<AppenderRef ref="FILE" />
+		</Logger> 
+		<Logger name="org.openeo.spring.api.JobsApiController" level="trace"
 			additivity="false">
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
@@ -98,13 +109,13 @@
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
 		</Logger>
-		<Logger name="org.keycloak" level="error" additivity="false">
+		<Logger name="org.keycloak" level="trace" additivity="false">
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
 		</Logger>
 		<Logger
 			name="org.openeo.spring.OpenEOKeycloakAuthenticationProcessingFilter"
-			level="error" additivity="false">
+			level="trace" additivity="false">
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
 		</Logger>
