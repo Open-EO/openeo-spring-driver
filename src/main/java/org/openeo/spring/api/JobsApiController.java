@@ -334,6 +334,7 @@ public class JobsApiController implements JobsApi {
 			conn.setDoOutput(true);
 			conn.setRequestProperty("Content-Type", "application/json");
 			StringBuilder queryString = new StringBuilder();
+			//TODO insert elastic search parameters from application.properties through resource loader here
 			queryString.append("{");
 			queryString.append("    \"query\":{");
 			queryString.append("            \"bool\":{");
