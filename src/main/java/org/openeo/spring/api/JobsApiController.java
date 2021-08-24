@@ -1,11 +1,20 @@
 package org.openeo.spring.api;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.StringBufferInputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -25,6 +34,7 @@ import javax.validation.constraints.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.tomcat.util.json.JSONParser;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -35,11 +45,15 @@ import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.BatchJobEstimate;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobs;
+import org.openeo.spring.model.EngineTypes;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.LogEntries;
+import org.openeo.spring.model.LogEntry;
+import org.openeo.spring.model.LogEntry.LevelEnum;
+import org.openeo.spring.api.ResultApiController;
 import org.openeo.wcps.ConvenienceHelper;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
@@ -92,12 +106,24 @@ public class JobsApiController implements JobsApi {
 
 	@Value("${org.openeo.tmp.dir}")
 	private String tmpDir;
+	
+	@Value("${co.elasticsearch.endpoint}")
+	private String elasticSearchEndpoint;
+	
+	@Value("${co.elasticsearch.service.name}")
+	private String serviceName;
+	
+	@Value("${co.elasticsearch.service.node.name}")
+	private String serviceNodeName;
 
 	@Autowired
 	private JobScheduler jobScheduler;
 	
 	@Autowired
 	private AuthzService authzService;
+	
+	@Autowired
+	private ResultApiController resultApiController;
 
 	JobDAO jobDAO;
 
@@ -169,6 +195,7 @@ public class JobsApiController implements JobsApi {
 		if(principal != null) {
 			token = TokenUtil.getAccessToken(principal);
 			job.setOwnerPrincipal(token.getPreferredUsername());
+			ThreadContext.put("userid", token.getPreferredUsername());
 		}
 		//TODO add validity check of the job using ValidationApiController
 //    	UUID jobID = UUID.randomUUID();
@@ -206,13 +233,25 @@ public class JobsApiController implements JobsApi {
 			}
 		}
 
-		
+		try {
+			EngineTypes resultEngine = null;
+			resultEngine = resultApiController.checkGraphValidityAndEngine(processGraph);
+			job.setEngine(resultEngine);
+		} catch (Exception e) {
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage(e.getMessage());
+			log.error(error.getMessage());
+			ThreadContext.clearMap();
+			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		}		
 		log.trace("Process Graph attached: " + processGraph.toString(4));
 		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
 		
 		if (isCreateJobAllow) {
 		jobDAO.save(job);
 		
+		ThreadContext.put("jobid", job.getId().toString());
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			log.info("job saved to database: " + mapper.writeValueAsString(job));
@@ -231,12 +270,14 @@ public class JobsApiController implements JobsApi {
 			URI jobUrl;
 			try {
 				jobUrl = new URI(openEOPublicEndpoint + "/jobs/" + job.getId().toString());
+				ThreadContext.clearMap();
 				return ResponseEntity.created(jobUrl).header("OpenEO-Identifier", job.getId().toString()).body(job);
 			} catch (URISyntaxException e) {
 				Error error = new Error();
 				error.setCode("500");
 				error.setMessage("The submitted job " + job.toString() + " has an invalid URI");
 				log.error("The submitted job " + job.toString() + " has an invalid URI");
+				ThreadContext.clearMap();
 				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 			
@@ -245,6 +286,7 @@ public class JobsApiController implements JobsApi {
 			error.setCode("500");
 			error.setMessage("The submitted job " + job.toString() + " was not saved persistently");
 			log.error("The submitted job " + job.toString() + " was not saved persistently");
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		}
@@ -320,20 +362,96 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/jobs/{job_id}/logs", produces = { "application/json" }, method = RequestMethod.GET)
-	public ResponseEntity<LogEntries> debugJob(
+	public ResponseEntity<?> debugJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId,
 			@Parameter(description = "The last identifier (property `id` of a log entry) the client has received. If provided, the back-ends only sends the entries that occured after the specified identifier. If not provided or empty, start with the first entry.") @Valid @RequestParam(value = "offset", required = false) String offset,
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
-		getRequest().ifPresent(request -> {
-			for (MediaType mediaType : MediaType.parseMediaTypes(request.getHeader("Accept"))) {
-				if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-					String exampleString = "{ \"links\" : [ { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" }, { \"rel\" : \"related\", \"href\" : \"https://example.openeo.org\", \"type\" : \"text/html\", \"title\" : \"openEO\" } ], \"logs\" : [ { \"path\" : [ { \"process_id\" : \"run_udf\", \"parameter\" : \"udf\", \"node_id\" : \"runudf1\" }, { \"process_id\" : \"run_udf\", \"parameter\" : \"udf\", \"node_id\" : \"runudf1\" } ], \"code\" : \"SampleError\", \"data\" : \"\", \"level\" : \"error\", \"links\" : [ { \"href\" : \"https://example.openeo.org/docs/errors/SampleError\", \"rel\" : \"about\" } ], \"id\" : \"1\", \"message\" : \"Can't load the UDF file from the URL `https://example.com/invalid/file.txt`. Server responded with error 404.\" }, { \"path\" : [ { \"process_id\" : \"run_udf\", \"parameter\" : \"udf\", \"node_id\" : \"runudf1\" }, { \"process_id\" : \"run_udf\", \"parameter\" : \"udf\", \"node_id\" : \"runudf1\" } ], \"code\" : \"SampleError\", \"data\" : \"\", \"level\" : \"error\", \"links\" : [ { \"href\" : \"https://example.openeo.org/docs/errors/SampleError\", \"rel\" : \"about\" } ], \"id\" : \"1\", \"message\" : \"Can't load the UDF file from the URL `https://example.com/invalid/file.txt`. Server responded with error 404.\" } ] }";
-					ApiUtil.setExampleResponse(request, "application/json", exampleString);
-					break;
+		LogEntries logEntries = new LogEntries();
+		//TODO describe query
+		String elasticSearchQuery = "filebeat-7.13.3-2021.07.13-000001/_search";
+		try {
+			//TODO query elastic search endpoint here for all log information regarding a job queued for processing.
+			URL url = new URL(elasticSearchEndpoint + "/" + elasticSearchQuery);
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			conn.setDoOutput(true);
+			conn.setRequestProperty("Content-Type", "application/json");
+			StringBuilder queryString = new StringBuilder();
+			//TODO insert elastic search parameters from application.properties through resource loader here
+			queryString.append("{");
+			queryString.append("    \"query\":{");
+			queryString.append("            \"bool\":{");
+			queryString.append("                    \"filter\":[");
+			queryString.append("                            {\"term\": {\"service.name\":\"openeo\"}},");
+			queryString.append("                            {\"term\": {\"service.node.name\":\"alex_dev\"}},");
+			queryString.append("                            {\"term\": {\"jobid\":\"" + jobId + "\"}}");
+			queryString.append("                            ]");
+			queryString.append("                    }");
+			queryString.append("            },");
+			queryString.append("    \"fields\":[");
+			queryString.append("            \"@timestamp\",");
+			queryString.append("            \"message\",");
+			queryString.append("            \"log.level\",");
+			queryString.append("            \"log.logger\"");
+			queryString.append("    ],");
+			queryString.append("    \"_source\": false");
+			queryString.append("}");
+			OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream());
+			out.write(queryString.toString());
+			out.close();
+			InputStream errorStream = conn.getErrorStream();
+			if (errorStream != null) {
+				BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream));
+				StringBuilder errorMessage = new StringBuilder();
+				String line;
+				while ((line = reader.readLine()) != null) {
+					log.error(line);
+					errorMessage.append(line);
+					errorMessage.append(System.getProperty("line.separator"));
 				}
+				log.error("An error when accessing logs from elastic stac: " + errorMessage.toString());
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage("An error when accessing logs from elastic stac: " + errorMessage.toString());
+				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			}else {
+				ByteArrayOutputStream result = new ByteArrayOutputStream();
+				byte[] buffer = new byte[1024];
+				 for (int length; (length = conn.getInputStream().read(buffer)) != -1; ) {
+				     result.write(buffer, 0, length);
+				 }
+				log.trace(result.toString());
+				//TODO create log result as json mappable object in domain model and map directly using annotations.
+				//automatic parsing as below is currently failing...
+				JSONObject logResult = new JSONObject(result.toString());
+				JSONArray results =  logResult.getJSONObject("hits").getJSONArray("hits");
+				results.forEach(item -> {
+					JSONObject logEntryItem = (JSONObject) item;
+					JSONObject logInfoFields =  logEntryItem.getJSONObject("fields");
+					log.trace(logEntryItem.toString());
+					log.trace(logInfoFields.toString());
+					LogEntry logEntry = new LogEntry();
+					String logLevel = logInfoFields.getJSONArray("log.level").getString(0);
+					logEntry.setLevel(LevelEnum.valueOf(logLevel.toUpperCase()));
+					logEntry.setMessage(logInfoFields.getJSONArray("message").getString(0));
+					logEntry.setId(logEntryItem.getString("_id"));
+					logEntries.addLogsItem(logEntry);
+				});
 			}
-		});
-		return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+		}catch(Exception e) {
+			log.error("An error when accessing logs from elastic stac: " + e.getMessage());
+			StringBuilder builder = new StringBuilder(e.getMessage());
+			for (StackTraceElement element : e.getStackTrace()) {
+				builder.append(element.toString() + "\n");
+			}
+			log.error(builder.toString());
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("An error when accessing logs from elastic stac: " + builder.toString());
+			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		//TODO implement logEntry and add to logEntries list and return result with pagination links
+		return new ResponseEntity<LogEntries>(logEntries, HttpStatus.OK);
 
 	}
 
@@ -439,15 +557,18 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs/{job_id}", produces = { "application/json" }, method = RequestMethod.GET)
 	public ResponseEntity<?> describeJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
+		ThreadContext.put("jobid", jobId);
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			log.debug("The job " + jobId + " was successfully requested.");
 			log.trace(job.toString());
+			ThreadContext.clearMap();
 			return new ResponseEntity<Job>(job, HttpStatus.OK);
 		} else {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
 	}
@@ -648,7 +769,7 @@ public class JobsApiController implements JobsApi {
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
 		BatchJobResult result = resultDAO.findOne(UUID.fromString(jobId));
 		if (result != null) {
-			log.debug(result.toString());
+			log.trace(result.toString());
 			return new ResponseEntity<BatchJobResult>(result, HttpStatus.OK);
 		} else {
 			Error error = new Error();
@@ -669,6 +790,7 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> downloadResult(
 			@Parameter(description = "Id of job that has created the result", required = true) @PathVariable("job_id") String jobID,
 			@Parameter(description = "name of file of result", required = true) @PathVariable("file_name") String fileName) {
+		ThreadContext.put("jobid", jobID);
 		byte[] response = null;
 		log.debug("job-id: " + jobID);
 		log.debug("file-name: " + fileName);
@@ -680,6 +802,7 @@ public class JobsApiController implements JobsApi {
 			response = IOUtils.toByteArray(new FileInputStream(userFile));
 			log.debug("File found and converted in bytes for download");
 			//Content-Disposition: inline; filename="myfile.txt"
+			ThreadContext.clearMap();
 			return ResponseEntity.ok().header("Content-Disposition", "inline; filename=\"" + fileName + "\"").contentType(MediaType.parseMediaType(mime)).body(response);
 		} catch (FileNotFoundException e) {
 			log.error("File not found:" + fileName);
@@ -691,6 +814,7 @@ public class JobsApiController implements JobsApi {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested file " + fileName + " could not be found.");
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -703,6 +827,7 @@ public class JobsApiController implements JobsApi {
 			Error error = new Error();
 			error.setCode("500");
 			error.setMessage("IOEXception error " + builder.toString());
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -751,18 +876,45 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs/{job_id}/results", produces = { "application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> startJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
+		ThreadContext.put("jobid", jobId);
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
+			if (job.getStatus() == JobStates.FINISHED) {
+				Error error = new Error();
+				error.setCode("400");
+				error.setMessage("The requested job " + jobId + " has been finished and can't be restarted. Please create a new job.");
+				log.error(error.getMessage());
+				ThreadContext.clearMap();
+				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			}
+			if (job.getStatus() == JobStates.QUEUED)  {
+				Error error = new Error();
+				error.setCode("400");
+				error.setMessage("The requested job " + jobId + " is queued and can't be restarted before finishing.");
+				log.error(error.getMessage());
+				ThreadContext.clearMap();
+				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			}
+			if (job.getStatus() == JobStates.RUNNING)  {
+				Error error = new Error();
+				error.setCode("400");
+				error.setMessage("The requested job " + jobId + " is running and can't be restarted before finishing.");
+				log.error(error.getMessage());
+				ThreadContext.clearMap();
+				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			}
 			job.setStatus(JobStates.QUEUED);
 			job.setUpdated(OffsetDateTime.now());
 			jobDAO.update(job);
 			this.fireJobQueuedEvent(job.getId());
+			ThreadContext.clearMap();
 			return new ResponseEntity<Job>(HttpStatus.ACCEPTED);
 		} else {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
 			log.error("The requested job " + jobId + " could not be found.");
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
 
@@ -856,21 +1008,43 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> updateJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId,
 			@Parameter(description = "", required = true) @Valid @RequestBody Job updateBatchJobRequest) {
-		
+		ThreadContext.put("jobid", jobId);
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
-			job.setProcess(updateBatchJobRequest.getProcess());
-			job.setBudget(updateBatchJobRequest.getBudget());
-			job.setPlan(updateBatchJobRequest.getPlan());
-			job.setDescription(updateBatchJobRequest.getDescription());
-			job.setTitle(updateBatchJobRequest.getTitle());
+			if (job.getStatus()==JobStates.QUEUED || job.getStatus()==JobStates.RUNNING) {
+					Error error = new Error();
+					error.setCode("400");
+					error.setMessage("JobLocked: The requested job " + jobId + " is queued or running, not possible to update it now.");
+					ThreadContext.clearMap();
+					return new ResponseEntity<Error>(error, HttpStatus.FORBIDDEN);
+				}
+			if(updateBatchJobRequest.getEngine() != null) {
+				job.setEngine(updateBatchJobRequest.getEngine());
+			}
+			if(updateBatchJobRequest.getProcess() != null) {
+				job.setProcess(updateBatchJobRequest.getProcess());
+			}
+			if(updateBatchJobRequest.getBudget() != null) {
+				job.setBudget(updateBatchJobRequest.getBudget());
+			}
+			if(updateBatchJobRequest.getPlan() != null) {
+				job.setPlan(updateBatchJobRequest.getPlan());
+			}
+			if(updateBatchJobRequest.getDescription() != null) {
+				job.setDescription(updateBatchJobRequest.getDescription());
+			}
+			if(updateBatchJobRequest.getTitle() != null) {
+				job.setTitle(updateBatchJobRequest.getTitle());
+			}
 			job.setUpdated(OffsetDateTime.now());
 			jobDAO.update(job);
+			ThreadContext.clearMap();
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
 			Error error = new Error();
 			error.setCode("400");
 			error.setMessage("The requested job " + jobId + " could not be found.");
+			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 		}
 
@@ -891,6 +1065,7 @@ public class JobsApiController implements JobsApi {
 	}
 
 	private void fireJobQueuedEvent(UUID jobId) {
+		ThreadContext.put("jobid", jobId.toString());
 		Object[] listeners = listenerList.getListenerList();
 		for (int i = listeners.length - 2; i >= 0; i -= 2) {
 			if (listeners[i] == JobEventListener.class) {
@@ -899,6 +1074,7 @@ public class JobsApiController implements JobsApi {
 			}
 		}
 		log.debug("Job Queue Event fired for job: " + jobId);
+		ThreadContext.clearMap();
 	}
 
 }
