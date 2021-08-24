@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
+<<<<<<< HEAD
 	<Appenders>
 		<File name="FILE" fileName="logs/openeo_1.0.0.log" append="true">
 			<EcsLayout serviceName="openeo" serviceNodeName="alex_dev" stackTraceAsArray="true">
@@ -124,4 +125,96 @@
 			<AppenderRef ref="FILE" />
 		</Root>
 	</Loggers>
+=======
+  <Appenders>
+  	<File name="FILE" fileName="logs/openeo_1.0.0.log" append="true">
+      <PatternLayout pattern="%p %d{ISO8601} [%t] %r %c %m%n"/>
+    </File>
+    <Console name="STDOUT" target="SYSTEM_OUT">
+      <PatternLayout pattern="%p %d{ISO8601} [%t] %r %c %m%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>   
+    <Logger name="org.openeo.spring.api" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps.WCPSQueryFactory" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps.HyperCubeFactory" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps.JobScheduler" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps.UDFFactory" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps.JobResultScheduler" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps.JobResultDeletion" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.spring.api.ApiFilter" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.spring.dao" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.wcps" level="debug" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.spring.model.Process" level="info" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.spring.model" level="error" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openapitools" level="error" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.hibernate" level="info" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.hibernate.SQL" level="info" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.hibernate.type.descriptor.sql" level="info" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.keycloak" level="trace" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.spring.OpenEOKeycloakAuthenticationProcessingFilter" level="trace" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>
+    <Logger name="org.openeo.spring.ApiFilter" level="info" additivity="false">
+    	<AppenderRef ref="STDOUT"/>
+		<AppenderRef ref="FILE"/>
+    </Logger>    
+    <Root level="info">
+      <AppenderRef ref="STDOUT"/>
+      <AppenderRef ref="FILE"/>
+    </Root>  
+  </Loggers>
+>>>>>>> branch '1.0-draft' of git@github.com:Open-EO/openeo-spring-driver.git
 </Configuration>

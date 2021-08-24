@@ -11,5 +11,8 @@
 /collections_wcps.json
 /keycloak-ks.jks
 /keycloak_openEO_TEST.json
+<<<<<<< HEAD
 /keycloak_JWT.json
 /oidc_providers.json
+=======
+>>>>>>> branch '1.0-draft' of git@github.com:Open-EO/openeo-spring-driver.git
