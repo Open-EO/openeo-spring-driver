@@ -18,7 +18,11 @@ import java.net.URLEncoder;
 import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
@@ -71,6 +75,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -145,6 +150,9 @@ public class JobsApiController implements JobsApi {
 	public Optional<NativeWebRequest> getRequest() {
 		return Optional.ofNullable(request);
 	}
+	
+//	@Autowired
+//	public Identity identity;
 
 	/**
 	 * POST /jobs : Create a new batch job Creates a new batch processing task (job)
@@ -183,7 +191,6 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs", produces = { "application/json" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
-//		ThreadContext.put("jobid", job.getId().toString()); 
 		AccessToken token = null;
 		if(principal != null) {
 			token = TokenUtil.getAccessToken(principal);
@@ -200,23 +207,50 @@ public class JobsApiController implements JobsApi {
 		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
+	     
 		
-		try {
-			EngineTypes resultEngine = null;
-			resultEngine = resultApiController.checkGraphValidityAndEngine(processGraph);
-			job.setEngine(resultEngine);
-		} catch (Exception e) {
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage(e.getMessage());
-			log.error(error.getMessage());
-			ThreadContext.clearMap();
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		Set<String> roles = new HashSet<>();
+		Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
+		for (Map.Entry<String, AccessToken.Access> e : resourceAccess.entrySet()) {
+			if (e.getValue().getRoles() != null){
+				for(String r: e.getValue().getRoles()) {
+					roles.add(r);					
+				}			
+			}		
 		}
 		
+
+		boolean isEuracUser = roles.contains("eurac");
+	
+		Iterator<String> keys = processGraph.keys();
+		boolean isCreateJobAllow= true;
+		while(keys.hasNext()) {
+			String key = keys.next();
+			JSONObject processNode = (JSONObject) processGraph.get(key);
+			String process_id = processNode.get("process_id").toString();
+			if (process_id.equals("run_udf") && !isEuracUser) {
+				isCreateJobAllow =false;				    
+			}
+		}
+	
 		log.trace("Process Graph attached: " + processGraph.toString(4));
 		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
+		
+		if (isCreateJobAllow) {
+			try {
+				EngineTypes resultEngine = null;
+				resultEngine = resultApiController.checkGraphValidityAndEngine(processGraph);
+				job.setEngine(resultEngine);
+			} catch (Exception e) {
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage(e.getMessage());
+				log.error(error.getMessage());
+				ThreadContext.clearMap();
+				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			}	
 		jobDAO.save(job);
+		
 		ThreadContext.put("jobid", job.getId().toString());
 		ObjectMapper mapper = new ObjectMapper();
 		try {
@@ -228,11 +262,11 @@ public class JobsApiController implements JobsApi {
 		Job verifiedSave = jobDAO.findOne(job.getId());
 		if (verifiedSave != null) {
 			if(token != null) {
+			
 				authzService.createProtectedResource(job, token);
 			}
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 			log.debug("verified retrieved job: " + verifiedSave.toString());
-			//return new ResponseEntity<Job>(job, HttpStatus.OK);
 			URI jobUrl;
 			try {
 				jobUrl = new URI(openEOPublicEndpoint + "/jobs/" + job.getId().toString());
@@ -255,6 +289,15 @@ public class JobsApiController implements JobsApi {
 			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+		}
+		else {
+			Error error = new Error();
+			error.setCode("401");
+			error.setMessage("You are not authorized to create this job");
+			log.error("You are not authorized to create this job");
+			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED); 
+		}
+		
 	}
 
 	/**
