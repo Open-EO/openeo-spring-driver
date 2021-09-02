@@ -729,7 +729,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				dataFileName = "result.nc";
 				}
 			else if(dataFormat.equalsIgnoreCase("gtiff") || dataFormat.equalsIgnoreCase("geotiff")) {
-				dataFileName = "result.tif";
+				dataFileName = "result.tiff";
 				}
 			else if(dataFormat.equalsIgnoreCase("png")){
 				dataFileName = "result.png";
