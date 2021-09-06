@@ -276,6 +276,7 @@ public class ResultApiController implements ResultApi {
 		String collectionID = new String();
 	
 		List<JSONObject> loadCollectionNodes = jobScheduler.getProcessNode("load_collection",processGraphJSON);
+		List<JSONObject> loadResultNodes = jobScheduler.getProcessNode("load_result",processGraphJSON);
 		
 		boolean containsSameEngineCollections = false;
 		EngineTypes selectedEngineType = null;
@@ -308,13 +309,18 @@ public class ResultApiController implements ResultApi {
 					break; // We don't need to check anything else, we found that the required collections are in the current engine/back-end
 				}
 			}
-		checkProcessesAvailability(processGraphJSON,selectedEngineType);
+			if(containsSameEngineCollections){
+				checkProcessesAvailability(processGraphJSON,selectedEngineType);
+			}
+			else {
+				throw new Exception("The submitted job contains collections from two different engines, not supported!");
+			}
+		}
+		else if(!loadResultNodes.isEmpty()){
+			selectedEngineType = EngineTypes.ODC_DASK;
 		}
 		else {
-			throw new Exception("The submitted job contains no load_collection process!");
-		}
-		if(!containsSameEngineCollections){
-			throw new Exception("The submitted job contains collections from two different engines, not supported!");
+			throw new Exception("The submitted job contains no load_collection nor load_result process!");
 		}
 		return selectedEngineType;
 	}
