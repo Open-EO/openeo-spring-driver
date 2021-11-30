@@ -382,8 +382,8 @@ public class JobsApiController implements JobsApi {
 			queryString.append("    \"query\":{");
 			queryString.append("            \"bool\":{");
 			queryString.append("                    \"filter\":[");
-			queryString.append("                            {\"term\": {\"service.name\":\"openeo\"}},");
-			queryString.append("                            {\"term\": {\"service.node.name\":\"alex_dev\"}},");
+			queryString.append("                            {\"term\": {\"service.name\":\""+  serviceName +"\"}},");
+			queryString.append("                            {\"term\": {\"service.node.name\":\""+ serviceNodeName +"\"}},");
 			queryString.append("                            {\"term\": {\"jobid\":\"" + jobId + "\"}}");
 			queryString.append("                            ]");
 			queryString.append("                    }");
