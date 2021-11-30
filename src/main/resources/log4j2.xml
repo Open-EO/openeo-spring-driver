@@ -2,14 +2,14 @@
 <Configuration>
 	<Appenders>
 		<File name="FILE" fileName="logs/openeo_1.0.0.log" append="true">
-			<EcsLayout serviceName="openeo" serviceNodeName="alex_dev" stackTraceAsArray="true">
+			<EcsLayout serviceName="openeo" serviceNodeName="eurac_op" stackTraceAsArray="true">
 			    <KeyValuePair key="jobid" value="$${ctx:jobid}"/>
 			    <KeyValuePair key="userid" value="$${ctx:userid}"/>
 			</EcsLayout>
 		</File>
 		<Console name="STDOUT" target="SYSTEM_OUT">
 <!-- 			<PatternLayout pattern="%p %d{ISO8601} [%t] %r %c %m%n"/> -->
-			<EcsLayout serviceName="openeo" serviceNodeName="alex_dev" stackTraceAsArray="true">
+			<EcsLayout serviceName="openeo" serviceNodeName="eurac_op" stackTraceAsArray="true">
 			    <KeyValuePair key="jobid" value="$${ctx:jobid}"/>
 			    <KeyValuePair key="userid" value="$${ctx:userid}"/>
 			</EcsLayout>
