@@ -1,69 +1,593 @@
 {
   "processes": [
-	  {
-	  "id": "add_dimension",
-	  "summary": "Add a new dimension",
-	  "description": "Adds a new named dimension to the data cube.\n\nAfterwards, the dimension can be referred to with the specified `name`. If a dimension with the specified name exists, the process fails with a `DimensionExists` exception. The dimension label of the dimension is set to the specified `label`.",
-	  "categories": [
-		"cubes"
-	  ],
-	  "parameters": [
-		{
-		  "name": "data",
-		  "description": "A data cube to add the dimension to.",
-		  "schema": {
-			"type": "object",
-			"subtype": "raster-cube"
-		  }
-		},
-		{
-		  "name": "name",
-		  "description": "Name for the dimension.",
-		  "schema": {
-			"type": "string"
-		  }
-		},
-		{
-		  "name": "label",
-		  "description": "A dimension label.",
-		  "schema": [
-			{
-			  "type": "number"
-			},
-			{
-			  "type": "string"
-			}
-		  ]
-		},
-		{
-		  "name": "type",
-		  "description": "The type of dimension, defaults to `other`.",
-		  "schema": {
-			"type": "string",
-			"enum": [
-			  "spatial",
-			  "temporal",
-			  "bands",
-			  "other"
-			]
-		  },
-		  "default": "other",
-		  "optional": true
-		}
-	  ],
-	  "returns": {
-		"description": "The data cube with a newly added dimension. The new dimension has exactly one dimension label. All other dimensions remain unchanged.",
-		"schema": {
-		  "type": "object",
-		  "subtype": "raster-cube"
-		}
-	  },
-	  "exceptions": {
-		"DimensionExists": {
-		  "message": "A dimension with the specified name already exists."
-		}
-	  }
-	},
+      {
+      "id": "ln",
+      "summary": "Natural logarithm",
+      "description": "The natural logarithm is the logarithm to the base *e* of the number `x`, which equals to using the *log* process with the base set to *e*. The natural logarithm is the inverse function of taking *e* to the power x.\n\nThe no-data value `null` is passed through.\n\nThe computations follow [IEEE Standard 754](https://ieeexplore.ieee.org/document/8766229) whenever the processing environment supports it. Therefore, *`ln(0)`* results in ±infinity if the processing environment supports it or otherwise an exception is thrown.",
+      "categories": [
+        "math > exponential & logarithmic"
+      ],
+      "parameters": [
+        {
+          "name": "x",
+          "description": "A number to compute the natural logarithm for.",
+          "schema": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      ],
+      "returns": {
+        "description": "The computed natural logarithm.",
+        "schema": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "arguments": {
+            "x": 1
+          },
+          "returns": 0
+        }
+      ],
+      "links": [
+        {
+          "rel": "about",
+          "href": "http://mathworld.wolfram.com/NaturalLogarithm.html",
+          "title": "Natural logarithm explained by Wolfram MathWorld"
+        },
+        {
+          "rel": "about",
+          "href": "https://ieeexplore.ieee.org/document/8766229",
+          "title": "IEEE Standard 754-2019 for Floating-Point Arithmetic"
+        }
+      ],
+      "process_graph": {
+        "e": {
+          "process_id": "e",
+          "arguments": {}
+        },
+        "log": {
+          "process_id": "log",
+          "arguments": {
+            "x": {
+              "from_parameter": "x"
+            },
+            "base": {
+              "from_node": "e"
+            }
+          },
+          "result": true
+        }
+      }
+    },
+      {
+      "id": "log",
+      "summary": "Logarithm to a base",
+      "description": "Logarithm to the base `base` of the number `x` is defined to be the inverse function of taking b to the power of x.\n\nThe no-data value `null` is passed through and therefore gets propagated if any of the arguments is `null`.\n\nThe computations follow [IEEE Standard 754](https://ieeexplore.ieee.org/document/8766229) whenever the processing environment supports it. Therefore, `log(0, 2)` results in ±infinity if the processing environment supports it or otherwise an exception is thrown.",
+      "categories": [
+        "math > exponential & logarithmic"
+      ],
+      "parameters": [
+        {
+          "name": "x",
+          "description": "A number to compute the logarithm for.",
+          "schema": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        {
+          "name": "base",
+          "description": "The numerical base.",
+          "schema": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      ],
+      "returns": {
+        "description": "The computed logarithm.",
+        "schema": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "arguments": {
+            "x": 10,
+            "base": 10
+          },
+          "returns": 1
+        },
+        {
+          "arguments": {
+            "x": 2,
+            "base": 2
+          },
+          "returns": 1
+        },
+        {
+          "arguments": {
+            "x": 4,
+            "base": 2
+          },
+          "returns": 2
+        },
+        {
+          "arguments": {
+            "x": 1,
+            "base": 16
+          },
+          "returns": 0
+        }
+      ],
+      "links": [
+        {
+          "rel": "about",
+          "href": "http://mathworld.wolfram.com/Logarithm.html",
+          "title": "Logarithm explained by Wolfram MathWorld"
+        },
+        {
+          "rel": "about",
+          "href": "https://ieeexplore.ieee.org/document/8766229",
+          "title": "IEEE Standard 754-2019 for Floating-Point Arithmetic"
+        }
+      ]
+    },
+      {
+      "id": "add_dimension",
+      "summary": "Add a new dimension",
+      "description": "Adds a new named dimension to the data cube.\n\nAfterwards, the dimension can be referred to with the specified `name`. If a dimension with the specified name exists, the process fails with a `DimensionExists` exception. The dimension label of the dimension is set to the specified `label`.",
+      "categories": [
+        "cubes"
+      ],
+      "parameters": [
+        {
+          "name": "data",
+          "description": "A data cube to add the dimension to.",
+          "schema": {
+            "type": "object",
+            "subtype": "raster-cube"
+          }
+        },
+        {
+          "name": "name",
+          "description": "Name for the dimension.",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "label",
+          "description": "A dimension label.",
+          "schema": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "type",
+          "description": "The type of dimension, defaults to `other`.",
+          "schema": {
+            "type": "string",
+            "enum": [
+              "spatial",
+              "temporal",
+              "bands",
+              "other"
+            ]
+          },
+          "default": "other",
+          "optional": true
+        }
+      ],
+      "returns": {
+        "description": "The data cube with a newly added dimension. The new dimension has exactly one dimension label. All other dimensions remain unchanged.",
+        "schema": {
+          "type": "object",
+          "subtype": "raster-cube"
+        }
+      },
+      "exceptions": {
+        "DimensionExists": {
+          "message": "A dimension with the specified name already exists."
+        }
+      }
+    },
+      {
+        "id": "aggregate_spatial",
+        "summary": "Zonal statistics for geometries",
+        "description": "Aggregates statistics for one or more geometries (e.g. zonal statistics for polygons) over the spatial dimensions. The number of total and valid pixels is returned together with the calculated values.\n\nAn 'unbounded' aggregation over the full extent of the horizontal spatial dimensions can be computed with the process ``reduce_spatial()``.\n\nThis process passes a list of values to the reducer. The list of values has an undefined order, therefore processes such as ``last()`` and ``first()`` that depend on the order of the values will lead to unpredictable results.",
+        "categories": [
+            "cubes",
+            "aggregate & resample"
+        ],
+        "parameters": [
+            {
+                "name": "data",
+                "description": "A raster data cube.\n\nThe data cube must have been reduced to only contain two spatial dimensions and a third dimension the values are aggregated for, for example the temporal dimension to get a time series. Otherwise, this process fails with the `TooManyDimensions` exception.\n\nThe data cube implicitly gets restricted to the bounds of the geometries as if ``filter_spatial()`` would have been used with the same values for the corresponding parameters immediately before this process.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "raster-cube"
+                }
+            },
+            {
+                "name": "geometries",
+                "description": "Geometries as GeoJSON on which the aggregation will be based.\n\nOne value will be computed per GeoJSON `Feature`, `Geometry` or `GeometryCollection`. For a `FeatureCollection` multiple values will be computed, one value per contained `Feature`. For example, a single value will be computed for a `MultiPolygon`, but two values will be computed for a `FeatureCollection` containing two polygons.\n\n- For **polygons**, the process considers all pixels for which the point at the pixel center intersects with the corresponding polygon (as defined in the Simple Features standard by the OGC).\n- For **points**, the process considers the closest pixel center.\n- For **lines** (line strings), the process considers all the pixels whose centers are closest to at least one point on the line.\n\nThus, pixels may be part of multiple geometries and be part of multiple aggregations.\n\nTo maximize interoperability, a nested `GeometryCollection` should be avoided. Furthermore, a `GeometryCollection` composed of a single type of geometries should be avoided in favour of the corresponding multi-part type (e.g. `MultiPolygon`).",
+                "schema": {
+                    "type": "object",
+                    "subtype": "geojson"
+                }
+            },
+            {
+                "name": "reducer",
+                "description": "A reducer to be applied on all values of each geometry. A reducer is a single process such as ``mean()`` or a set of processes, which computes a single value for a list of values, see the category 'reducer' for such processes.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "process-graph",
+                    "parameters": [
+                        {
+                            "name": "data",
+                            "description": "An array with elements of any type.",
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "description": "Any data type."
+                                }
+                            }
+                        },
+                        {
+                            "name": "context",
+                            "description": "Additional data passed by the user.",
+                            "schema": {
+                                "description": "Any data type."
+                            },
+                            "optional": true,
+                            "default": null
+                        }
+                    ],
+                    "returns": {
+                        "description": "The value to be set in the vector data cube.",
+                        "schema": {
+                            "description": "Any data type."
+                        }
+                    }
+                }
+            },
+            {
+                "name": "target_dimension",
+                "description": "The new dimension name to be used for storing the results. Defaults to `result`.",
+                "schema": {
+                    "type": "string"
+                },
+                "default": "result",
+                "optional": true
+            },
+            {
+                "name": "context",
+                "description": "Additional data to be passed to the reducer.",
+                "schema": {
+                    "description": "Any data type."
+                },
+                "optional": true,
+                "default": null
+            }
+        ],
+        "returns": {
+            "description": "A vector data cube with the computed results and restricted to the bounds of the geometries.\n\nThe computed value is used for the dimension with the name that was specified in the parameter `target_dimension`.\n\nThe computation also stores information about the total count of pixels (valid + invalid pixels) and the number of valid pixels (see ``is_valid()``) for each geometry. These values are added as a new dimension with a dimension name derived from `target_dimension` by adding the suffix `_meta`. The new dimension has the dimension labels `total_count` and `valid_count`.",
+            "schema": {
+                "type": "object",
+                "subtype": "vector-cube"
+            }
+        },
+        "exceptions": {
+            "TooManyDimensions": {
+                "message": "The number of dimensions must be reduced to three for `aggregate_spatial`."
+            }
+        },
+        "links": [
+            {
+                "href": "https://openeo.org/documentation/1.0/datacubes.html#aggregate",
+                "rel": "about",
+                "title": "Aggregation explained in the openEO documentation"
+            },
+            {
+                "href": "http://www.opengeospatial.org/standards/sfa",
+                "rel": "about",
+                "title": "Simple Features standard by the OGC"
+            }
+        ]
+    },
+      {
+        "id": "fit_regr_random_forest",
+        "summary": "Train a random forest regression model",
+        "description": "Executes the fit of a random forest regression based on the user input of target and predictors. The Random Forest regression model is based on the approach by Breiman (2001).",
+        "categories": [
+            "machine learning"
+        ],
+        "experimental": true,
+        "parameters": [
+            {
+                "name": "data",
+                "description": "The input data for the regression model. The raster images that will be used as predictors for the Random Forest. Aggregated to the features (vectors) of the target input variable.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "vector-cube"
+                }
+            },
+            {
+                "name": "target",
+                "description": "The input data for the regression model. This will be vector cubes for each training site. This is associated with the target variable for the Random Forest Model. The Geometry has to associated with a value to predict (e.g. fractional forest canopy cover).",
+                "schema": {
+                    "type": "object",
+                    "subtype": "vector-cube"
+                }
+            },
+            {
+                "name": "training",
+                "description": "The amount of training data to be used in the regression. The sampling will be randomly through the data object. The remaining data will be used as test data for the validation.",
+                "schema": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100
+                }
+            },
+            {
+                "name": "num_trees",
+                "description": "The number of trees build within the Random Forest regression.",
+                "optional": true,
+                "default": 100,
+                "schema": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            },
+            {
+                "name": "mtry",
+                "description": "Specifies how many split variables will be used at a node. Default value is `null`, which corresponds to the number of predictors divided by 3.",
+                "optional": true,
+                "default": null,
+                "schema": [
+                    {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    {
+                        "type": "null"
+                    }
+                ]
+            }
+        ],
+        "returns": {
+            "description": "A model object that can be saved with ``save_ml_model()`` and restored with ``load_ml_model()``.",
+            "schema": {
+                "type": "object",
+                "subtype": "ml-model"
+            }
+        },
+        "links": [
+            {
+                "href": "https://doi.org/10.1023/A:1010933404324",
+                "title": "Breiman (2001): Random Forests",
+                "type": "text/html",
+                "rel": "about"
+            }
+        ]
+    },
+      {
+        "id": "fit_class_random_forest",
+        "summary": "Train a random forest classification model",
+        "description": "Executes the fit of a random forest classification based on the user input of target and predictors. The Random Forest classification model is based on the approach by Breiman (2001).",
+        "categories": [
+            "machine learning"
+        ],
+        "experimental": true,
+        "parameters": [
+            {
+                "name": "data",
+                "description": "The input data for the classification model. The raster images that will be used as predictors for the Random Forest. Aggregated to the features (vectors) of the target input variable.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "vector-cube"
+                }
+            },
+            {
+                "name": "target",
+                "description": "The input data for the classification model. This will be vector cubes for each training site. This is associated with the target variable for the Random Forest Model. The Geometry has to associated with a value to predict (e.g. fractional forest canopy cover).",
+                "schema": {
+                    "type": "object",
+                    "subtype": "vector-cube"
+                }
+            },
+            {
+                "name": "training",
+                "description": "The amount of training data to be used in the classification. The sampling will be randomly through the data object. The remaining data will be used as test data for the validation.",
+                "schema": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100
+                }
+            },
+            {
+                "name": "num_trees",
+                "description": "The number of trees build within the Random Forest classification.",
+                "optional": true,
+                "default": 100,
+                "schema": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            },
+            {
+                "name": "mtry",
+                "description": "Specifies how many split variables will be used at a node. Default value is `null`, which corresponds to the number of predictors divided by 3.",
+                "optional": true,
+                "default": null,
+                "schema": [
+                    {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    {
+                        "type": "null"
+                    }
+                ]
+            }
+        ],
+        "returns": {
+            "description": "A model object that can be saved with ``save_ml_model()`` and restored with ``load_ml_model()``.",
+            "schema": {
+                "type": "object",
+                "subtype": "ml-model"
+            }
+        },
+        "links": [
+            {
+                "href": "https://doi.org/10.1023/A:1010933404324",
+                "title": "Breiman (2001): Random Forests",
+                "type": "text/html",
+                "rel": "about"
+            }
+        ]
+    },
+      {
+        "id": "predict_random_forest",
+        "summary": "Predict values from a Random Forest model",
+        "description": "Applies a Random Forest Model to a raster cube objects. The raster data cube necessarily needs the same bands as the predictors in the model. Otherwise, an `IncompatibleBands` must be returned.",
+        "categories": [
+            "machine learning"
+        ],
+        "experimental": true,
+        "parameters": [
+            {
+                "name": "data",
+                "description": "A raster cube with the bands corresponding to the predictors.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "vector-cube"
+                }
+            },
+            {
+                "name": "model",
+                "description": "A model object that can be trained with the ``fit_regr_random_forest()`` process.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "ml-model"
+                }
+            }
+        ],
+        "returns": {
+            "description": "A raster data cube with the prediction of the target variable based on the model.",
+            "schema": {
+                "type": "object",
+                "subtype": "raster-cube"
+            }
+        },
+        "exceptions": {
+            "IncompatibleBands": {
+                "message": "The bands provided do not match the bands that the model has been trained for."
+            }
+        }
+    },
+      {
+        "id": "load_ml_model",
+        "summary": "Load a machine learning model",
+        "description": "...",
+        "categories": [
+            "machine learning",
+            "import"
+        ],
+        "experimental": true,
+        "parameters": [
+            {
+                "name": "id",
+                "description": "The STAC Item to load the machine learning model from. The STAC Item must implement the ml-model extension. Such model can be trained with processes such as ``fit_random_forest()``.",
+                "schema": [
+                    {
+                        "title": "URL",
+                        "type": "string",
+                        "format": "uri",
+                        "subtype": "uri",
+                        "pattern": "^https?://"
+                    },
+                    {
+                        "title": "Batch Job ID",
+                        "type": "string",
+                        "subtype": "job-id",
+                        "pattern": "^[\\w\\-\\.~]+$"
+                    },
+                    {
+                        "title": "User-uploaded File",
+                        "type": "string",
+                        "subtype": "file-path",
+                        "pattern": "^[^\r\n\\:'\"]+$"
+                    }
+                ]
+            }
+        ],
+        "returns": {
+            "description": "A machine learning model to be used with machine learning processes such as ``predict_random_forest()``.",
+            "schema": {
+                "type": "object",
+                "subtype": "ml-model"
+            }
+        }
+    },
+      {
+        "id": "save_ml_model",
+        "summary": "Save a machine learning model",
+        "description": "...",
+        "categories": [
+            "machine learning",
+            "import"
+        ],
+        "experimental": true,
+        "parameters": [
+            {
+                "name": "data",
+                "description": "The data to store as a machine learning model.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "ml-model"
+                }
+            },
+            {
+                "name": "options",
+                "description": "Any additional parameters to create the file(s).",
+                "schema": {
+                    "type": "object",
+                    "additionalParameters": false
+                },
+                "default": {},
+                "optional": true
+            }
+        ],
+        "returns": {
+            "description": "Returns `false` if the process failed to store the model, `true` otherwise.",
+            "schema": {
+                "type": "boolean"
+            }
+        }
+    },
+      
       {
       "id": "filter_bbox",
       "summary": "Spatial filter using a bounding box",
