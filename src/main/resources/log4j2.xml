@@ -16,7 +16,7 @@
 		</Console>
 	</Appenders>
 	<Loggers>
-		<Logger name="org.openeo.spring.api" level="debug"
+		<Logger name="org.openeo.spring.api" level="info"
 			additivity="false">
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
@@ -119,7 +119,7 @@
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
 		</Logger>
-		<Root level="debug">
+		<Root level="error">
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
 		</Root>
