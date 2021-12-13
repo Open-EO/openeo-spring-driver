@@ -8,11 +8,11 @@
 			</EcsLayout>
 		</File>
 		<Console name="STDOUT" target="SYSTEM_OUT">
-<!-- 			<PatternLayout pattern="%p %d{ISO8601} [%t] %r %c %m%n"/> -->
-			<EcsLayout serviceName="openeo" serviceNodeName="eurac_op" stackTraceAsArray="true">
-			    <KeyValuePair key="jobid" value="$${ctx:jobid}"/>
-			    <KeyValuePair key="userid" value="$${ctx:userid}"/>
-			</EcsLayout>
+<PatternLayout pattern="%p %d{ISO8601} [%t] %r %c %m%n"/>
+<!-- 			<EcsLayout serviceName="openeo" serviceNodeName="eurac_op" stackTraceAsArray="true"> -->
+<!-- 			    <KeyValuePair key="jobid" value="$${ctx:jobid}"/> -->
+<!-- 			    <KeyValuePair key="userid" value="$${ctx:userid}"/> -->
+<!-- 			</EcsLayout> -->
 		</Console>
 	</Appenders>
 	<Loggers>
@@ -119,7 +119,7 @@
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
 		</Logger>
-		<Root level="error">
+		<Root level="debug">
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
 		</Root>
