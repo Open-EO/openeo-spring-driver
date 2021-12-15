@@ -1,6 +1,52 @@
 {
   "processes": [
       {
+      "id": "filter_spatial",
+      "summary": "Spatial filter using geometries",
+      "description": "Limits the data cube over the spatial dimensions to the specified geometries.\n\n- For **polygons**, the filter retains a pixel in the data cube if the point at the pixel center intersects with at least one of the polygons (as defined in the Simple Features standard by the OGC).\n- For **points**, the process considers the closest pixel center.\n- For **lines** (line strings), the process considers all the pixels whose centers are closest to at least one point on the line.\n\nMore specifically, pixels outside of the bounding box of the given geometry will not be available after filtering. All pixels inside the bounding box that are not retained will be set to `null` (no data).",
+      "categories": [
+        "cubes",
+        "filter"
+      ],
+      "parameters": [
+        {
+          "name": "data",
+          "description": "A data cube.",
+          "schema": {
+            "type": "object",
+            "subtype": "raster-cube"
+          }
+        },
+        {
+          "name": "geometries",
+          "description": "One or more geometries used for filtering, specified as GeoJSON.",
+          "schema": {
+            "type": "object",
+            "subtype": "geojson"
+          }
+        }
+      ],
+      "returns": {
+        "description": "A data cube restricted to the specified geometries. The dimensions and dimension properties (name, type, labels, reference system and resolution) remain unchanged, except that the spatial dimensions have less (or the same) dimension labels.",
+        "schema": {
+          "type": "object",
+          "subtype": "raster-cube"
+        }
+      },
+      "links": [
+        {
+          "href": "https://openeo.org/documentation/1.0/datacubes.html#filter",
+          "rel": "about",
+          "title": "Filters explained in the openEO documentation"
+        },
+        {
+          "href": "http://www.opengeospatial.org/standards/sfa",
+          "rel": "about",
+          "title": "Simple Features standard by the OGC"
+        }
+      ]
+    },
+      {
       "id": "ln",
       "summary": "Natural logarithm",
       "description": "The natural logarithm is the logarithm to the base *e* of the number `x`, which equals to using the *log* process with the base set to *e*. The natural logarithm is the inverse function of taking *e* to the power x.\n\nThe no-data value `null` is passed through.\n\nThe computations follow [IEEE Standard 754](https://ieeexplore.ieee.org/document/8766229) whenever the processing environment supports it. Therefore, *`ln(0)`* results in ±infinity if the processing environment supports it or otherwise an exception is thrown.",
@@ -2066,17 +2112,29 @@
         },
         {
           "name": "timedelta",
-          "description": "Temporal delta between acquisitions on which we want to compute coherence.",
+          "description": "Temporal delta in days between acquisitions on which we want to compute coherence.",
           "schema": {
             "type": "integer",
             "enum": [
               6,
               12,
+              18,
               24,
-              48
+              30,
+              36,
+              42,
+              48,
+              54,
+              60,
+              66,
+              72,
+              78,
+              84,
+              90,
+              96
             ]
           },
-          "default": "6 days",
+          "default": "6",
           "optional": true
         }
       ],
@@ -2091,7 +2149,7 @@
     {
       "id": "geocode",
       "summary": "Geocoding SAR data",
-      "description": "Geocoding SAR data given the desired projection and resolution.",
+      "description": "Geocoding SAR data given the desired projection and resolution. The resolution can be either 10m or 20m or 60m, to align the with Sentinel-2 grid.",
       "categories": [
         "cubes",
         "aggregate & resample"
@@ -2138,8 +2196,14 @@
           "description": "Desired reolution in meters.",
           "schema": {
             "type": "integer",
-            "minItems": 1
-          }
+            "enum": [
+              10,
+              20,
+              60
+            ]
+          },
+          "default": "10",
+          "optional": true
         }
       ],
       "returns": {
