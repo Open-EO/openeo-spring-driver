@@ -26,12 +26,12 @@
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
 		</Logger>
-		<Logger name="org.openeo.spring.api.CredentialsApiController" level="trace"
+		<Logger name="org.openeo.spring.api.CredentialsApiController" level="debug"
 			additivity="false">
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
 		</Logger> 
-		<Logger name="org.openeo.spring.api.JobsApiController" level="trace"
+		<Logger name="org.openeo.spring.api.JobsApiController" level="debug"
 			additivity="false">
 			<AppenderRef ref="STDOUT" />
 			<AppenderRef ref="FILE" />
