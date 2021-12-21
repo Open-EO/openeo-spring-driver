@@ -2216,24 +2216,29 @@
     },
     {
       "id": "radar_mask",
-      "summary": "Compute Radar Mask from DEM and LIA",
-      "description": "Computes the Radar Mask taking into account Layover, Foreshortening and Shadow",
+      "summary": "Compute Radar Mask from DEM (Digital Elevation Model) and LIA (Local Incidence Angle)",
+      "description": "Computes the Radar Mask taking into account Layover, Foreshortening and Shadow. It returns an array with the new bands as integers: 1:layover_mask, 2:foreshortening_mask and 3:shadow_mask. This process must be used in an apply_dimension process, since it acts on pixel level but modifies the existing number of dimensions (bands). You need to use rename_labels to assign the band labels afterwards.",
       "categories": [
         "cubes"
       ],
-      "experimental": true,
+        "experimental": true,
       "parameters": [
         {
           "name": "data",
-          "description": "A raster data cube with exactly two horizontal spatial dimensions and two bands called DEM and LIA, no other dimensions allowed (no temporal dimension)",
+          "description": "An array of numbers with two bands (DEM and LIA), expected to be indexed in that order. If the given array is a labeled array the bands should be called DEM and LIA, no other dimensions allowed (no temporal dimension)",
           "schema": {
-            "type": "object",
-            "subtype": "raster-cube"
+            "type": "array",
+            "items": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
           }
         },
         {
           "name": "threshold",
-          "description": "The threshold to apply to the final mask, between 0 and 1.",
+          "description": "The foreshortening threshold, between 0 and 1.",
           "schema": {
             "type": "float",
             "minItems": 1
@@ -2257,10 +2262,12 @@
         }
       ],
       "returns": {
-        "description": "A boolean mask with zeros for the masked pixels and ones for the valid pixels.",
+        "description": "An array with with zeros for the masked pixels and ones for the valid pixels.",
         "schema": {
-          "type": "object",
-          "subtype": "raster-cube"
+          "type": [
+            "number",
+            "null"
+          ]
         }
       }
     },
