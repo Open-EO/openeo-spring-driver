@@ -2237,7 +2237,7 @@
           }
         },
         {
-          "name": "threshold",
+          "name": "foreshortening_th",
           "description": "The foreshortening threshold, between 0 and 1.",
           "schema": {
             "type": "float",
@@ -2246,7 +2246,16 @@
           "default": 0.2
         },
         {
-          "name": "orbit",
+          "name": "layover_th",
+          "description": "The layover threshold, must be greater than 0.",
+          "schema": {
+            "type": "float",
+            "minItems": 1
+          },
+          "default": 1.0
+        },
+        {
+          "name": "orbit_direction",
           "description": "The Sentinel-1 orbit direction.",
           "schema": [
             {
