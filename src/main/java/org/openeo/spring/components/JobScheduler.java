@@ -56,6 +56,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -63,6 +65,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
+@EnableAsync(proxyTargetClass=true)
 public class JobScheduler implements JobEventListener, UDFEventListener {
 
 	Logger log = LogManager.getLogger(JobScheduler.class);
@@ -122,6 +125,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	}
 	
 	@Override
+	@Async
 	public void jobQueued(JobEvent jobEvent) {
 		Job job = null;
 		try {
