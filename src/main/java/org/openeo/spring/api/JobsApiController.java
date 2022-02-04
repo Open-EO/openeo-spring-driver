@@ -906,7 +906,9 @@ public class JobsApiController implements JobsApi {
 			job.setStatus(JobStates.QUEUED);
 			job.setUpdated(OffsetDateTime.now());
 			jobDAO.update(job);
+			log.debug("START SYNC TEST");
 			this.fireJobQueuedEvent(job.getId());
+			log.debug("END SYNC TEST");
 			ThreadContext.clearMap();
 			return new ResponseEntity<Job>(HttpStatus.ACCEPTED);
 		} else {
