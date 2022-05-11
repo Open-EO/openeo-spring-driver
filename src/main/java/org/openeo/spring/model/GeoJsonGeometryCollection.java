@@ -12,20 +12,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
- * GeoJSONGeometryCollection
+ * GeoJsonGeometryCollection
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class GeoJSONGeometryCollection   {
+public class GeoJsonGeometryCollection extends GeoJsonGeometry  {
   @JsonProperty("geometries")
   @Valid
   private List<GeoJsonGeometry> geometries = new ArrayList<>();
 
-  public GeoJSONGeometryCollection geometries(List<GeoJsonGeometry> geometries) {
+  public GeoJsonGeometryCollection geometries(List<GeoJsonGeometry> geometries) {
     this.geometries = geometries;
     return this;
   }
 
-  public GeoJSONGeometryCollection addGeometriesItem(GeoJsonGeometry geometriesItem) {
+  public GeoJsonGeometryCollection addGeometriesItem(GeoJsonGeometry geometriesItem) {
     this.geometries.add(geometriesItem);
     return this;
   }
@@ -56,20 +56,21 @@ public class GeoJSONGeometryCollection   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    GeoJSONGeometryCollection geoJSONGeometryCollection = (GeoJSONGeometryCollection) o;
-    return Objects.equals(this.geometries, geoJSONGeometryCollection.geometries);
+    GeoJsonGeometryCollection geoJsonGeometryCollection = (GeoJsonGeometryCollection) o;
+    return Objects.equals(this.geometries, geoJsonGeometryCollection.geometries) &&
+        super.equals(o);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(geometries);
+    return Objects.hash(geometries, super.hashCode());
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class GeoJSONGeometryCollection {\n");
-    
+    sb.append("class GeoJsonGeometryCollection {\n");
+    sb.append("    ").append(toIndentedString(super.toString())).append("\n");
     sb.append("    geometries: ").append(toIndentedString(geometries)).append("\n");
     sb.append("}");
     return sb.toString();

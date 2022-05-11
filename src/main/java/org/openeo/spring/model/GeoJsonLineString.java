@@ -13,20 +13,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
- * GeoJSONLineString
+ * GeoJsonLineString
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class GeoJSONLineString   {
+public class GeoJsonLineString extends GeoJsonGeometry  {
   @JsonProperty("coordinates")
   @Valid
   private List<List<BigDecimal>> coordinates = new ArrayList<>();
 
-  public GeoJSONLineString coordinates(List<List<BigDecimal>> coordinates) {
+  public GeoJsonLineString coordinates(List<List<BigDecimal>> coordinates) {
     this.coordinates = coordinates;
     return this;
   }
 
-  public GeoJSONLineString addCoordinatesItem(List<BigDecimal> coordinatesItem) {
+  public GeoJsonLineString addCoordinatesItem(List<BigDecimal> coordinatesItem) {
     this.coordinates.add(coordinatesItem);
     return this;
   }
@@ -57,20 +57,21 @@ public class GeoJSONLineString   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    GeoJSONLineString geoJSONLineString = (GeoJSONLineString) o;
-    return Objects.equals(this.coordinates, geoJSONLineString.coordinates);
+    GeoJsonLineString geoJsonLineString = (GeoJsonLineString) o;
+    return Objects.equals(this.coordinates, geoJsonLineString.coordinates) &&
+        super.equals(o);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(coordinates);
+    return Objects.hash(coordinates, super.hashCode());
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class GeoJSONLineString {\n");
-    
+    sb.append("class GeoJsonLineString {\n");
+    sb.append("    ").append(toIndentedString(super.toString())).append("\n");
     sb.append("    coordinates: ").append(toIndentedString(coordinates)).append("\n");
     sb.append("}");
     return sb.toString();
