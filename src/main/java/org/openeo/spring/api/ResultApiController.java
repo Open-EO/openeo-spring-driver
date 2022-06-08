@@ -14,6 +14,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -95,6 +97,9 @@ public class ResultApiController implements ResultApi {
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
 
+	@Value("${org.openeo.tmp.dir}")
+	private String tmpDir;
+	
 	@Value("${org.openeo.wcps.collections.list}")
 	Resource collectionsFileWCPS;
 	@Value("${org.openeo.odc.collections.list}")
@@ -194,15 +199,22 @@ public class ResultApiController implements ResultApi {
 					os.write(requestBody, 0, requestBody.length);
 				}
 				InputStream is = conn.getInputStream();
-			    String mime = conn.getContentType();
-				//String mime = URLConnection.guessContentTypeFromStream(is);
-				log.debug("Mime type on ODC response guessed to be: " + mime);
+
 				byte[] response = IOUtils.toByteArray(is);
-				log.info("Job successfully executed: " + job.toString());
+				log.debug("Job successfully executed: " + job.toString());
+				String responseString = new String(response);				
+				JSONObject responseJson = new JSONObject(responseString.toString());
+				String outputFilePath = tmpDir + responseJson.getString("output");
+				log.debug(outputFilePath);
+			    File outputFile = new File(outputFilePath);
+			    String mime = URLConnection.guessContentTypeFromName(outputFile.getName());
+			    
+			    byte[] outputFileBytes = Files.readAllBytes(Paths.get(outputFilePath));
+			    
 				if (mime == null) {
-					return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/octet-stream")).body(response);
+					return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/octet-stream")).body(outputFileBytes);
 				}
-				return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(response);
+				return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(outputFileBytes);
 			} catch (Exception e) {
 				StringBuilder importProcessLogger = new StringBuilder();
 				BufferedReader importProcessLogErrorReader = new BufferedReader(
