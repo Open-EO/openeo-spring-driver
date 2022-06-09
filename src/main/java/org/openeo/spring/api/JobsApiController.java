@@ -812,7 +812,6 @@ public class JobsApiController implements JobsApi {
 			log.debug("File found and converted in bytes for download");
 			//Content-Disposition: inline; filename="myfile.txt"
 			ThreadContext.clearMap();
-			log.debug("After threadcontext clear");
 			return ResponseEntity.ok().header("Content-Disposition", "inline; attachment; filename=\"" + fileName + "\"").contentType(MediaType.parseMediaType(mime)).contentLength(length).body(response);
 		} catch (FileNotFoundException e) {
 			log.error("File not found:" + fileName);
