@@ -752,15 +752,22 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				InputStream is = conn.getInputStream();
 				dataMimeType = conn.getContentType();
 				byte[] response = IOUtils.toByteArray(is);
-				FileOutputStream fileOutputStream = new FileOutputStream(jobResultPath + dataFileName);
+				FileOutputStream fileOutputStream = new FileOutputStream(jobResultPath + "result_path.json");
 				fileOutputStream.write(response, 0, response.length); 
 				log.debug("File saved correctly");
 				fileOutputStream.close();
-			} catch (IOException e) {
-				log.error("An error occured when downloading the file of the current job: " + e.getMessage());
+				boolean outputFileExists = new File(jobResultPath + dataFileName).isFile();
+				if (!outputFileExists){
+					String errorMessage = new String("Output file not found! Job id" + job.getId().toString());
+					log.error(errorMessage);
 				job.setStatus(JobStates.ERROR);
 				jobDAO.update(job);
 				return;
+			}
+			} catch (Exception e) {
+				job.setStatus(JobStates.ERROR);
+				jobDAO.update(job);
+				addStackTraceAndErrorToLog(e);
 			}
 					
 			batchJobResult.setId(job.getId());

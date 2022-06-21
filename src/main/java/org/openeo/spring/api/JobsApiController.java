@@ -1,6 +1,8 @@
 package org.openeo.spring.api;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,11 +12,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringBufferInputStream;
+import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.file.Files;
 import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -32,6 +36,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.entity.mime.MIME;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
@@ -59,9 +64,11 @@ import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -71,6 +78,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -791,7 +799,6 @@ public class JobsApiController implements JobsApi {
 			@Parameter(description = "Id of job that has created the result", required = true) @PathVariable("job_id") String jobID,
 			@Parameter(description = "name of file of result", required = true) @PathVariable("file_name") String fileName) {
 		ThreadContext.put("jobid", jobID);
-		byte[] response = null;
 		log.debug("job-id: " + jobID);
 		log.debug("file-name: " + fileName);
 		try {
@@ -799,11 +806,13 @@ public class JobsApiController implements JobsApi {
 			log.debug("File download was requested:" + fileName + " of mime type: " + mime);
 			File userFile = new File(tmpDir + jobID + "/" + fileName);
 			log.debug(userFile.getAbsolutePath());
-			response = IOUtils.toByteArray(new FileInputStream(userFile));
+			File file = ResourceUtils.getFile(userFile.getAbsolutePath());
+			InputStreamResource response = new InputStreamResource(new FileInputStream(file));
+			long length = file.length();
 			log.debug("File found and converted in bytes for download");
 			//Content-Disposition: inline; filename="myfile.txt"
 			ThreadContext.clearMap();
-			return ResponseEntity.ok().header("Content-Disposition", "inline; filename=\"" + fileName + "\"").contentType(MediaType.parseMediaType(mime)).body(response);
+			return ResponseEntity.ok().header("Content-Disposition", "inline; attachment; filename=\"" + fileName + "\"").contentType(MediaType.parseMediaType(mime)).contentLength(length).body(response);
 		} catch (FileNotFoundException e) {
 			log.error("File not found:" + fileName);
 			StringBuilder builder = new StringBuilder();
@@ -906,9 +915,7 @@ public class JobsApiController implements JobsApi {
 			job.setStatus(JobStates.QUEUED);
 			job.setUpdated(OffsetDateTime.now());
 			jobDAO.update(job);
-			log.debug("START SYNC TEST");
 			this.fireJobQueuedEvent(job.getId());
-			log.debug("END SYNC TEST");
 			ThreadContext.clearMap();
 			return new ResponseEntity<Job>(HttpStatus.ACCEPTED);
 		} else {
