@@ -748,8 +748,21 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				try (OutputStream os = conn.getOutputStream()) {
 					byte[] requestBody = process.toString().getBytes("utf-8");
 					os.write(requestBody, 0, requestBody.length);
+				} catch (IOException e) {
+					job.setStatus(JobStates.ERROR);
+					jobDAO.update(job);
+					addStackTraceAndErrorToLog(e);
+					return;
 				}
-				InputStream is = conn.getInputStream();
+				InputStream is = null;
+				try{
+					is = conn.getInputStream();
+					} catch (IOException e) {
+						job.setStatus(JobStates.ERROR);
+						jobDAO.update(job);
+						addStackTraceAndErrorToLog(e);
+						return;
+					}
 				dataMimeType = conn.getContentType();
 				byte[] response = IOUtils.toByteArray(is);
 				FileOutputStream fileOutputStream = new FileOutputStream(jobResultPath + "result_path.json");
@@ -763,7 +776,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 					job.setStatus(JobStates.ERROR);
 					jobDAO.update(job);
 					return;
-			}
+				}
 			} catch (IOException e) {
 				job.setStatus(JobStates.ERROR);
 				jobDAO.update(job);
