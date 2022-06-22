@@ -760,11 +760,11 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				if (!outputFileExists){
 					String errorMessage = new String("Output file not found! Job id" + job.getId().toString());
 					log.error(errorMessage);
-				job.setStatus(JobStates.ERROR);
-				jobDAO.update(job);
-				return;
+					job.setStatus(JobStates.ERROR);
+					jobDAO.update(job);
+					return;
 			}
-			} catch (Exception e) {
+			} catch (IOException e) {
 				job.setStatus(JobStates.ERROR);
 				jobDAO.update(job);
 				addStackTraceAndErrorToLog(e);
