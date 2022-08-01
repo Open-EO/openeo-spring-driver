@@ -5,6 +5,7 @@
  */
 package org.openeo.spring.api;
 
+import java.security.Principal;
 import java.util.Optional;
 
 import javax.validation.Valid;
@@ -50,7 +51,7 @@ public interface ResultApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.POST)
-    default ResponseEntity<?> computeResult(@Parameter(description = "" ,required=true )  @Valid @RequestBody Job synchronousResultRequest) {
+    default ResponseEntity<?> computeResult(@Parameter(description = "" ,required=true )  @Valid @RequestBody Job synchronousResultRequest, Principal principal) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }

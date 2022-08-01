@@ -1,5 +1,1271 @@
 {
   "processes": [
+      {
+      "id": "filter_spatial",
+      "summary": "Spatial filter using geometries",
+      "description": "Limits the data cube over the spatial dimensions to the specified geometries.\n\n- For **polygons**, the filter retains a pixel in the data cube if the point at the pixel center intersects with at least one of the polygons (as defined in the Simple Features standard by the OGC).\n- For **points**, the process considers the closest pixel center.\n- For **lines** (line strings), the process considers all the pixels whose centers are closest to at least one point on the line.\n\nMore specifically, pixels outside of the bounding box of the given geometry will not be available after filtering. All pixels inside the bounding box that are not retained will be set to `null` (no data).",
+      "categories": [
+        "cubes",
+        "filter"
+      ],
+      "parameters": [
+        {
+          "name": "data",
+          "description": "A data cube.",
+          "schema": {
+            "type": "object",
+            "subtype": "raster-cube"
+          }
+        },
+        {
+          "name": "geometries",
+          "description": "One or more geometries used for filtering, specified as GeoJSON.",
+          "schema": {
+            "type": "object",
+            "subtype": "geojson"
+          }
+        }
+      ],
+      "returns": {
+        "description": "A data cube restricted to the specified geometries. The dimensions and dimension properties (name, type, labels, reference system and resolution) remain unchanged, except that the spatial dimensions have less (or the same) dimension labels.",
+        "schema": {
+          "type": "object",
+          "subtype": "raster-cube"
+        }
+      },
+      "links": [
+        {
+          "href": "https://openeo.org/documentation/1.0/datacubes.html#filter",
+          "rel": "about",
+          "title": "Filters explained in the openEO documentation"
+        },
+        {
+          "href": "http://www.opengeospatial.org/standards/sfa",
+          "rel": "about",
+          "title": "Simple Features standard by the OGC"
+        }
+      ]
+    },
+      {
+      "id": "ln",
+      "summary": "Natural logarithm",
+      "description": "The natural logarithm is the logarithm to the base *e* of the number `x`, which equals to using the *log* process with the base set to *e*. The natural logarithm is the inverse function of taking *e* to the power x.\n\nThe no-data value `null` is passed through.\n\nThe computations follow [IEEE Standard 754](https://ieeexplore.ieee.org/document/8766229) whenever the processing environment supports it. Therefore, *`ln(0)`* results in ±infinity if the processing environment supports it or otherwise an exception is thrown.",
+      "categories": [
+        "math > exponential & logarithmic"
+      ],
+      "parameters": [
+        {
+          "name": "x",
+          "description": "A number to compute the natural logarithm for.",
+          "schema": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      ],
+      "returns": {
+        "description": "The computed natural logarithm.",
+        "schema": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "arguments": {
+            "x": 1
+          },
+          "returns": 0
+        }
+      ],
+      "links": [
+        {
+          "rel": "about",
+          "href": "http://mathworld.wolfram.com/NaturalLogarithm.html",
+          "title": "Natural logarithm explained by Wolfram MathWorld"
+        },
+        {
+          "rel": "about",
+          "href": "https://ieeexplore.ieee.org/document/8766229",
+          "title": "IEEE Standard 754-2019 for Floating-Point Arithmetic"
+        }
+      ],
+      "process_graph": {
+        "e": {
+          "process_id": "e",
+          "arguments": {}
+        },
+        "log": {
+          "process_id": "log",
+          "arguments": {
+            "x": {
+              "from_parameter": "x"
+            },
+            "base": {
+              "from_node": "e"
+            }
+          },
+          "result": true
+        }
+      }
+    },
+      {
+      "id": "log",
+      "summary": "Logarithm to a base",
+      "description": "Logarithm to the base `base` of the number `x` is defined to be the inverse function of taking b to the power of x.\n\nThe no-data value `null` is passed through and therefore gets propagated if any of the arguments is `null`.\n\nThe computations follow [IEEE Standard 754](https://ieeexplore.ieee.org/document/8766229) whenever the processing environment supports it. Therefore, `log(0, 2)` results in ±infinity if the processing environment supports it or otherwise an exception is thrown.",
+      "categories": [
+        "math > exponential & logarithmic"
+      ],
+      "parameters": [
+        {
+          "name": "x",
+          "description": "A number to compute the logarithm for.",
+          "schema": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        {
+          "name": "base",
+          "description": "The numerical base.",
+          "schema": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      ],
+      "returns": {
+        "description": "The computed logarithm.",
+        "schema": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "arguments": {
+            "x": 10,
+            "base": 10
+          },
+          "returns": 1
+        },
+        {
+          "arguments": {
+            "x": 2,
+            "base": 2
+          },
+          "returns": 1
+        },
+        {
+          "arguments": {
+            "x": 4,
+            "base": 2
+          },
+          "returns": 2
+        },
+        {
+          "arguments": {
+            "x": 1,
+            "base": 16
+          },
+          "returns": 0
+        }
+      ],
+      "links": [
+        {
+          "rel": "about",
+          "href": "http://mathworld.wolfram.com/Logarithm.html",
+          "title": "Logarithm explained by Wolfram MathWorld"
+        },
+        {
+          "rel": "about",
+          "href": "https://ieeexplore.ieee.org/document/8766229",
+          "title": "IEEE Standard 754-2019 for Floating-Point Arithmetic"
+        }
+      ]
+    },
+      {
+      "id": "add_dimension",
+      "summary": "Add a new dimension",
+      "description": "Adds a new named dimension to the data cube.\n\nAfterwards, the dimension can be referred to with the specified `name`. If a dimension with the specified name exists, the process fails with a `DimensionExists` exception. The dimension label of the dimension is set to the specified `label`.",
+      "categories": [
+        "cubes"
+      ],
+      "parameters": [
+        {
+          "name": "data",
+          "description": "A data cube to add the dimension to.",
+          "schema": {
+            "type": "object",
+            "subtype": "raster-cube"
+          }
+        },
+        {
+          "name": "name",
+          "description": "Name for the dimension.",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "label",
+          "description": "A dimension label.",
+          "schema": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "type",
+          "description": "The type of dimension, defaults to `other`.",
+          "schema": {
+            "type": "string",
+            "enum": [
+              "spatial",
+              "temporal",
+              "bands",
+              "other"
+            ]
+          },
+          "default": "other",
+          "optional": true
+        }
+      ],
+      "returns": {
+        "description": "The data cube with a newly added dimension. The new dimension has exactly one dimension label. All other dimensions remain unchanged.",
+        "schema": {
+          "type": "object",
+          "subtype": "raster-cube"
+        }
+      },
+      "exceptions": {
+        "DimensionExists": {
+          "message": "A dimension with the specified name already exists."
+        }
+      }
+    },
+      {
+        "id": "aggregate_spatial",
+        "summary": "Zonal statistics for geometries",
+        "description": "Aggregates statistics for one or more geometries (e.g. zonal statistics for polygons) over the spatial dimensions. The number of total and valid pixels is returned together with the calculated values.\n\nAn 'unbounded' aggregation over the full extent of the horizontal spatial dimensions can be computed with the process ``reduce_spatial()``.\n\nThis process passes a list of values to the reducer. The list of values has an undefined order, therefore processes such as ``last()`` and ``first()`` that depend on the order of the values will lead to unpredictable results.",
+        "categories": [
+            "cubes",
+            "aggregate & resample"
+        ],
+        "parameters": [
+            {
+                "name": "data",
+                "description": "A raster data cube.\n\nThe data cube must have been reduced to only contain two spatial dimensions and a third dimension the values are aggregated for, for example the temporal dimension to get a time series. Otherwise, this process fails with the `TooManyDimensions` exception.\n\nThe data cube implicitly gets restricted to the bounds of the geometries as if ``filter_spatial()`` would have been used with the same values for the corresponding parameters immediately before this process.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "raster-cube"
+                }
+            },
+            {
+                "name": "geometries",
+                "description": "Geometries as GeoJSON on which the aggregation will be based.\n\nOne value will be computed per GeoJSON `Feature`, `Geometry` or `GeometryCollection`. For a `FeatureCollection` multiple values will be computed, one value per contained `Feature`. For example, a single value will be computed for a `MultiPolygon`, but two values will be computed for a `FeatureCollection` containing two polygons.\n\n- For **polygons**, the process considers all pixels for which the point at the pixel center intersects with the corresponding polygon (as defined in the Simple Features standard by the OGC).\n- For **points**, the process considers the closest pixel center.\n- For **lines** (line strings), the process considers all the pixels whose centers are closest to at least one point on the line.\n\nThus, pixels may be part of multiple geometries and be part of multiple aggregations.\n\nTo maximize interoperability, a nested `GeometryCollection` should be avoided. Furthermore, a `GeometryCollection` composed of a single type of geometries should be avoided in favour of the corresponding multi-part type (e.g. `MultiPolygon`).",
+                "schema": {
+                    "type": "object",
+                    "subtype": "geojson"
+                }
+            },
+            {
+                "name": "reducer",
+                "description": "A reducer to be applied on all values of each geometry. A reducer is a single process such as ``mean()`` or a set of processes, which computes a single value for a list of values, see the category 'reducer' for such processes.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "process-graph",
+                    "parameters": [
+                        {
+                            "name": "data",
+                            "description": "An array with elements of any type.",
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "description": "Any data type."
+                                }
+                            }
+                        },
+                        {
+                            "name": "context",
+                            "description": "Additional data passed by the user.",
+                            "schema": {
+                                "description": "Any data type."
+                            },
+                            "optional": true,
+                            "default": null
+                        }
+                    ],
+                    "returns": {
+                        "description": "The value to be set in the vector data cube.",
+                        "schema": {
+                            "description": "Any data type."
+                        }
+                    }
+                }
+            },
+            {
+                "name": "target_dimension",
+                "description": "The new dimension name to be used for storing the results. Defaults to `result`.",
+                "schema": {
+                    "type": "string"
+                },
+                "default": "result",
+                "optional": true
+            },
+            {
+                "name": "context",
+                "description": "Additional data to be passed to the reducer.",
+                "schema": {
+                    "description": "Any data type."
+                },
+                "optional": true,
+                "default": null
+            }
+        ],
+        "returns": {
+            "description": "A vector data cube with the computed results and restricted to the bounds of the geometries.\n\nThe computed value is used for the dimension with the name that was specified in the parameter `target_dimension`.\n\nThe computation also stores information about the total count of pixels (valid + invalid pixels) and the number of valid pixels (see ``is_valid()``) for each geometry. These values are added as a new dimension with a dimension name derived from `target_dimension` by adding the suffix `_meta`. The new dimension has the dimension labels `total_count` and `valid_count`.",
+            "schema": {
+                "type": "object",
+                "subtype": "vector-cube"
+            }
+        },
+        "exceptions": {
+            "TooManyDimensions": {
+                "message": "The number of dimensions must be reduced to three for `aggregate_spatial`."
+            }
+        },
+        "links": [
+            {
+                "href": "https://openeo.org/documentation/1.0/datacubes.html#aggregate",
+                "rel": "about",
+                "title": "Aggregation explained in the openEO documentation"
+            },
+            {
+                "href": "http://www.opengeospatial.org/standards/sfa",
+                "rel": "about",
+                "title": "Simple Features standard by the OGC"
+            }
+        ]
+    },
+      {
+        "id": "fit_regr_random_forest",
+        "summary": "Train a random forest regression model",
+        "description": "Executes the fit of a random forest regression based on the user input of target and predictors. The Random Forest regression model is based on the approach by Breiman (2001).",
+        "categories": [
+            "machine learning"
+        ],
+        "experimental": true,
+        "parameters": [
+            {
+                "name": "data",
+                "description": "The input data for the regression model. The raster images that will be used as predictors for the Random Forest. Aggregated to the features (vectors) of the target input variable.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "vector-cube"
+                }
+            },
+            {
+                "name": "target",
+                "description": "The input data for the regression model. This will be vector cubes for each training site. This is associated with the target variable for the Random Forest Model. The Geometry has to associated with a value to predict (e.g. fractional forest canopy cover).",
+                "schema": {
+                    "type": "object",
+                    "subtype": "vector-cube"
+                }
+            },
+            {
+                "name": "training",
+                "description": "The amount of training data to be used in the regression. The sampling will be randomly through the data object. The remaining data will be used as test data for the validation.",
+                "schema": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100
+                }
+            },
+            {
+                "name": "num_trees",
+                "description": "The number of trees build within the Random Forest regression.",
+                "optional": true,
+                "default": 100,
+                "schema": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            },
+            {
+                "name": "mtry",
+                "description": "Specifies how many split variables will be used at a node. Default value is `null`, which corresponds to the number of predictors divided by 3.",
+                "optional": true,
+                "default": null,
+                "schema": [
+                    {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    {
+                        "type": "null"
+                    }
+                ]
+            }
+        ],
+        "returns": {
+            "description": "A model object that can be saved with ``save_ml_model()`` and restored with ``load_ml_model()``.",
+            "schema": {
+                "type": "object",
+                "subtype": "ml-model"
+            }
+        },
+        "links": [
+            {
+                "href": "https://doi.org/10.1023/A:1010933404324",
+                "title": "Breiman (2001): Random Forests",
+                "type": "text/html",
+                "rel": "about"
+            }
+        ]
+    },
+      {
+        "id": "fit_class_random_forest",
+        "summary": "Train a random forest classification model",
+        "description": "Executes the fit of a random forest classification based on the user input of target and predictors. The Random Forest classification model is based on the approach by Breiman (2001).",
+        "categories": [
+            "machine learning"
+        ],
+        "experimental": true,
+        "parameters": [
+            {
+                "name": "data",
+                "description": "The input data for the classification model. The raster images that will be used as predictors for the Random Forest. Aggregated to the features (vectors) of the target input variable.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "vector-cube"
+                }
+            },
+            {
+                "name": "target",
+                "description": "The input data for the classification model. This will be vector cubes for each training site. This is associated with the target variable for the Random Forest Model. The Geometry has to associated with a value to predict (e.g. fractional forest canopy cover).",
+                "schema": {
+                    "type": "object",
+                    "subtype": "vector-cube"
+                }
+            },
+            {
+                "name": "training",
+                "description": "The amount of training data to be used in the classification. The sampling will be randomly through the data object. The remaining data will be used as test data for the validation.",
+                "schema": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100
+                }
+            },
+            {
+                "name": "num_trees",
+                "description": "The number of trees build within the Random Forest classification.",
+                "optional": true,
+                "default": 100,
+                "schema": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            },
+            {
+                "name": "mtry",
+                "description": "Specifies how many split variables will be used at a node. Default value is `null`, which corresponds to the number of predictors divided by 3.",
+                "optional": true,
+                "default": null,
+                "schema": [
+                    {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    {
+                        "type": "null"
+                    }
+                ]
+            }
+        ],
+        "returns": {
+            "description": "A model object that can be saved with ``save_ml_model()`` and restored with ``load_ml_model()``.",
+            "schema": {
+                "type": "object",
+                "subtype": "ml-model"
+            }
+        },
+        "links": [
+            {
+                "href": "https://doi.org/10.1023/A:1010933404324",
+                "title": "Breiman (2001): Random Forests",
+                "type": "text/html",
+                "rel": "about"
+            }
+        ]
+    },
+      {
+        "id": "predict_random_forest",
+        "summary": "Predict values from a Random Forest model",
+        "description": "Applies a Random Forest Model to a raster cube objects. The raster data cube necessarily needs the same bands as the predictors in the model. Otherwise, an `IncompatibleBands` must be returned.",
+        "categories": [
+            "machine learning"
+        ],
+        "experimental": true,
+        "parameters": [
+            {
+                "name": "data",
+                "description": "A raster cube with the bands corresponding to the predictors.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "vector-cube"
+                }
+            },
+            {
+                "name": "model",
+                "description": "A model object that can be trained with the ``fit_regr_random_forest()`` process.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "ml-model"
+                }
+            }
+        ],
+        "returns": {
+            "description": "A raster data cube with the prediction of the target variable based on the model.",
+            "schema": {
+                "type": "object",
+                "subtype": "raster-cube"
+            }
+        },
+        "exceptions": {
+            "IncompatibleBands": {
+                "message": "The bands provided do not match the bands that the model has been trained for."
+            }
+        }
+    },
+      {
+        "id": "load_ml_model",
+        "summary": "Load a machine learning model",
+        "description": "...",
+        "categories": [
+            "machine learning",
+            "import"
+        ],
+        "experimental": true,
+        "parameters": [
+            {
+                "name": "id",
+                "description": "The STAC Item to load the machine learning model from. The STAC Item must implement the ml-model extension. Such model can be trained with processes such as ``fit_random_forest()``.",
+                "schema": [
+                    {
+                        "title": "URL",
+                        "type": "string",
+                        "format": "uri",
+                        "subtype": "uri",
+                        "pattern": "^https?://"
+                    },
+                    {
+                        "title": "Batch Job ID",
+                        "type": "string",
+                        "subtype": "job-id",
+                        "pattern": "^[\\w\\-\\.~]+$"
+                    },
+                    {
+                        "title": "User-uploaded File",
+                        "type": "string",
+                        "subtype": "file-path",
+                        "pattern": "^[^\r\n\\:'\"]+$"
+                    }
+                ]
+            }
+        ],
+        "returns": {
+            "description": "A machine learning model to be used with machine learning processes such as ``predict_random_forest()``.",
+            "schema": {
+                "type": "object",
+                "subtype": "ml-model"
+            }
+        }
+    },
+      {
+        "id": "save_ml_model",
+        "summary": "Save a machine learning model",
+        "description": "...",
+        "categories": [
+            "machine learning",
+            "import"
+        ],
+        "experimental": true,
+        "parameters": [
+            {
+                "name": "data",
+                "description": "The data to store as a machine learning model.",
+                "schema": {
+                    "type": "object",
+                    "subtype": "ml-model"
+                }
+            },
+            {
+                "name": "options",
+                "description": "Any additional parameters to create the file(s).",
+                "schema": {
+                    "type": "object",
+                    "additionalParameters": false
+                },
+                "default": {},
+                "optional": true
+            }
+        ],
+        "returns": {
+            "description": "Returns `false` if the process failed to store the model, `true` otherwise.",
+            "schema": {
+                "type": "boolean"
+            }
+        }
+    },
+      
+      {
+      "id": "filter_bbox",
+      "summary": "Spatial filter using a bounding box",
+      "description": "Limits the data cube to the specified bounding box.\n\nThe filter retains a pixel in the data cube if the point at the pixel center intersects with the bounding box (as defined in the Simple Features standard by the OGC).",
+      "categories": [
+        "cubes",
+        "filter"
+      ],
+      "parameters": [
+        {
+          "name": "data",
+          "description": "A data cube.",
+          "schema": {
+            "type": "object",
+            "subtype": "raster-cube"
+          }
+        },
+        {
+          "name": "extent",
+          "description": "A bounding box, which may include a vertical axis (see `base` and `height`).",
+          "schema": {
+            "type": "object",
+            "subtype": "bounding-box",
+            "required": [
+              "west",
+              "south",
+              "east",
+              "north"
+            ],
+            "properties": {
+              "west": {
+                "description": "West (lower left corner, coordinate axis 1).",
+                "type": "number"
+              },
+              "south": {
+                "description": "South (lower left corner, coordinate axis 2).",
+                "type": "number"
+              },
+              "east": {
+                "description": "East (upper right corner, coordinate axis 1).",
+                "type": "number"
+              },
+              "north": {
+                "description": "North (upper right corner, coordinate axis 2).",
+                "type": "number"
+              },
+              "base": {
+                "description": "Base (optional, lower left corner, coordinate axis 3).",
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "default": null
+              },
+              "height": {
+                "description": "Height (optional, upper right corner, coordinate axis 3).",
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "default": null
+              },
+              "crs": {
+                "description": "Coordinate reference system of the extent, specified as as [EPSG code](http://www.epsg-registry.org/), [WKT2 (ISO 19162) string](http://docs.opengeospatial.org/is/18-010r7/18-010r7.html) or [PROJ definition (deprecated)](https://proj.org/usage/quickstart.html). Defaults to `4326` (EPSG code 4326) unless the client explicitly requests a different coordinate reference system.",
+                "anyOf": [
+                  {
+                    "title": "EPSG Code",
+                    "type": "integer",
+                    "subtype": "epsg-code",
+                    "minimum": 1000,
+                    "examples": [
+                      3857
+                    ]
+                  },
+                  {
+                    "title": "WKT2",
+                    "type": "string",
+                    "subtype": "wkt2-definition"
+                  },
+                  {
+                    "title": "PROJ definition",
+                    "type": "string",
+                    "subtype": "proj-definition",
+                    "deprecated": true
+                  }
+                ],
+                "default": 4326
+              }
+            }
+          }
+        }
+      ],
+      "returns": {
+        "description": "A data cube restricted to the bounding box. The dimensions and dimension properties (name, type, labels, reference system and resolution) remain unchanged, except that the spatial dimensions have less (or the same) dimension labels.",
+        "schema": {
+          "type": "object",
+          "subtype": "raster-cube"
+        }
+      },
+      "links": [
+        {
+          "href": "https://openeo.org/documentation/1.0/datacubes.html#filter",
+          "rel": "about",
+          "title": "Filters explained in the openEO documentation"
+        },
+        {
+          "rel": "about",
+          "href": "https://proj.org/usage/projections.html",
+          "title": "PROJ parameters for cartographic projections"
+        },
+        {
+          "rel": "about",
+          "href": "http://www.epsg-registry.org",
+          "title": "Official EPSG code registry"
+        },
+        {
+          "rel": "about",
+          "href": "http://www.epsg.io",
+          "title": "Unofficial EPSG code database"
+        },
+        {
+          "href": "http://www.opengeospatial.org/standards/sfa",
+          "rel": "about",
+          "title": "Simple Features standard by the OGC"
+        }
+      ]
+    },
+      {
+      "id": "sum",
+      "summary": "Compute the sum by adding up numbers",
+      "description": "Sums up all elements in a sequential array of numbers and returns the computed sum.\n\nBy default no-data values are ignored. Setting `ignore_nodata` to `false` considers no-data values so that `null` is returned if any element is such a value.\n\nThe computations follow [IEEE Standard 754](https://ieeexplore.ieee.org/document/8766229) whenever the processing environment supports it.",
+      "categories": [
+        "math",
+        "reducer"
+      ],
+      "parameters": [
+        {
+          "name": "data",
+          "description": "An array of numbers.",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ignore_nodata",
+          "description": "Indicates whether no-data values are ignored or not. Ignores them by default. Setting this flag to `false` considers no-data values so that `null` is returned if any value is such a value.",
+          "schema": {
+            "type": "boolean"
+          },
+          "default": true,
+          "optional": true
+        }
+      ],
+      "returns": {
+        "description": "The computed sum of the sequence of numbers.",
+        "schema": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "arguments": {
+            "data": [
+              5,
+              1
+            ]
+          },
+          "returns": 6
+        },
+        {
+          "arguments": {
+            "data": [
+              -2,
+              4,
+              2.5
+            ]
+          },
+          "returns": 4.5
+        },
+        {
+          "arguments": {
+            "data": [
+              1,
+              null
+            ],
+            "ignore_nodata": false
+          },
+          "returns": null
+        },
+        {
+          "arguments": {
+            "data": [
+              100
+            ]
+          },
+          "returns": 100
+        },
+        {
+          "arguments": {
+            "data": [
+              null
+            ],
+            "ignore_nodata": false
+          },
+          "returns": null
+        },
+        {
+          "arguments": {
+            "data": []
+          },
+          "returns": null
+        }
+      ],
+      "links": [
+        {
+          "rel": "about",
+          "href": "http://mathworld.wolfram.com/Sum.html",
+          "title": "Sum explained by Wolfram MathWorld"
+        },
+        {
+          "rel": "about",
+          "href": "https://ieeexplore.ieee.org/document/8766229",
+          "title": "IEEE Standard 754-2019 for Floating-Point Arithmetic"
+        }
+      ]
+    },
+      {
+      "id": "product",
+      "summary": "Compute the product by multiplying numbers",
+      "description": "Multiplies all elements in a sequential array of numbers and returns the computed product.\n\nBy default no-data values are ignored. Setting `ignore_nodata` to `false` considers no-data values so that `null` is returned if any element is such a value.\n\nThe computations follow [IEEE Standard 754](https://ieeexplore.ieee.org/document/8766229) whenever the processing environment supports it.",
+      "categories": [
+        "math",
+        "reducer"
+      ],
+      "parameters": [
+        {
+          "name": "data",
+          "description": "An array of numbers.",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ignore_nodata",
+          "description": "Indicates whether no-data values are ignored or not. Ignores them by default. Setting this flag to `false` considers no-data values so that `null` is returned if any value is such a value.",
+          "schema": {
+            "type": "boolean"
+          },
+          "default": true,
+          "optional": true
+        }
+      ],
+      "returns": {
+        "description": "The computed product of the sequence of numbers.",
+        "schema": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "arguments": {
+            "data": [
+              5,
+              0
+            ]
+          },
+          "returns": 0
+        },
+        {
+          "arguments": {
+            "data": [
+              -2,
+              4,
+              2.5
+            ]
+          },
+          "returns": -20
+        },
+        {
+          "arguments": {
+            "data": [
+              1,
+              null
+            ],
+            "ignore_nodata": false
+          },
+          "returns": null
+        },
+        {
+          "arguments": {
+            "data": [
+              -1
+            ]
+          },
+          "returns": -1
+        },
+        {
+          "arguments": {
+            "data": [
+              null
+            ],
+            "ignore_nodata": false
+          },
+          "returns": null
+        },
+        {
+          "arguments": {
+            "data": []
+          },
+          "returns": null
+        }
+      ],
+      "links": [
+        {
+          "rel": "about",
+          "href": "http://mathworld.wolfram.com/Product.html",
+          "title": "Product explained by Wolfram MathWorld"
+        },
+        {
+          "rel": "about",
+          "href": "https://ieeexplore.ieee.org/document/8766229",
+          "title": "IEEE Standard 754-2019 for Floating-Point Arithmetic"
+        }
+      ]
+    },
+      {
+      "id": "array_interpolate_linear",
+      "summary": "One-dimensional linear interpolation for arrays",
+      "description": "Performs a linear interpolation for each of the no-data values (`null`) in the array given, except for leading and trailing no-data values.\n\nThe linear interpolants are defined by the array indices or labels (x) and the values in the array (y).",
+      "categories": [
+        "arrays",
+        "math",
+        "math > interpolation"
+      ],
+      "experimental": true,
+      "parameters": [
+        {
+          "name": "data",
+          "description": "An array of numbers and no-data values.\n\nIf the given array is a labeled array, the labels must have a natural/inherent label order and the process expects the labels to be sorted accordingly. This is the default behavior in openEO for spatial and temporal dimensions.",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        }
+      ],
+      "returns": {
+        "description": "An array with no-data values being replaced with interpolated values. If not at least 2 numerical values are available in the array, the array stays the same.",
+        "schema": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "arguments": {
+            "data": [
+              null,
+              1,
+              null,
+              6,
+              null,
+              -8
+            ]
+          },
+          "returns": [
+            null,
+            1,
+            3.5,
+            6,
+            -1,
+            -8
+          ]
+        }
+      ],
+      "links": [
+        {
+          "rel": "about",
+          "href": "https://en.wikipedia.org/wiki/Linear_interpolation",
+          "title": "Linear interpolation explained by Wikipedia"
+        }
+      ]
+    },
+      {
+      "id": "apply_dimension",
+      "summary": "Apply a process to pixels along a dimension",
+      "description": "Applies a process to all pixel values along a dimension of a raster data cube. For example, if the temporal dimension is specified the process will work on a time series of pixel values.\n\nThe process ``reduce_dimension()`` also applies a process to pixel values along a dimension, but drops the dimension afterwards. The process ``apply()`` applies a process to each pixel value in the data cube.\n\nThe target dimension is the source dimension if not specified otherwise in the `target_dimension` parameter. The pixel values in the target dimension get replaced by the computed pixel values. The name, type and reference system are preserved.\n\nThe dimension labels are preserved when the target dimension is the source dimension and the number of pixel values in the source dimension is equal to the number of values computed by the process. Otherwise, the dimension labels will be incrementing integers starting from zero, which can be changed using ``rename_labels()`` afterwards. The number of labels will equal to the number of values computed by the process.",
+      "categories": [
+        "cubes"
+      ],
+      "parameters": [
+        {
+          "name": "data",
+          "description": "A data cube.",
+          "schema": {
+            "type": "object",
+            "subtype": "raster-cube"
+          }
+        },
+        {
+          "name": "process",
+          "description": "Process to be applied on all pixel values. The specified process needs to accept an array and must return an array with at least one element. A process may consist of multiple sub-processes.",
+          "schema": {
+            "type": "object",
+            "subtype": "process-graph",
+            "parameters": [
+              {
+                "name": "data",
+                "description": "A labeled array with elements of any type.",
+                "schema": {
+                  "type": "array",
+                  "subtype": "labeled-array",
+                  "items": {
+                    "description": "Any data type."
+                  }
+                }
+              },
+              {
+                "name": "context",
+                "description": "Additional data passed by the user.",
+                "schema": {
+                  "description": "Any data type."
+                },
+                "optional": true,
+                "default": null
+              }
+            ],
+            "returns": {
+              "description": "The value to be set in the new data cube.",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "description": "Any data type."
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "dimension",
+          "description": "The name of the source dimension to apply the process on. Fails with a `DimensionNotAvailable` exception if the specified dimension does not exist.",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "target_dimension",
+          "description": "The name of the target dimension or `null` (the default) to use the source dimension specified in the parameter `dimension`.\n\nBy specifying a target dimension, the source dimension is removed. The target dimension with the specified name and the type `other` (see ``add_dimension()``) is created, if it doesn't exist yet.",
+          "schema": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "default": null,
+          "optional": true
+        },
+        {
+          "name": "context",
+          "description": "Additional data to be passed to the process.",
+          "schema": {
+            "description": "Any data type."
+          },
+          "optional": true,
+          "default": null
+        }
+      ],
+      "returns": {
+        "description": "A data cube with the newly computed values.\n\nAll dimensions stay the same, except for the dimensions specified in corresponding parameters. There are three cases how the dimensions can change:\n\n1. The source dimension is the target dimension:\n   - The (number of) dimensions remain unchanged as the source dimension is the target dimension.\n   - The source dimension properties name and type remain unchanged.\n   - The dimension labels, the reference system and the resolution are preserved only if the number of pixel values in the source dimension is equal to the number of values computed by the process. Otherwise, all other dimension properties change as defined in the list below.\n2. The source dimension is not the target dimension and the latter exists:\n   - The number of dimensions decreases by one as the source dimension is dropped.\n   - The target dimension properties name and type remain unchanged. All other dimension properties change as defined in the list below.\n3. The source dimension is not the target dimension and the latter does not exist:\n   - The number of dimensions remain unchanged, but the source dimension is replaced with the target dimension.\n   - The target dimension has the specified name and the type other. All other dimension properties are set as defined in the list below.\n\nUnless otherwise stated above, for the given (target) dimension the following applies:\n\n- the number of dimension labels is equal to the number of values computed by the process,\n- the dimension labels are incrementing integers starting from zero,\n- the resolution changes, and\n- the reference system is undefined.",
+        "schema": {
+          "type": "object",
+          "subtype": "raster-cube"
+        }
+      },
+      "exceptions": {
+        "DimensionNotAvailable": {
+          "message": "A dimension with the specified name does not exist."
+        }
+      },
+      "links": [
+        {
+          "href": "https://openeo.org/documentation/1.0/datacubes.html#apply",
+          "rel": "about",
+          "title": "Apply explained in the openEO documentation"
+        }
+      ]
+    },
+      {
+      "id": "aggregate_temporal_period",
+      "summary": "Temporal aggregations based on calendar hierarchies",
+      "description": "Computes a temporal aggregation based on calendar hierarchies such as years, months or seasons. For other calendar hierarchies ``aggregate_temporal()`` can be used.\n\nFor each interval, all data along the dimension will be passed through the reducer.\n\nIf the dimension is not set or is set to `null`, the data cube is expected to only have one temporal dimension.",
+      "categories": [
+        "aggregate & resample",
+        "climatology",
+        "cubes"
+      ],
+      "parameters": [
+        {
+          "name": "data",
+          "description": "A data cube.",
+          "schema": {
+            "type": "object",
+            "subtype": "raster-cube"
+          }
+        },
+        {
+          "name": "period",
+          "description": "The time intervals to aggregate. The following pre-defined values are available:\n\n* `hour`: Hour of the day\n* `day`: Day of the year\n* `week`: Week of the year\n* `dekad`: Ten day periods, counted per year with three periods per month (day 1 - 10, 11 - 20 and 21 - end of month). The third dekad of the month can range from 8 to 11 days. For example, the fourth dekad is Feb, 1 - Feb, 10 each year.\n* `month`: Month of the year\n* `season`: Three month periods of the calendar seasons (December - February, March - May, June - August, September - November).\n* `tropical-season`: Six month periods of the tropical seasons (November - April, May - October).\n* `year`: Proleptic years\n* `decade`: Ten year periods ([0-to-9 decade](https://en.wikipedia.org/wiki/Decade#0-to-9_decade)), from a year ending in a 0 to the next year ending in a 9.\n* `decade-ad`: Ten year periods ([1-to-0 decade](https://en.wikipedia.org/wiki/Decade#1-to-0_decade)) better aligned with the anno Domini (AD) calendar era, from a year ending in a 1 to the next year ending in a 0.",
+          "schema": {
+            "type": "string",
+            "enum": [
+              "hour",
+              "day",
+              "week",
+              "dekad",
+              "month",
+              "season",
+              "tropical-season",
+              "year",
+              "decade",
+              "decade-ad"
+            ]
+          }
+        },
+        {
+          "name": "reducer",
+          "description": "A reducer to be applied for the values contained in each period. A reducer is a single process such as ``mean()`` or a set of processes, which computes a single value for a list of values, see the category 'reducer' for such processes. Periods may not contain any values, which for most reducers leads to no-data (`null`) values by default.",
+          "schema": {
+            "type": "object",
+            "subtype": "process-graph",
+            "parameters": [
+              {
+                "name": "data",
+                "description": "A labeled array with elements of any type. If there's no data for the period, the array is empty.",
+                "schema": {
+                  "type": "array",
+                  "subtype": "labeled-array",
+                  "items": {
+                    "description": "Any data type."
+                  }
+                }
+              },
+              {
+                "name": "context",
+                "description": "Additional data passed by the user.",
+                "schema": {
+                  "description": "Any data type."
+                },
+                "optional": true,
+                "default": null
+              }
+            ],
+            "returns": {
+              "description": "The value to be set in the new data cube.",
+              "schema": {
+                "description": "Any data type."
+              }
+            }
+          }
+        },
+        {
+          "name": "dimension",
+          "description": "The name of the temporal dimension for aggregation. All data along the dimension is passed through the specified reducer. If the dimension is not set or set to `null`, the data cube is expected to only have one temporal dimension. Fails with a `TooManyDimensions` exception if it has more dimensions. Fails with a `DimensionNotAvailable` exception if the specified dimension does not exist.",
+          "schema": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optional": true,
+          "default": null
+        },
+        {
+          "name": "context",
+          "description": "Additional data to be passed to the reducer.",
+          "schema": {
+            "description": "Any data type."
+          },
+          "optional": true,
+          "default": null
+        }
+      ],
+      "returns": {
+        "description": "A new data cube with the same dimensions. The dimension properties (name, type, labels, reference system and resolution) remain unchanged, except for the resolution and dimension labels of the given temporal dimension. The specified temporal dimension has the following dimension labels (`YYYY` = four-digit year, `MM` = two-digit month, `DD` two-digit day of month):\n\n* `hour`: `YYYY-MM-DD-00` - `YYYY-MM-DD-23`\n* `day`: `YYYY-001` - `YYYY-365`\n* `week`: `YYYY-01` - `YYYY-52`\n* `dekad`: `YYYY-00` - `YYYY-36`\n* `month`: `YYYY-01` - `YYYY-12`\n* `season`: `YYYY-djf` (December - February), `YYYY-mam` (March - May), `YYYY-jja` (June - August), `YYYY-son` (September - November).\n* `tropical-season`: `YYYY-ndjfma` (November - April), `YYYY-mjjaso` (May - October).\n* `year`: `YYYY`\n* `decade`: `YYY0`\n* `decade-ad`: `YYY1`",
+        "schema": {
+          "type": "object",
+          "subtype": "raster-cube"
+        }
+      },
+      "exceptions": {
+        "TooManyDimensions": {
+          "message": "The data cube contains multiple temporal dimensions. The parameter `dimension` must be specified."
+        },
+        "DimensionNotAvailable": {
+          "message": "A dimension with the specified name does not exist."
+        },
+        "DistinctDimensionLabelsRequired": {
+          "message": "The dimension labels have duplicate values. Distinct labels must be specified."
+        }
+      },
+      "links": [
+        {
+          "href": "https://openeo.org/documentation/1.0/datacubes.html#aggregate",
+          "rel": "about",
+          "title": "Aggregation explained in the openEO documentation"
+        }
+      ]
+    },
     {
       "id": "sd",
       "summary": "Standard deviation",
@@ -846,17 +2112,29 @@
         },
         {
           "name": "timedelta",
-          "description": "Temporal delta between acquisitions on which we want to compute coherence.",
+          "description": "Temporal delta in days between acquisitions on which we want to compute coherence.",
           "schema": {
             "type": "integer",
             "enum": [
               6,
               12,
+              18,
               24,
-              48
+              30,
+              36,
+              42,
+              48,
+              54,
+              60,
+              66,
+              72,
+              78,
+              84,
+              90,
+              96
             ]
           },
-          "default": "6 days",
+          "default": "6",
           "optional": true
         }
       ],
@@ -871,7 +2149,7 @@
     {
       "id": "geocode",
       "summary": "Geocoding SAR data",
-      "description": "Geocoding SAR data given the desired projection and resolution.",
+      "description": "Geocoding SAR data given the desired projection and resolution. The resolution can be either 10m or 20m or 60m, to align the with Sentinel-2 grid.",
       "categories": [
         "cubes",
         "aggregate & resample"
@@ -918,8 +2196,14 @@
           "description": "Desired reolution in meters.",
           "schema": {
             "type": "integer",
-            "minItems": 1
-          }
+            "enum": [
+              10,
+              20,
+              60
+            ]
+          },
+          "default": "10",
+          "optional": true
         }
       ],
       "returns": {
@@ -932,24 +2216,29 @@
     },
     {
       "id": "radar_mask",
-      "summary": "Compute Radar Mask from DEM and LIA",
-      "description": "Computes the Radar Mask taking into account Layover, Foreshortening and Shadow",
+      "summary": "Compute Radar Mask from DEM (Digital Elevation Model) and LIA (Local Incidence Angle)",
+      "description": "Computes the Radar Mask taking into account Layover, Foreshortening and Shadow. It returns an array with the new bands as integers: 1:layover_mask, 2:foreshortening_mask and 3:shadow_mask. This process must be used in an apply_dimension process, since it acts on pixel level but modifies the existing number of dimensions (bands). You need to use rename_labels to assign the band labels afterwards.",
       "categories": [
         "cubes"
       ],
-      "experimental": true,
+        "experimental": true,
       "parameters": [
         {
           "name": "data",
-          "description": "A raster data cube with exactly two horizontal spatial dimensions and two bands called DEM and LIA, no other dimensions allowed (no temporal dimension)",
+          "description": "An array of numbers with two bands (DEM and LIA), expected to be indexed in that order. If the given array is a labeled array the bands should be called DEM and LIA, no other dimensions allowed (no temporal dimension)",
           "schema": {
-            "type": "object",
-            "subtype": "raster-cube"
+            "type": "array",
+            "items": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
           }
         },
         {
-          "name": "threshold",
-          "description": "The threshold to apply to the final mask, between 0 and 1.",
+          "name": "foreshortening_th",
+          "description": "The foreshortening threshold, between 0 and 1.",
           "schema": {
             "type": "float",
             "minItems": 1
@@ -957,7 +2246,16 @@
           "default": 0.2
         },
         {
-          "name": "orbit",
+          "name": "layover_th",
+          "description": "The layover threshold, must be greater than 0.",
+          "schema": {
+            "type": "float",
+            "minItems": 1
+          },
+          "default": 1.0
+        },
+        {
+          "name": "orbit_direction",
           "description": "The Sentinel-1 orbit direction.",
           "schema": [
             {
@@ -973,10 +2271,12 @@
         }
       ],
       "returns": {
-        "description": "A boolean mask with zeros for the masked pixels and ones for the valid pixels.",
+        "description": "An array with with zeros for the masked pixels and ones for the valid pixels.",
         "schema": {
-          "type": "object",
-          "subtype": "raster-cube"
+          "type": [
+            "number",
+            "null"
+          ]
         }
       }
     },

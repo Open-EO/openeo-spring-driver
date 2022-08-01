@@ -1,6 +1,8 @@
 package org.openeo.spring.api;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,15 +12,21 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringBufferInputStream;
+import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.file.Files;
 import java.security.Principal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
@@ -28,6 +36,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.entity.mime.MIME;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
@@ -55,9 +64,11 @@ import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -67,10 +78,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -145,6 +158,9 @@ public class JobsApiController implements JobsApi {
 	public Optional<NativeWebRequest> getRequest() {
 		return Optional.ofNullable(request);
 	}
+	
+//	@Autowired
+//	public Identity identity;
 
 	/**
 	 * POST /jobs : Create a new batch job Creates a new batch processing task (job)
@@ -183,7 +199,6 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs", produces = { "application/json" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
-//		ThreadContext.put("jobid", job.getId().toString()); 
 		AccessToken token = null;
 		if(principal != null) {
 			token = TokenUtil.getAccessToken(principal);
@@ -200,23 +215,50 @@ public class JobsApiController implements JobsApi {
 		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
+	     
 		
-		try {
-			EngineTypes resultEngine = null;
-			resultEngine = resultApiController.checkGraphValidityAndEngine(processGraph);
-			job.setEngine(resultEngine);
-		} catch (Exception e) {
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage(e.getMessage());
-			log.error(error.getMessage());
-			ThreadContext.clearMap();
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		Set<String> roles = new HashSet<>();
+		Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
+		for (Map.Entry<String, AccessToken.Access> e : resourceAccess.entrySet()) {
+			if (e.getValue().getRoles() != null){
+				for(String r: e.getValue().getRoles()) {
+					roles.add(r);					
+				}			
+			}		
 		}
 		
+
+		boolean isEuracUser = roles.contains("eurac");
+	
+		Iterator<String> keys = processGraph.keys();
+		boolean isCreateJobAllow= true;
+		while(keys.hasNext()) {
+			String key = keys.next();
+			JSONObject processNode = (JSONObject) processGraph.get(key);
+			String process_id = processNode.get("process_id").toString();
+			if (process_id.equals("run_udf") && !isEuracUser) {
+				isCreateJobAllow =false;				    
+			}
+		}
+	
 		log.trace("Process Graph attached: " + processGraph.toString(4));
 		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
+		
+		if (isCreateJobAllow) {
+			try {
+				EngineTypes resultEngine = null;
+				resultEngine = resultApiController.checkGraphValidityAndEngine(processGraph);
+				job.setEngine(resultEngine);
+			} catch (Exception e) {
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage(e.getMessage());
+				log.error(error.getMessage());
+				ThreadContext.clearMap();
+				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			}	
 		jobDAO.save(job);
+		
 		ThreadContext.put("jobid", job.getId().toString());
 		ObjectMapper mapper = new ObjectMapper();
 		try {
@@ -228,11 +270,11 @@ public class JobsApiController implements JobsApi {
 		Job verifiedSave = jobDAO.findOne(job.getId());
 		if (verifiedSave != null) {
 			if(token != null) {
+			
 				authzService.createProtectedResource(job, token);
 			}
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
 			log.debug("verified retrieved job: " + verifiedSave.toString());
-			//return new ResponseEntity<Job>(job, HttpStatus.OK);
 			URI jobUrl;
 			try {
 				jobUrl = new URI(openEOPublicEndpoint + "/jobs/" + job.getId().toString());
@@ -255,6 +297,15 @@ public class JobsApiController implements JobsApi {
 			ThreadContext.clearMap();
 			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+		}
+		else {
+			Error error = new Error();
+			error.setCode("401");
+			error.setMessage("You are not authorized to create this job");
+			log.error("You are not authorized to create this job");
+			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED); 
+		}
+		
 	}
 
 	/**
@@ -334,12 +385,13 @@ public class JobsApiController implements JobsApi {
 			conn.setDoOutput(true);
 			conn.setRequestProperty("Content-Type", "application/json");
 			StringBuilder queryString = new StringBuilder();
+			//TODO insert elastic search parameters from application.properties through resource loader here
 			queryString.append("{");
 			queryString.append("    \"query\":{");
 			queryString.append("            \"bool\":{");
 			queryString.append("                    \"filter\":[");
-			queryString.append("                            {\"term\": {\"service.name\":\"openeo\"}},");
-			queryString.append("                            {\"term\": {\"service.node.name\":\"alex_dev\"}},");
+			queryString.append("                            {\"term\": {\"service.name\":\""+  serviceName +"\"}},");
+			queryString.append("                            {\"term\": {\"service.node.name\":\""+ serviceNodeName +"\"}},");
 			queryString.append("                            {\"term\": {\"jobid\":\"" + jobId + "\"}}");
 			queryString.append("                            ]");
 			queryString.append("                    }");
@@ -747,7 +799,6 @@ public class JobsApiController implements JobsApi {
 			@Parameter(description = "Id of job that has created the result", required = true) @PathVariable("job_id") String jobID,
 			@Parameter(description = "name of file of result", required = true) @PathVariable("file_name") String fileName) {
 		ThreadContext.put("jobid", jobID);
-		byte[] response = null;
 		log.debug("job-id: " + jobID);
 		log.debug("file-name: " + fileName);
 		try {
@@ -755,11 +806,13 @@ public class JobsApiController implements JobsApi {
 			log.debug("File download was requested:" + fileName + " of mime type: " + mime);
 			File userFile = new File(tmpDir + jobID + "/" + fileName);
 			log.debug(userFile.getAbsolutePath());
-			response = IOUtils.toByteArray(new FileInputStream(userFile));
+			File file = ResourceUtils.getFile(userFile.getAbsolutePath());
+			InputStreamResource response = new InputStreamResource(new FileInputStream(file));
+			long length = file.length();
 			log.debug("File found and converted in bytes for download");
 			//Content-Disposition: inline; filename="myfile.txt"
 			ThreadContext.clearMap();
-			return ResponseEntity.ok().header("Content-Disposition", "inline; filename=\"" + fileName + "\"").contentType(MediaType.parseMediaType(mime)).body(response);
+			return ResponseEntity.ok().header("Content-Disposition", "inline; attachment; filename=\"" + fileName + "\"").contentType(MediaType.parseMediaType(mime)).contentLength(length).body(response);
 		} catch (FileNotFoundException e) {
 			log.error("File not found:" + fileName);
 			StringBuilder builder = new StringBuilder();

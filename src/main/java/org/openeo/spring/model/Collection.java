@@ -23,14 +23,21 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Collection   {
+
+  private static final String TYPE = "Collection"; // STAC >=v1.0.0-rc.1
+
   private EngineTypes engine;
-  
+
   @JsonProperty("stac_version")
   private String stacVersion;
 
   @JsonProperty("stac_extensions")
   @Valid
   private Set<String> stacExtensions = null;
+
+  @JsonProperty("type")
+  @Valid
+  private String type = TYPE; // fallback for STAC<v1.0.0-rc.1
 
   @JsonProperty("id")
   private String id;
@@ -53,7 +60,7 @@ public class Collection   {
 
   @JsonProperty("license")
   private String license;
-  
+
   @JsonProperty("sci:citation")
   private String citation;
 
@@ -99,8 +106,6 @@ public Collection stacVersion(String stacVersion) {
   */
   @ApiModelProperty(required = true, value = "The [version of the STAC specification](https://github.com/radiantearth/stac-spec/releases), which MAY not be equal to the [STAC API version](#section/STAC). Supports versions 0.9.x and 1.x.x.")
   @NotNull
-
-
   public String getStacVersion() {
     return stacVersion;
   }
@@ -127,15 +132,37 @@ public Collection stacVersion(String stacVersion) {
    * @return stacExtensions
   */
   @ApiModelProperty(value = "A list of implemented STAC extensions. The list contains URLs to the JSON Schema files it can be validated against. For official extensions, a \"shortcut\" can be used. This means you can specify the folder name of the extension in the STAC repository, for example `sar` for the SAR extension. If the versions of the extension and the collection diverge, you can specify the URL of the JSON schema file.")
-
   @Valid
-
   public Set<String> getStacExtensions() {
     return stacExtensions;
   }
 
   public void setStacExtensions(Set<String> stacExtensions) {
     this.stacExtensions = stacExtensions;
+  }
+
+
+  public Collection type(String type) {
+    this.type = type;
+    return this;
+  }
+
+  /**
+   * The type of the collection, which MUST be equal to "Collection".
+   * @return type
+  */
+  @ApiModelProperty(
+		  value = "The type of a collection shall be equal to \"Collection\".",
+		  required = true,
+		  allowableValues = TYPE) // force the only accepted value for this field
+  //@NotNull
+  //@Pattern(regexp="^" + TYPE + "$") // force the only accepted value for this field
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+	    this.type = type;
   }
 
   public Collection id(String id) {
@@ -149,8 +176,7 @@ public Collection stacVersion(String stacVersion) {
   */
   @ApiModelProperty(example = "Sentinel-2A", required = true, value = "A unique identifier for the collection, which MUST match the specified pattern.")
   @NotNull
-
-@Pattern(regexp="^[\\w\\-\\.~/]+$") 
+  @Pattern(regexp="^[\\w\\-\\.~/]+$")
   public String getId() {
     return id;
   }
@@ -288,7 +314,7 @@ public Collection stacVersion(String stacVersion) {
   public void setLicense(String license) {
     this.license = license;
   }
-  
+
   public Collection citation(String citation) {
 	  this.citation = citation;
 	  return this;
@@ -507,7 +533,7 @@ public Collection stacVersion(String stacVersion) {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class Collection {\n");
-    
+
     sb.append("    stacVersion: ").append(toIndentedString(stacVersion)).append("\n");
     sb.append("    stacExtensions: ").append(toIndentedString(stacExtensions)).append("\n");
     sb.append("    id: ").append(toIndentedString(id)).append("\n");

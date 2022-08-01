@@ -14,9 +14,16 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.Principal;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.validation.Valid;
 
@@ -26,6 +33,7 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.keycloak.representations.AccessToken;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.Processes;
@@ -89,6 +97,9 @@ public class ResultApiController implements ResultApi {
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
 
+	@Value("${org.openeo.tmp.dir}")
+	private String tmpDir;
+	
 	@Value("${org.openeo.wcps.collections.list}")
 	Resource collectionsFileWCPS;
 	@Value("${org.openeo.odc.collections.list}")
@@ -117,8 +128,40 @@ public class ResultApiController implements ResultApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/result", produces = { "*" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
-	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job) {
+	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job,Principal principal) {
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
+				
+		AccessToken token = null;
+		if(principal != null) {
+			token = TokenUtil.getAccessToken(principal);
+		}
+		
+		Set<String> roles = new HashSet<>();
+		Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
+		for (Map.Entry<String, AccessToken.Access> e : resourceAccess.entrySet()) {
+			if (e.getValue().getRoles() != null){
+				for(String r: e.getValue().getRoles()) {
+					roles.add(r);					
+				}			
+			}		
+		}
+		
+
+		boolean isEuracUser = roles.contains("eurac");
+	
+		Iterator<String> keys = processGraphJSON.keys();
+		boolean isRunProcessAllow= true;
+		while(keys.hasNext()) {
+			String key = keys.next();
+			JSONObject processNode = (JSONObject) processGraphJSON.get(key);
+			String process_id = processNode.get("process_id").toString();
+			if (process_id.equals("run_udf") && !isEuracUser) {
+				isRunProcessAllow =false;				    
+			}
+		}
+		
+		if (isRunProcessAllow) {
+		
 		EngineTypes resultEngine = null;
 		try {
 			resultEngine = checkGraphValidityAndEngine(processGraphJSON);
@@ -156,15 +199,22 @@ public class ResultApiController implements ResultApi {
 					os.write(requestBody, 0, requestBody.length);
 				}
 				InputStream is = conn.getInputStream();
-			    String mime = conn.getContentType();
-				//String mime = URLConnection.guessContentTypeFromStream(is);
-				log.debug("Mime type on ODC response guessed to be: " + mime);
+
 				byte[] response = IOUtils.toByteArray(is);
-				log.info("Job successfully executed: " + job.toString());
+				log.debug("Job successfully executed: " + job.toString());
+				String responseString = new String(response);				
+				JSONObject responseJson = new JSONObject(responseString.toString());
+				String outputFilePath = tmpDir + responseJson.getString("output");
+				log.debug(outputFilePath);
+			    File outputFile = new File(outputFilePath);
+			    String mime = URLConnection.guessContentTypeFromName(outputFile.getName());
+			    
+			    byte[] outputFileBytes = Files.readAllBytes(Paths.get(outputFilePath));
+			    
 				if (mime == null) {
-					return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/octet-stream")).body(response);
+					return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/octet-stream")).body(outputFileBytes);
 				}
-				return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(response);
+				return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(outputFileBytes);
 			} catch (Exception e) {
 				StringBuilder importProcessLogger = new StringBuilder();
 				BufferedReader importProcessLogErrorReader = new BufferedReader(
@@ -221,6 +271,15 @@ public class ResultApiController implements ResultApi {
 		error.setMessage("The submitted job " + job.toString() + " was not executed!");
 		log.error(error.getMessage());
 		return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		//
+		else {
+			Error error = new Error();
+			error.setCode("401");
+			error.setMessage("You are not authorized to execute this process graph containing Run_UDF" );
+			log.error("You are not authorized to execute this process graph containing Run_UDF" );
+			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED); 
+		}
 
 	}
 	
@@ -229,6 +288,7 @@ public class ResultApiController implements ResultApi {
 		String collectionID = new String();
 	
 		List<JSONObject> loadCollectionNodes = jobScheduler.getProcessNode("load_collection",processGraphJSON);
+		List<JSONObject> loadResultNodes = jobScheduler.getProcessNode("load_result",processGraphJSON);
 		
 		boolean containsSameEngineCollections = false;
 		EngineTypes selectedEngineType = null;
@@ -261,13 +321,18 @@ public class ResultApiController implements ResultApi {
 					break; // We don't need to check anything else, we found that the required collections are in the current engine/back-end
 				}
 			}
-		checkProcessesAvailability(processGraphJSON,selectedEngineType);
+			if(containsSameEngineCollections){
+				checkProcessesAvailability(processGraphJSON,selectedEngineType);
+			}
+			else {
+				throw new Exception("The submitted job contains collections from two different engines, not supported!");
+			}
+		}
+		else if(!loadResultNodes.isEmpty()){
+			selectedEngineType = EngineTypes.ODC_DASK;
 		}
 		else {
-			throw new Exception("The submitted job contains no load_collection process!");
-		}
-		if(!containsSameEngineCollections){
-			throw new Exception("The submitted job contains collections from two different engines, not supported!");
+			throw new Exception("The submitted job contains no load_collection nor load_result process!");
 		}
 		return selectedEngineType;
 	}
@@ -319,7 +384,6 @@ public class ResultApiController implements ResultApi {
 			}
 		return true;
 	}
-	
 	
 	private void addStackTraceAndErrorToLog(Exception e) {
 		log.error(e.getMessage());

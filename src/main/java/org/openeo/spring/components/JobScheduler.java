@@ -56,6 +56,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -63,6 +65,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
+@EnableAsync(proxyTargetClass=true)
 public class JobScheduler implements JobEventListener, UDFEventListener {
 
 	Logger log = LogManager.getLogger(JobScheduler.class);
@@ -122,6 +125,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	}
 	
 	@Override
+	@Async
 	public void jobQueued(JobEvent jobEvent) {
 		Job job = null;
 		try {
@@ -729,7 +733,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				dataFileName = "result.nc";
 				}
 			else if(dataFormat.equalsIgnoreCase("gtiff") || dataFormat.equalsIgnoreCase("geotiff")) {
-				dataFileName = "result.tif";
+				dataFileName = "result.tiff";
 				}
 			else if(dataFormat.equalsIgnoreCase("png")){
 				dataFileName = "result.png";
@@ -744,19 +748,39 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				try (OutputStream os = conn.getOutputStream()) {
 					byte[] requestBody = process.toString().getBytes("utf-8");
 					os.write(requestBody, 0, requestBody.length);
+				} catch (IOException e) {
+					job.setStatus(JobStates.ERROR);
+					jobDAO.update(job);
+					addStackTraceAndErrorToLog(e);
+					return;
 				}
-				InputStream is = conn.getInputStream();
+				InputStream is = null;
+				try{
+					is = conn.getInputStream();
+					} catch (IOException e) {
+						job.setStatus(JobStates.ERROR);
+						jobDAO.update(job);
+						addStackTraceAndErrorToLog(e);
+						return;
+					}
 				dataMimeType = conn.getContentType();
 				byte[] response = IOUtils.toByteArray(is);
-				FileOutputStream fileOutputStream = new FileOutputStream(jobResultPath + dataFileName);
+				FileOutputStream fileOutputStream = new FileOutputStream(jobResultPath + "result_path.json");
 				fileOutputStream.write(response, 0, response.length); 
 				log.debug("File saved correctly");
 				fileOutputStream.close();
+				boolean outputFileExists = new File(jobResultPath + dataFileName).isFile();
+				if (!outputFileExists){
+					String errorMessage = new String("Output file not found! Job id" + job.getId().toString());
+					log.error(errorMessage);
+					job.setStatus(JobStates.ERROR);
+					jobDAO.update(job);
+					return;
+				}
 			} catch (IOException e) {
-				log.error("An error occured when downloading the file of the current job: " + e.getMessage());
 				job.setStatus(JobStates.ERROR);
 				jobDAO.update(job);
-				return;
+				addStackTraceAndErrorToLog(e);
 			}
 					
 			batchJobResult.setId(job.getId());

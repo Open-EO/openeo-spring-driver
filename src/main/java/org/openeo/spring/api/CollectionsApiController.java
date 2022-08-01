@@ -1302,6 +1302,7 @@ public class CollectionsApiController implements CollectionsApi {
 			dimensionYspatial.setType(TypeEnum.SPATIAL);
 			DimensionTemporal dimensionTemporal = new DimensionTemporal();
 			dimensionTemporal.setType(TypeEnum.TEMPORAL);
+	
 			String srsDescription = boundingBoxElement.getAttributeValue("srsName");
 			Integer rows = 0;
 			Integer columns = 0;
@@ -1318,8 +1319,12 @@ public class CollectionsApiController implements CollectionsApi {
 				}
 
 				CollectionSummaryStats epsg = new CollectionSummaryStats();
-				epsg.setMin(Double.parseDouble(srsDescription));
-				epsg.setMax(Double.parseDouble(srsDescription));
+				try {
+					epsg.setMin(Double.parseDouble(srsDescription));
+					epsg.setMax(Double.parseDouble(srsDescription));
+				} catch (NumberFormatException e) {
+					continue;
+				}
 
 				SpatialReference src = new SpatialReference();
 				src.ImportFromEPSG(Integer.parseInt(srsDescription));
