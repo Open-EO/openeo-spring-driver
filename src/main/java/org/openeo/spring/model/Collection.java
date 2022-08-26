@@ -156,7 +156,7 @@ public Collection stacVersion(String stacVersion) {
 		  required = true,
 		  allowableValues = TYPE) // force the only accepted value for this field
   //@NotNull
-  //@Pattern(regexp="^" + TYPE + "$") // force the only accepted value for this field
+  //@Pattern(regexp="^" + TYPE + "$")
   public String getType() {
     return type;
   }

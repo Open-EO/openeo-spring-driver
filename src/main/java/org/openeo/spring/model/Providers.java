@@ -31,8 +31,8 @@ public class Providers   {
   @JsonProperty("roles")
   private List<String> roles;
 
-  @JsonProperty("title")
-  private String title;
+  @JsonProperty("description")
+  private String description;
 
   public Providers name(String name) {
     this.name = name;
@@ -94,8 +94,8 @@ public class Providers   {
     this.roles = roles;
   }
 
-  public Providers title(String title) {
-    this.title = title;
+  public Providers description(String description) {
+    this.description = description;
     return this;
   }
 
@@ -106,12 +106,12 @@ public class Providers   {
   @ApiModelProperty(example = "openEO", value = "Used as a human-readable label for a link.")
 
 
-  public String getTitle() {
-    return title;
+  public String getDescription() {
+    return description;
   }
 
-  public void setTitle(String title) {
-    this.title = title;
+  public void setDescription(String description) {
+    this.description = description;
   }
 
 
@@ -127,12 +127,12 @@ public class Providers   {
     return Objects.equals(this.name, providers.name) &&
         Objects.equals(this.url, providers.url) &&
         Objects.equals(this.roles, providers.roles) &&
-        Objects.equals(this.title, providers.title);
+        Objects.equals(this.description, providers.description);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, url, roles, title);
+    return Objects.hash(name, url, roles, description);
   }
 
   @Override
@@ -143,7 +143,7 @@ public class Providers   {
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    url: ").append(toIndentedString(url)).append("\n");
     sb.append("    roles: ").append(toIndentedString(roles)).append("\n");
-    sb.append("    title: ").append(toIndentedString(title)).append("\n");
+    sb.append("    description: ").append(toIndentedString(description)).append("\n");
     sb.append("}");
     return sb.toString();
   }
