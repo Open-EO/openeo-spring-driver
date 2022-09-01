@@ -47,6 +47,7 @@ org.openeo.oidc.providers.list=classpath:oidc_providers.json
 org.openeo.wcps.endpoint=http://my_wcps_server:8080
 org.openeo.wcps.provider.name=My Company
 org.openeo.wcps.provider.url=http://www.my-company.url
+org.openeo.wcps.provider.type=host
 org.openeo.wcps.processes.list=classpath:processes_wcps.json
 org.openeo.wcps.collections.list=collections_wcps.json
 
@@ -55,6 +56,7 @@ org.openeo.odc.deleteResultEndpoint=http://my_open_data_cube_endpoint_for_stoppi
 org.openeo.odc.collectionsEndpoint=http://my_open_data_cube_endpoint/collections/
 org.openeo.odc.provider.name=open data cube provider name
 org.openeo.odc.provider.url=http://www.open_data_cube_provider.url
+org.openeo.odc.provider.type=host
 org.openeo.odc.processes.list=classpath:processes_odc.json
 org.openeo.odc.collections.list=collections_odc.json
 
