@@ -1,7 +1,6 @@
 package org.openeo.spring.api;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,27 +14,27 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.Principal;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-//import org.openapitools.jackson.nullable.JsonNullable;
-import org.apache.http.HttpConnection;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gdal.osr.CoordinateTransformation;
@@ -45,13 +44,11 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
-import org.json.JSONObject;
-import org.keycloak.adapters.springsecurity.client.KeycloakRestTemplate;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.openeo.spring.components.CollectionMap;
 import org.openeo.spring.components.CollectionsMap;
-import org.openeo.spring.model.AdditionalDimension;
 import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.BandSummary;
 import org.openeo.spring.model.Collection;
@@ -64,6 +61,7 @@ import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.Dimension;
 import org.openeo.spring.model.Dimension.TypeEnum;
 import org.openeo.spring.model.DimensionBands;
+import org.openeo.spring.model.DimensionOther;
 import org.openeo.spring.model.DimensionSpatial;
 import org.openeo.spring.model.DimensionSpatial.AxisEnum;
 import org.openeo.spring.model.DimensionTemporal;
@@ -83,49 +81,84 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @RestController
 @RequestMapping("${openapi.openEO.base-path:}")
 public class CollectionsApiController implements CollectionsApi {
+
+	/** STAC spec. version used. */
+	// FIXME this should be dictated by the model implemented
+	public static final String STAC_VERSION = DefaultApiController.DEFAULT_STAC_VERSION;
+
+	/**
+	 * The {@code datacube} STAC extension, used to allow the
+	 * {@code cube:dimensions} element.
+	 *
+	 * @see <a href=
+	 *      "https://stac-extensions.github.io/datacube/v1.0.0/schema.json">datacube
+	 *      extension</a>
+	 */
+	public static final String DATACUBE_STAC_EXT = "datacube";
+
+	/** The version assigned to a collection when not stated otherwise in the input. */
+	public static final String DEFAULT_COLL_VERSION = "v1";
+
+	/** Characters set assumed in remote catalogs. */
+	public static final Charset UTF8 = Charset.forName("UTF-8");
+
+	/** Home directory used as root for cached catalogs. */
+	private static final String USER_DIR = System.getProperty("user.dir");
+
 	private final NativeWebRequest request;
+
 	@Value("${org.openeo.wcps.endpoint}")
 	private String wcpsEndpoint;
-    @Value("${org.openeo.wcps.provider.name}")
-    private String wcpsProviderName;
-    @Value("${org.openeo.wcps.provider.type}")
-    private String wcpsProviderType;
-    @Value("${org.openeo.wcps.provider.url}")
-    private String wcpsProviderUrl;
-    @Value("${org.openeo.odc.collectionsEndpoint}")
-    private String odcCollEndpoint;
-    @Value("${org.openeo.odc.provider.name}")
-    private String odcProviderName;
-    @Value("${org.openeo.odc.provider.type}")
-    private String odcProviderType;
-    @Value("${org.openeo.odc.provider.url}")
-    private String odcProviderUrl;
-    
+
+	@Value("${org.openeo.wcps.provider.name}")
+	private String wcpsProviderName;
+
+	@Value("${org.openeo.wcps.provider.type}")
+	private String wcpsProviderType;
+
+	@Value("${org.openeo.wcps.provider.url}")
+	private String wcpsProviderUrl;
+
+	@Value("${org.openeo.odc.collectionsEndpoint}")
+	private String odcCollEndpoint;
+
+	@Value("${org.openeo.odc.provider.name}")
+	private String odcProviderName;
+
+	@Value("${org.openeo.odc.provider.type}")
+	private String odcProviderType;
+
+	@Value("${org.openeo.odc.provider.url}")
+	private String odcProviderUrl;
+
 	@Value("${org.openeo.querycollectionsonstartup}")
 	private boolean queryCollectionsOnStartup;
 
 	@Value("${org.openeo.wcps.collections.list}")
 	Resource collectionsFileWCPS;
+
 	@Value("${org.openeo.odc.collections.list}")
 	Resource collectionsFileODC;
 
 	@Autowired
 	private CollectionsMap collectionsMap;
-	
+
 	@Autowired
 	private CollectionMap collectionMap;
 
@@ -138,6 +171,7 @@ public class CollectionsApiController implements CollectionsApi {
 
 	@PostConstruct
 	public void init() {
+		// TODO parallelize
 		if (queryCollectionsOnStartup) {
 			collectionsMap.put(EngineTypes.WCPS, loadWcpsCollections());
 			collectionsMap.put(EngineTypes.ODC_DASK, loadOdcCollections());
@@ -145,13 +179,14 @@ public class CollectionsApiController implements CollectionsApi {
 			collectionsMap.put(EngineTypes.WCPS, loadCollectionsFromFile(collectionsFileWCPS));
 			collectionsMap.put(EngineTypes.ODC_DASK, loadCollectionsFromFile(collectionsFileODC));
 		}
+
 		log.info(collectionsMap.keySet());
+
 		for (EngineTypes type : collectionsMap.keySet()) {
 			for (Collection currentCollection : collectionsMap.get(type).getCollections()) {
 				collectionMap.put(currentCollection.getId(), currentCollection);
 			}
 		}
-		
 	}
 
 	@Override
@@ -231,9 +266,9 @@ public class CollectionsApiController implements CollectionsApi {
 		}
 
 		return new ResponseEntity<Collections>(collectionsList, HttpStatus.OK);
-
 	}
 
+	/** Reads all chars from an input stream onto a string. */
 	private static String readAll(Reader rd) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		int cp;
@@ -243,19 +278,46 @@ public class CollectionsApiController implements CollectionsApi {
 		return sb.toString();
 	}
 
-	private JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
-		log.debug("Trying to read JSON from the following URL : ");
-		log.debug(url);
-		InputStream is = new URL(url).openStream();
-		try {
-			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+	/**
+	 * Parses the content of a document to JSON.
+	 *
+	 * @param url     the URL of the JSON document
+	 * @param charset the characters encoding of the remote document
+	 * @return the global {@code JSONObject} object representing the unmarshalled document;
+	 *         {@code null} if the document cannot not be fetch or is invalid.
+	 */
+	private JSONObject readJsonFromUrl(String url, Charset charset) {
+
+		JSONObject json = null;
+
+		log.debug("Trying to read JSON from '{}'", url);
+
+		try (InputStream is = new URL(url).openStream()) {
+
+			BufferedReader rd = new BufferedReader(
+					new InputStreamReader(is, charset)
+					);
 			String jsonText = readAll(rd);
-			log.debug(jsonText);
-			JSONObject json = new JSONObject(jsonText);
-			return json;
-		} finally {
-			is.close();
+//			log.debug(jsonText);
+			json = new JSONObject(jsonText);
+
+		} catch (IOException ioe) {
+			log.error("Error while parsing JSON from {}", url, ioe);
+		} catch (JSONException je) {
+			log.error("Error while parsing JSON from {}", url, je);
 		}
+
+		return json;
+	}
+
+	/**
+	 * Override method with default UTF-8 character encoding.
+	 *
+	 * @param url     the URL of the JSON document
+	 * @see #readJsonFromUrl(String, Charset)
+	 */
+	private JSONObject readJsonFromUrl(String url) {
+		return readJsonFromUrl(url, UTF8);
 	}
 
 	/**
@@ -315,30 +377,35 @@ public class CollectionsApiController implements CollectionsApi {
 
 		URL url;
 		Collection currentCollection = collectionMap.get(collectionId);
-		if(currentCollection != null) {
+		if (currentCollection != null) {
 			return new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
 		}
 		return new ResponseEntity<Collection>(HttpStatus.NOT_FOUND);
 
 	}
 
+	/**
+	 * Loads collections from the configured OGC-WC(P)S endpoint.
+	 *
+	 * @see CollectionsApiController#wcpsEndpoint
+	 */
 	private Collections loadWcpsCollections() {
+
 		Collections collectionsList = new Collections();
 		InputStream wcpsInputStream;
 		URL urlWCPS;
 		HttpURLConnection conn;
+
 		try {
 			urlWCPS = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCapabilities");
 			conn = (HttpURLConnection) urlWCPS.openConnection();
 			conn.setRequestMethod("GET");
 			wcpsInputStream = conn.getInputStream();
-		} catch (MalformedURLException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
+		} catch (MalformedURLException mue) {
+			log.error("Malformed rasdaman endpoint.", mue);
 			return collectionsList;
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (IOException ioe) {
+			log.error("Could not fetch rasdaman collections.", ioe);
 			return collectionsList;
 		}
 
@@ -346,750 +413,798 @@ public class CollectionsApiController implements CollectionsApi {
 		Document capabilititesDoc;
 		try {
 			capabilititesDoc = builder.build(wcpsInputStream);
-		} catch (JDOMException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
+		} catch (JDOMException e) {
+			log.error("Invalid rasdaman WCS capabilities document.", e);
 			return collectionsList;
-		} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
+		} catch (IOException e) {
+			log.error("Error while parsing rasdaman WCS capabilities document.", e);
 			return collectionsList;
 		}
 
 		Element rootNodeCollectionsList = capabilititesDoc.getRootElement();
 		Namespace defaultNSCollectionsList = rootNodeCollectionsList.getNamespace();
-//			log.debug("root node info: " + rootNode.getName());
+		log.trace("root node info: " + rootNodeCollectionsList.getName());
 		List<Element> coverageList = rootNodeCollectionsList.getChildren("Contents", defaultNSCollectionsList).get(0)
 				.getChildren("CoverageSummary", defaultNSCollectionsList);
 
-		for (int collection = 0; collection < coverageList.size(); collection++) {
+		/*
+		 * go through each WCS coverage and convert it to STAC collection:
+		 */
+		// TODO factor out to helper file all sub-tasks
+		COLLECTIONS:
+        for (int collection = 0; collection < coverageList.size(); collection++) {
+
 			Collection currentCollection = new Collection();
 			currentCollection.setEngine(EngineTypes.WCPS);
+
 			Element coverage = coverageList.get(collection);
-//				log.debug("root node info: " + coverage.getName() + ":" + coverage.getChildText("CoverageId", defaultNS));		
 			String coverageID = coverage.getChildText("CoverageId", defaultNSCollectionsList);
+
+			log.trace("coverage info: {}:{}", coverage.getName(), coverageID);
+
 			currentCollection.setId(coverageID);
-			currentCollection.setStacVersion("0.9.0");
+			currentCollection.setStacVersion(STAC_VERSION);
 
 			URL urlCollections;
 			HttpURLConnection connCollections;
 			InputStream currentCollectionInputStream;
 			try {
-				urlCollections = new URL(
-						wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + coverageID);
+				urlCollections = new URL(wcpsEndpoint
+						+ "?SERVICE=WCS"
+						+ "&VERSION=2.0.1"
+						+ "&REQUEST=DescribeCoverage"
+						+ "&COVERAGEID=" + coverageID);
 				connCollections = (HttpURLConnection) urlCollections.openConnection();
 				connCollections.setRequestMethod("GET");
 				currentCollectionInputStream = connCollections.getInputStream();
 
-			} catch (MalformedURLException e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
-				continue;
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				continue;
+			} catch (MalformedURLException mue) {
+				log.error("Malformed rasdaman coverage URL.", mue);
+				return collectionsList;
+			} catch (IOException ioe) {
+				log.error("Could not fetch metadata of rasdaman coverage '{}'.", coverageID, ioe);
+				return collectionsList;
 			}
 
 			SAXBuilder builderInt = new SAXBuilder();
 			Document capabilititesDocInt;
 			try {
 				capabilititesDocInt = builderInt.build(currentCollectionInputStream);
-			} catch (JDOMException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-				continue;
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-				continue;
+			} catch (JDOMException e) {
+				log.error("Invalid rasdaman '{}' coverage document.", coverageID, e);
+				return collectionsList;
+			} catch (IOException e) {
+				log.error("Error while parsing rasdaman '{}' coverage document.", coverageID, e);
+				return collectionsList;
 			}
+
 			List<Namespace> namespaces = capabilititesDocInt.getNamespacesIntroduced();
 			Element rootNode = capabilititesDocInt.getRootElement();
 			Namespace defaultNS = rootNode.getNamespace();
 			Namespace gmlNS = null;
 			Namespace sweNS = null;
-			Namespace gmlCovNS = null;
-			Namespace gmlrgridNS = null;
+//			Namespace gmlCovNS = null;
+//			Namespace gmlrgridNS = null;
+
 			for (int n = 0; n < namespaces.size(); n++) {
 				Namespace current = namespaces.get(n);
 				if (current.getPrefix().equals("swe")) {
 					sweNS = current;
-				}
-				if (current.getPrefix().equals("gmlcov")) {
-					gmlCovNS = current;
-				}
-				if (current.getPrefix().equals("gml")) {
+				} else if (current.getPrefix().equals("gml")) {
 					gmlNS = current;
-				}
-				if (current.getPrefix().equals("gmlrgrid")) {
-					gmlrgridNS = current;
+//				} else if (current.getPrefix().equals("gmlcov")) {
+//					gmlCovNS = current;
+//				} else if (current.getPrefix().equals("gmlrgrid")) {
+//					gmlrgridNS = current;
 				}
 			}
-			log.debug("root node info: " + rootNode.getName());
 
+			log.debug("root node info: {}", rootNode.getName());
+
+			// bbox
 			Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
 			Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
 			Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
+
+			// bbox corners
+			String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
+			String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");
+
+			// (C)CRS axes labels
+			String envelopeLabels = boundingBoxElement.getAttribute("axisLabels").getValue();
+			List<String> axisLabels = Arrays.asList(envelopeLabels.split(" "));
+
+			// handy lists to keep track of axes related to spatial dimensions:
+			List<String> spatialAxisLabels = new ArrayList<>();
+			Map<String, CSAxisOrientation> spatialAxis2Orientation= new LinkedHashMap<>();
+			List<DimensionSpatial> spatialDims = new ArrayList<>();
+			boolean hasSpatialCrs = false;
+
+			// time extent
+			List<String> timeAxisLabels = new ArrayList<>();
+			List<DimensionTemporal> timeDims = new ArrayList<>();
+			boolean hasTimeCrs = false;
+
+			// overall extent
+			CollectionExtent collectionExtent = new CollectionExtent();
+
+			// extra metadata
 			Element metadataElement = null;
 			try {
-				metadataElement = rootNode.getChild("CoverageDescription", defaultNS).getChild("metadata", gmlNS)
-						.getChild("Extension", gmlNS).getChild("covMetadata", gmlNS);
+				metadataElement = rootNode
+						.getChild("CoverageDescription", defaultNS)
+						.getChild("metadata", gmlNS)
+						.getChild("Extension", gmlNS)
+						.getChild("covMetadata", gmlNS);
 			} catch (Exception e) {
-				log.warn("Error in parsing bands :" + e.getMessage());
+				log.warn("Error in parsing bands.", e);
+				// continue COLLECTION; ? skip or ignore?
 			}
 
-//		metadataObj = new JSONObject(metadataString1);
-//		String metadataString2 = metadataString1.replaceAll("\\n","");
-//		String metadataString3 = metadataString2.replaceAll("\"\"","\"");
-//		metadataObj = new JSONObject(metadataString3);
-//		JSONArray slices = metadataObj.getJSONArray("slices");
-			Map<String, Dimension> cubeColonDimensions = new HashMap<String, Dimension>();
+			/*
+			 * inner GRID
+			 */
+			String gridType = null; // RectifiedGrid? ReferenceableGrid? etc.
+			try {
+				gridType = rootNode
+						.getChild("CoverageDescription", defaultNS)
+						.getChild("domainSet", gmlNS)
+						.getChildren().get(0)
+						.getName();
+				log.debug("Grid type found: " + gridType);
+			} catch (Exception e) {
+				log.warn("Error while fetching grid type: {}", e.getMessage());
+				continue COLLECTIONS;
+			}
+
+			String[] gridDims = null;
+			try {
+				gridDims = rootNode
+						.getChild("CoverageDescription", defaultNS)
+						.getChild("domainSet", gmlNS)
+						.getChild(gridType, gmlNS)
+						.getChild("limits", gmlNS)
+						.getChild("GridEnvelope", gmlNS)
+						.getChildText("high", gmlNS)
+						.split(" ");
+			} catch (Exception e) {
+				log.warn("Error in parsing grid dimensions: {}", e.getMessage());
+				continue COLLECTIONS;
+			}
+
+			if (axisLabels.size() != gridDims.length) {
+				log.warn("{}: unsupported coverage type (grid and CRS dimensions do not match).", coverageID);
+				continue COLLECTIONS;
+			}
+
+			/*
+			 * Domain Set: DIMENSIONS
+			 */
+			Map<String, Dimension> cubeDimensions = new HashMap<>();
+
+			// CRS of the whole coverage (it might be compound space/time/other)
+			String crsUri = boundingBoxElement.getAttributeValue("srsName");
+
+			// Extract the single CRSs
+			List<String> singleCrsUris = new ArrayList<>();
+			if (crsUri.contains("/crs-compound")) {
+				String[] splitted = crsUri.split("(&)?\\d=");
+				if (splitted.length == 0) {
+					log.error("Unrecognized compound CRS uri: {}", crsUri);
+					continue COLLECTIONS;
+				} else if (splitted.length == 1) {
+					log.warn("Compound CRS contains only one CRS: {}", crsUri);
+					singleCrsUris.add(crsUri);
+				} else {
+					singleCrsUris.addAll(Arrays.stream(splitted).skip(1).toList());
+					log.debug("Extracted {} single CRSs from: {}", (splitted.length - 1), crsUri);
+				}
+			} else {
+				singleCrsUris.add(crsUri);
+				log.debug("Coverage has single CRS: {}", crsUri);
+			}
+
+			CollectionSummaryStats epsg = new CollectionSummaryStats();
+			CoordinateTransformation toWgs84 = null;
+			Map<Integer, JsonNode> epsgCode2Json = new LinkedHashMap<>();
+			Map<String, Integer> axisLabel2EpsgCode = new LinkedHashMap<>();
+
+			// find the spatial EPSG and set the transform to WGS84:
+			for (String uri : singleCrsUris) {
+				if (uri.contains("/crs/EPSG")) {
+					// check there are no multiple spatial CRSs (unsupported case):
+					if (hasSpatialCrs) {
+						log.error("Multiple spatial CRSs found: {}", crsUri);
+						continue COLLECTIONS;
+					}
+
+					int epsgCode;
+					try {
+						String epsgCodeStr = uri.substring(uri.lastIndexOf("/")+1);
+						epsgCode = Integer.parseInt(epsgCodeStr);
+						epsg.setMin(epsgCode);
+						epsg.setMax(epsgCode);
+						log.debug("Spatial CRS found: EPSG:" + epsgCode);
+
+					} catch (NumberFormatException e) {
+						log.error("Unrecognized EPSG code in : " + uri);
+						continue COLLECTIONS;
+					}
+
+					// TODO see WGS84 static end of class
+					final SpatialReference WGS84 = new SpatialReference();
+					WGS84.ImportFromEPSG(EPSG_WGS84);
+
+					SpatialReference src = new SpatialReference();
+					src.ImportFromEPSG(epsgCode);
+					toWgs84 = new CoordinateTransformation(src, WGS84);
+
+					// load JSONs to reach axes abbreviations (they match WCS coverage axes labels)
+					JsonNode srcJson = epsgCode2Json.get(epsgCode);
+
+					if (null == srcJson) {
+						try {
+							// srcGml = src.ExportToXML(/*GML_DIALECT (ignored)*/);
+							String[] strOut = { new String() };
+							src.ExportToPROJJSON(strOut);
+
+							ObjectMapper mapper = new ObjectMapper();
+							srcJson = mapper.readTree(strOut[0]);
+							epsgCode2Json.put(epsgCode, srcJson);
+
+						} catch (JsonProcessingException e) {
+							log.error("Irregular JSON format for EPSG:{}", epsgCode, e);
+							continue COLLECTIONS;
+						}
+					}
+
+					int N = src.GetAxesCount();
+
+					for (int i = 0; i < N; ++i) {
+						String label = null;
+						String csType = null;
+
+						for (CsType cst : EnumSet.of(CsType.PROJCS, CsType.GEOGCS)) {
+							label = src.GetAxisName(cst.name(), i);
+							csType = cst.name();
+							if (null != label) {
+								break;
+							}
+						}
+
+						if (null == label) {
+							log.error("Unknown CRS type: {}", src.GetName());
+//							log.error("Unknown CRS type: EPSG:{}", epsgCode);// FIXME: install GDAL 3.x
+							continue COLLECTIONS;
+						}
+
+						int aoindex = src.GetAxisOrientation(csType, i);
+						CSAxisOrientation ao = CSAxisOrientation.of(aoindex);
+
+						// get axis abbreviation
+						String abbrev = CollectionsApiController.getAxisAbbrev(srcJson, i);
+						if (null == abbrev) {
+							log.error("Unsupported JSON structure for EPSG:{}:\n{}", epsgCode, srcJson);
+							continue COLLECTIONS;
+						}
+
+						spatialAxisLabels.add(abbrev);
+						spatialAxis2Orientation.put(abbrev, ao);
+						axisLabel2EpsgCode.put(abbrev, epsgCode);
+
+						log.debug("spatial axis found: {} (\"{}\", {})", label, abbrev, ao);
+
+						// guard
+						if (!axisLabels.contains(abbrev)) {
+							log.error("Spatial axis '{}' not found in coverage definition.", label);
+							// skip or lenient?
+						}
+					}
+
+					hasSpatialCrs = true;
+				}
+			}
+
+			// go through each dimension, and identify their type
+
+			for (String label : axisLabels) {
+				log.trace("{}:{} axis", coverageID, label);
+				int index = axisLabels.indexOf(label);
+
+				/*
+				 * spatial axis
+				 */
+				if (spatialAxisLabels.contains(label)) {
+					// guard
+					if (!hasSpatialCrs) {
+						log.error("Internal coverage parsing error: '{}' deemed as spatial.", label);
+						continue COLLECTIONS;
+					}
+
+					DimensionSpatial dim = new DimensionSpatial();
+					dim.setType(TypeEnum.SPATIAL); // FIXME this should be implicit
+
+//					int gridDim = Integer.parseInt(gridDims[index]) + 1;
+					int epsgCode = axisLabel2EpsgCode.get(label);
+					dim.setReferenceSystem(epsgCode);
+
+					// axis type: easting/northing/z ?
+					CSAxisOrientation csOrientation = spatialAxis2Orientation.get(label);
+					AxisEnum orientation = CollectionsApiController.getAxisType(csOrientation);
+					if (null == orientation) {
+						log.error("No orientation inferred from axis '{}'.", label);
+						continue COLLECTIONS;
+					}
+					log.trace(" axis '{}' -> {}", label, orientation);
+					dim.setAxis(orientation);
+
+					// set native extent
+					List<BigDecimal> extent = Arrays.asList(
+							BigDecimal.valueOf(Double.parseDouble(minValues[index])),
+							BigDecimal.valueOf(Double.parseDouble(maxValues[index])));
+					dim.setExtent(extent);
+
+					cubeDimensions.put(label, dim);
+					spatialDims.add(dim);
+				}
+
+				/*
+				 * temporal axis
+				 */
+				// TODO import XML definition from SECORE and check:
+				//   i) UoM is temporal?
+				//   ii) type is TemporalCRS
+				else if (TEMPORAL_AXIS_LABELS.contains(label)) {
+					/*
+					 * NOTE: temporal axis can either be a quoted timestamp (eg.
+					 * "2022-12-03T09:00Z") or a time index whose meaning is encoded in the
+					 * correspondent CRS, and which we recognize because of its label. (!)
+					 */
+					String minT = minValues[index].replaceAll("\"", "");
+					String maxT = maxValues[index].replaceAll("\"", "");
+
+					try {
+						OffsetDateTime.parse(minT);
+						hasTimeCrs = true;
+						timeAxisLabels.add(label);
+					} catch (DateTimeParseException e) {
+						log.trace("Time axis is not expressed as timestamp: {}", minValues[index]); // nevermind
+					}
+
+					if (hasTimeCrs) { // "2022-12-03T09:00Z"
+						DimensionTemporal dim = new DimensionTemporal();
+						dim.setType(TypeEnum.TEMPORAL);
+						List<String> extent = Arrays.asList(minT, maxT);
+						dim.setExtent(extent);
+						cubeDimensions.put(label, dim);
+						timeDims.add(dim);
+					} else { // time-encoded numeric coordinate
+						DimensionOther dim = new DimensionOther();
+						dim.setType(TypeEnum.TEMPORAL);
+						List<BigDecimal> extent = Arrays.asList(
+								BigDecimal.valueOf(Double.parseDouble(minT)),
+								BigDecimal.valueOf(Double.parseDouble(maxT)));
+						dim.setExtent(extent);
+						cubeDimensions.put(label, dim);
+					}
+
+					/*
+					 * arbitrary non-spatial/non-temporal axis
+					 */
+				} else {
+					// check STAC API on this: types of axes
+					DimensionOther dim = new DimensionOther();
+					dim.setType(TypeEnum.OTHER);
+
+					// TODO shall an "other" dimension's extent be mandatorily numeric?
+					try {
+						List<BigDecimal> extent = Arrays.asList(
+								BigDecimal.valueOf(Double.parseDouble(minValues[index])),
+								BigDecimal.valueOf(Double.parseDouble(maxValues[index])));
+						dim.setExtent(extent);
+						cubeDimensions.put(label, dim);
+					} catch (NumberFormatException e) {
+						log.error("Unsupported extent for dimension '{}'.", label, e);
+						continue COLLECTIONS;
+					}
+				}
+			}
+
+			/*
+			 * Range Set: BANDS
+			 */
+			List<Element> bandsList = null;
+			List<Element> bandsListSwe = null;
+			boolean hasBandsMetadata = false;
+
+			try {
+				Element bandsMd = metadataElement.getChild("bands", gmlNS);
+				if (null != bandsMd) {
+					bandsList = bandsMd.getChildren();
+					hasBandsMetadata = true;
+				}
+			} catch (Exception e) {
+				log.warn("Error in parsing bands metadata.", e);
+				continue COLLECTIONS;
+			}
+
+			try {
+				bandsListSwe = rootNode
+						.getChild("CoverageDescription", defaultNS)
+						.getChild("rangeType", gmlNS)
+						.getChild("DataRecord", sweNS)
+						.getChildren("field", sweNS);
+			} catch (Exception e) {
+				log.error("Error in parsing bands definition.", e);
+				continue COLLECTIONS;
+			}
+
 			DimensionBands dimensionbands = new DimensionBands();
 			dimensionbands.setType(TypeEnum.BANDS);
-			DimensionSpatial dimensionXspatial = new DimensionSpatial();
-			dimensionXspatial.setType(TypeEnum.SPATIAL);
-			DimensionSpatial dimensionYspatial = new DimensionSpatial();
-			dimensionYspatial.setType(TypeEnum.SPATIAL);
-			DimensionTemporal dimensionTemporal = new DimensionTemporal();
-			dimensionTemporal.setType(TypeEnum.TEMPORAL);
-	
-			String srsDescription = boundingBoxElement.getAttributeValue("srsName");
-			Integer rows = 0;
-			Integer columns = 0;
-			if (srsDescription.contains("EPSG")) {
-				try {
-					srsDescription = srsDescription
-							.substring(srsDescription.indexOf("EPSG"), srsDescription.indexOf("&"))
-							.replace("/0/", ":");
-					srsDescription = srsDescription.replaceAll("EPSG:", "");
 
-				} catch (StringIndexOutOfBoundsException e) {
-					srsDescription = srsDescription.substring(srsDescription.indexOf("EPSG")).replace("/0/", ":");
-					srsDescription = srsDescription.replaceAll("EPSG:", "");
+			if (hasBandsMetadata) {
+				// richer bands description
+				for (Element band : bandsList) {
+
+					String bandId = band.getName();
+					dimensionbands.addValuesItem(bandId);
+
+//					String bandWave = null;
+//					try {
+//						bandWave = band.getChildText("wavelength");
+//					} catch (Exception e) {
+//						log.warn("Error in parsing band wave-length: {}", e.getMessage());
+//					}
+//
+//					String bandCommonName = null;
+//					try {
+//						bandCommonName = band.getChildText("common_name");
+//					} catch (Exception e) {
+//						log.warn("Error in parsing band common name: {}", e.getMessage());
+//					}
+//
+//					String bandGSD = null;
+//					try {
+//						bandGSD = band.getChildText("gsd");
+//					} catch (Exception e) {
+//						log.warn("Error in parsing band gsd: {}", e.getMessage());
+//					}
+//					CollectionSummaryStats gsd = new CollectionSummaryStats();
+//					CollectionSummaryStats[] eoGsd = { gsd };
+//					 // FIXME: why is this commented?
+//					 summaries.put("eo:bands", eoGsd);
+//					 currentCollection.setSummaries(summaries);
+//					 currentCollection.putSummariesItem("eo:gsd", eoGsd);
 				}
-
-				CollectionSummaryStats epsg = new CollectionSummaryStats();
-				try {
-					epsg.setMin(Double.parseDouble(srsDescription));
-					epsg.setMax(Double.parseDouble(srsDescription));
-				} catch (NumberFormatException e) {
-					continue;
+			} else {
+				// only band names available
+				for (Element band : bandsListSwe) {
+					String bandId = band.getAttributeValue("name");
+					dimensionbands.addValuesItem(bandId);
 				}
+			}
+			cubeDimensions.put("bands", dimensionbands);
+			currentCollection.setCubeColonDimensions(cubeDimensions);
 
-				SpatialReference src = new SpatialReference();
-				src.ImportFromEPSG(Integer.parseInt(srsDescription));
+			/*
+			 * Overall spatio-temporal extent
+			 *
+			 * (spatial bbox shall be WGS84:)
+			 *  https://github.com/radiantearth/stac-spec/blob/master/collection-spec/collection-spec.md#spatial-extent-object
+			 */
+			if (hasSpatialCrs) {
 
-				SpatialReference dst = new SpatialReference();
-				dst.ImportFromEPSG(4326);
+				final int ndims = spatialAxisLabels.size(); // either 2D or 3D
 
-				String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
-				String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");
+				List<Integer> indexes = spatialAxisLabels.stream()
+						.map(x -> axisLabels.indexOf(x))
+						.toList();
 
-				CoordinateTransformation tx = new CoordinateTransformation(src, dst);
+				double[] lowerCorner = indexes.stream()
+						.map(i -> Double.parseDouble(minValues[i]))
+						.mapToDouble(Double::doubleValue)
+						.toArray();
+				double[] upperCorner = indexes.stream()
+						.map(i -> Double.parseDouble(maxValues[i]))
+						.mapToDouble(Double::doubleValue)
+						.toArray();
 
-				String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
-				int xIndex = 0;
-				int yIndex = 0;
+				// TransformPoint requires 3D coords:
+				// https://gdal.org/java/org/gdal/osr/CoordinateTransformation.html
+				double[] llWgs84 = Arrays.copyOf(lowerCorner, 3);
+				double[] urWgs84 = Arrays.copyOf(upperCorner, 3);
 
-				List<Element> bandsList = null;
-				List<Element> bandsListSwe = null;
-				Boolean bandsMeta = false;
+				toWgs84.TransformPoint(llWgs84);
+				toWgs84.TransformPoint(urWgs84);
 
-				try {
-					bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
-					bandsMeta = true;
-				} catch (Exception e) {
-					// log.warn("Error in parsing bands :" + e.getMessage());
-				}
-				try {
-					bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS)
-							.getChild("DataRecord", sweNS).getChildren("field", sweNS);
-				} catch (Exception e) {
-					// log.warn("Error in parsing bands List :" + e.getMessage());
-				}
-				if (bandsMeta) {
-					try {
-						for (int c = 0; c < bandsList.size(); c++) {
-							String bandWave = null;
-							String bandCommonName = null;
-							String bandGSD = null;
-							Element band = bandsList.get(c);
-							String bandId = band.getName();
-							dimensionbands.addValuesItem(bandId);
-							try {
-								bandWave = band.getChildText("wavelength");
-							} catch (Exception e) {
-//						log.warn("Error in parsing band wave-length:" + e.getMessage());
-							}
-							try {
-								bandCommonName = band.getChildText("common_name");
-							} catch (Exception e) {
-//						log.warn("Error in parsing band common name:" + e.getMessage());
-							}
-							try {
-								bandGSD = band.getChildText("gsd");
-							} catch (Exception e) {
-//						log.warn("Error in parsing band gsd:" + e.getMessage());
-							}
-							CollectionSummaryStats gsd = new CollectionSummaryStats();
-							CollectionSummaryStats[] eoGsd = { gsd };
-//					summaries.put("eo:bands", eoGsd);
-//					currentCollection.setSummaries(summaries);
-//					currentCollection.putSummariesItem("eo:gsd", eoGsd);
-						}
-					} catch (Exception e) {
-//				log.warn("Error in parsing bands :" + e.getMessage());
-					}
-				} else {
-					for (int c = 0; c < bandsListSwe.size(); c++) {
-						String bandId = bandsListSwe.get(c).getAttributeValue("name");
-						dimensionbands.addValuesItem(bandId);
-					}
-				}
-				cubeColonDimensions.put("bands", dimensionbands);
-				currentCollection.setCubeColonDimensions(cubeColonDimensions);
+				log.trace("{}D WGS84 extent: {} -> {}", ndims,
+						Arrays.toString(llWgs84),
+						Arrays.toString(urWgs84));
 
-				double[] c1 = null;
-				double[] c2 = null;
-				int j = 0;
-
-				for (int a = 0; a < axis.length; a++) {
-//	    	log.debug(axis[a]);
-					if (axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long") || axis[a].equals("N")
-							|| axis[a].equals("Y") || axis[a].equals("Lat")) {
-						j = a;
-						break;
-					}
-				}
-//		log.debug(j);
-
-				c1 = tx.TransformPoint(Double.parseDouble(minValues[j]), Double.parseDouble(minValues[j + 1]));
-				c2 = tx.TransformPoint(Double.parseDouble(maxValues[j]), Double.parseDouble(maxValues[j + 1]));
-
-				String[] spatDims = null;
-				try {
-					spatDims = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS)
-							.getChild("ReferenceableGridByVectors", gmlNS).getChild("limits", gmlNS)
-							.getChild("GridEnvelope", gmlNS).getChildText("high", gmlNS).split(" ");
-				} catch (Exception e) {
-					log.warn("Error in parsing bands :" + e.getMessage());
-				}
-
-				try {
-					spatDims = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS)
-							.getChild("RectifiedGrid", gmlNS).getChild("limits", gmlNS)
-							.getChild("GridEnvelope", gmlNS).getChildText("high", gmlNS).split(" ");
-				} catch (Exception e) {
-					log.warn("Error in parsing bands :" + e.getMessage());
-				}
-
-				String startTime = null;
-				String endTime = null;
-				for (int a = 0; a < axis.length; a++) {
-//	    	log.debug(axis[a]);
-					if (axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long")) {
-						xIndex = a;
-						columns = Integer.parseInt(spatDims[xIndex]) + 1;
-						dimensionXspatial.setReferenceSystem(Integer.parseInt(srsDescription));
-						dimensionXspatial.setAxis(AxisEnum.X);
-						List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
-						xExtent.add(0, new BigDecimal(c1[1]));
-						xExtent.add(1, new BigDecimal(c2[1]));
-						dimensionXspatial.setExtent(xExtent);
-						cubeColonDimensions.put(axis[a], dimensionXspatial);
-					}
-					if (axis[a].equals("N") || axis[a].equals("Y") || axis[a].equals("Lat")) {
-						yIndex = a;
-						rows = Integer.parseInt(spatDims[yIndex]) + 1;
-						dimensionYspatial.setReferenceSystem(Integer.parseInt(srsDescription));
-						dimensionYspatial.setAxis(AxisEnum.Y);
-						List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
-						yExtent.add(0, new BigDecimal(c1[0]));
-						yExtent.add(1, new BigDecimal(c2[0]));
-						dimensionYspatial.setExtent(yExtent);
-						cubeColonDimensions.put(axis[a], dimensionYspatial);
-					}
-					if (axis[a].equals("DATE") || axis[a].equals("TIME") || axis[a].equals("ANSI")
-							|| axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time")
-							|| axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")) {
-
-						boolean isDate = true;
-						try {
-							Integer isDateInteger = Integer.parseInt(minValues[a].replaceAll("\"", ""));
-							isDate = false;
-						} catch (Exception e) {
-						}
-						if (isDate) {
-							List<String> temporalExtent = new ArrayList<String>();
-							temporalExtent.add(0, minValues[a].replaceAll("\"", ""));
-							temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
-							startTime = minValues[a].replaceAll("\"", "");
-							endTime = maxValues[a].replaceAll("\"", "");
-							dimensionTemporal.setExtent(temporalExtent);
-							cubeColonDimensions.put(axis[a], dimensionTemporal);
-						} else {
-							AdditionalDimension additionalDimension = new AdditionalDimension();
-							additionalDimension.setType(TypeEnum.TEMPORAL);
-							List<Integer> temporalExtent = new ArrayList<Integer>();
-							temporalExtent.add(0, Integer.parseInt(minValues[a].replaceAll("\"", "")));
-							temporalExtent.add(1, Integer.parseInt(maxValues[a].replaceAll("\"", "")));
-							startTime = minValues[a].replaceAll("\"", "");
-							endTime = maxValues[a].replaceAll("\"", "");
-							additionalDimension.setExtent(temporalExtent);
-							cubeColonDimensions.put(axis[a], additionalDimension);
-						}
-					}
-				}
-//		log.debug(srsDescription);
-
-				CollectionExtent extent = new CollectionExtent();
 				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
-				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
-				List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
-				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
-				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
-				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
-				try {
-					bbox1.add(new BigDecimal(c1[1]));
-					bbox1.add(new BigDecimal(c1[0]));
-					bbox1.add(new BigDecimal(c2[1]));
-					bbox1.add(new BigDecimal(c2[0]));
-				} catch (Exception e) {
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
+				List<List<BigDecimal>> bbox = new ArrayList<>();
+
+				for (int i=0; i<ndims; ++i) {
+					List<BigDecimal> coord = Arrays.asList(
+							BigDecimal.valueOf(llWgs84[i]),
+							BigDecimal.valueOf(urWgs84[i]));
+					bbox.add(coord);
 				}
-				bbox.add(bbox1);
+
 				spatialExtent.setBbox(bbox);
-				extent.setSpatial(spatialExtent);
-
-//		int k = 0;
-//		for(int a = 0; a < axis.length; a++) {
-//	    	log.debug(axis[a]);
-//			String timeAxis = axis[a].toUpperCase();
-//			if(timeAxis.equals("DATE") || timeAxis.equals("TIME") || timeAxis.equals("ANSI") || timeAxis.equals("UNIX"))
-//			{
-//				k = a;
-//				break;
-//			}
-//		}
-
-				try {
-					interval1.add(OffsetDateTime.parse(startTime));
-					interval1.add(OffsetDateTime.parse(endTime));
-				} catch (Exception e) {
-					interval1.add(null);
-					interval1.add(null);
-				}
-				log.debug("Interval : " + interval1);
-				interval.add(interval1);
-				temporalExtent.setInterval(interval);
-				extent.setTemporal(temporalExtent);
-				currentCollection.setExtent(extent);
+				collectionExtent.setSpatial(spatialExtent);
 			}
 
-			else {
-				srsDescription = "0";
-				CollectionSummaryStats epsg = new CollectionSummaryStats();
-				epsg.setMin(Double.parseDouble(srsDescription));
-				epsg.setMax(Double.parseDouble(srsDescription));
+			if (hasTimeCrs) {
+				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
+				List<List<OffsetDateTime>> intervals = new ArrayList<>();
 
-				String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
-				String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");
-				String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
-				int xIndex = 0;
-				int yIndex = 0;
+				// 1+ time dimensions:
+				for (DimensionTemporal dim : timeDims) {
+					String minT = dim.getExtent().get(0);
+					String maxT = dim.getExtent().get(1);
 
-				List<Element> bandsList = null;
-				List<Element> bandsListSwe = null;
-				Boolean bandsMeta = false;
-				try {
-					bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
-					bandsMeta = true;
-				} catch (Exception e) {
-				}
-				try {
-					bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS)
-							.getChild("DataRecord", sweNS).getChildren("field", sweNS);
-				} catch (Exception e) {
-				}
-				if (bandsMeta) {
+					List<OffsetDateTime> interval = new ArrayList<>();
 					try {
-						for (int c = 0; c < bandsList.size(); c++) {
-							String bandWave = null;
-							String bandCommonName = null;
-							String bandGSD = null;
-							Element band = bandsList.get(c);
-							String bandId = band.getName();
-							dimensionbands.addValuesItem(bandId);
-							try {
-								bandWave = band.getChildText("wavelength");
-							} catch (Exception e) {
-//							log.warn("Error in parsing band wave-lenght:" + e.getMessage());
-							}
-							try {
-								bandCommonName = band.getChildText("common_name");
-							} catch (Exception e) {
-//							log.warn("Error in parsing band common name:" + e.getMessage());
-							}
-							try {
-								bandGSD = band.getChildText("gsd");
-							} catch (Exception e) {
-//							log.warn("Error in parsing band gsd:" + e.getMessage());
-							}
-						}
-					} catch (Exception e) {
-//					log.warn("Error in parsing bands :" + e.getMessage());
+						//STAC requires format: https://www.rfc-editor.org/rfc/rfc3339#section-5.6
+						//We use: java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.
+						interval.add(OffsetDateTime.parse(minT));
+						interval.add(OffsetDateTime.parse(maxT));
+
+					} catch (DateTimeParseException e) {
+						log.warn("Error parsing time extent: {}:{}", minT, maxT);
+						interval.add(null); // FIXME should we be lenient?
+						interval.add(null); //
 					}
-				} else {
-					for (int c = 0; c < bandsListSwe.size(); c++) {
-						String bandId = bandsListSwe.get(c).getAttributeValue("name");
-						dimensionbands.addValuesItem(bandId);
-					}
+
+					log.debug("Time interval : " + interval);
+
+					intervals.add(interval);
 				}
-				cubeColonDimensions.put("bands", dimensionbands);
-				currentCollection.setCubeColonDimensions(cubeColonDimensions);
-				int j = 0;
-
-				for (int a = 0; a < axis.length; a++) {
-//		    	log.debug(axis[a]);
-					if (axis[a].equals("i") || axis[a].equals("j")) {
-						j = a;
-						break;
-					}
-				}
-//			log.debug(j);
-				String startTime = null;
-				String endTime = null;
-
-				for (int a = 0; a < axis.length; a++) {
-//		    	log.debug(axis[a]);
-					if (axis[a].equals("i")) {
-						xIndex = a;
-						dimensionXspatial.setReferenceSystem(Integer.parseInt(srsDescription));
-						dimensionXspatial.setAxis(AxisEnum.X);
-						List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
-						xExtent.add(0, new BigDecimal(minValues[j]));
-						xExtent.add(1, new BigDecimal(maxValues[j]));
-						dimensionXspatial.setExtent(xExtent);
-						cubeColonDimensions.put(axis[a], dimensionXspatial);
-					}
-					if (axis[a].equals("j")) {
-						yIndex = a;
-						dimensionYspatial.setReferenceSystem(Integer.parseInt(srsDescription));
-						dimensionYspatial.setAxis(AxisEnum.Y);
-						List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
-						yExtent.add(0, new BigDecimal(minValues[j + 1]));
-						yExtent.add(1, new BigDecimal(maxValues[j + 1]));
-						dimensionYspatial.setExtent(yExtent);
-						cubeColonDimensions.put(axis[a], dimensionYspatial);
-					}
-					if (axis[a].equals("DATE") || axis[a].equals("TIME") || axis[a].equals("ANSI")
-							|| axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time")
-							|| axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")) {
-						boolean isDate = true;
-						try {
-							Integer isDateInteger = Integer.parseInt(minValues[a].replaceAll("\"", ""));
-							isDate = false;
-						} catch (Exception e) {
-
-						}
-						if (isDate) {
-							List<String> temporalExtent = new ArrayList<String>();
-							temporalExtent.add(0, minValues[a].replaceAll("\"", ""));
-							temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
-							startTime = minValues[a].replaceAll("\"", "");
-							endTime = maxValues[a].replaceAll("\"", "");
-							dimensionTemporal.setExtent(temporalExtent);
-							cubeColonDimensions.put(axis[a], dimensionTemporal);
-						} else {
-							AdditionalDimension additionalDimension = new AdditionalDimension();
-							additionalDimension.setType(TypeEnum.TEMPORAL);
-							List<Integer> temporalExtent = new ArrayList<Integer>();
-							temporalExtent.add(0, Integer.parseInt(minValues[a].replaceAll("\"", "")));
-							temporalExtent.add(1, Integer.parseInt(maxValues[a].replaceAll("\"", "")));
-							startTime = minValues[a].replaceAll("\"", "");
-							endTime = maxValues[a].replaceAll("\"", "");
-							additionalDimension.setExtent(temporalExtent);
-							cubeColonDimensions.put(axis[a], additionalDimension);
-						}
-					}
-				}
-//			log.debug(srsDescription);
-
-				CollectionExtent extent = new CollectionExtent();
-				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
-				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
-				List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
-				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
-				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
-				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
-				try {
-					bbox1.add(new BigDecimal(minValues[j]));
-					bbox1.add(new BigDecimal(minValues[j + 1]));
-					bbox1.add(new BigDecimal(maxValues[j]));
-					bbox1.add(new BigDecimal(maxValues[j + 1]));
-				} catch (Exception e) {
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-				}
-				bbox.add(bbox1);
-				spatialExtent.setBbox(bbox);
-				extent.setSpatial(spatialExtent);
-
-//			int k = 0;
-//			for(int a = 0; a < axis.length; a++) {
-//		    	log.debug(axis[a]);
-//				String timeAxis = axis[a].toUpperCase();
-//				if(timeAxis.equals("DATE") || timeAxis.equals("TIME") || timeAxis.equals("ANSI") || timeAxis.equals("UNIX"))
-//				{
-//					k = a;
-//					break;
-//				}
-//			}
-
-				try {
-					interval1.add(OffsetDateTime.parse(startTime));
-					interval1.add(OffsetDateTime.parse(endTime));
-				} catch (Exception e) {
-					interval1.add(null);
-					interval1.add(null);
-				}
-				log.debug("Interval : " + interval1);
-				interval.add(interval1);
-				temporalExtent.setInterval(interval);
-				extent.setTemporal(temporalExtent);
-				currentCollection.setExtent(extent);
+				temporalExtent.setInterval(intervals);
+				collectionExtent.setTemporal(temporalExtent);
 			}
 
-			List<Link> links = new ArrayList<Link>();
-			Link link1 = new Link();
+			// set the computed spatio-temporal extent:
+			currentCollection.setExtent(collectionExtent);
 
-			currentCollection.setVersion("v1");
+			// FIXME should not be hardcoded here
+			currentCollection.setVersion(DEFAULT_COLL_VERSION);
 
-			String license = null;
-			try {
-				license = metadataElement.getChildText("License", gmlNS);
-				link1.setHref(new URI(metadataElement.getChildText("License_Link", gmlNS)));
-				link1.setRel("licence");
-				link1.setTitle("License Link");
-				link1.setType(metadataElement.getChildText("License_Link_Type", gmlNS));
-			} catch (Exception e) {
+			/*
+			 * license
+			 */
+			List<Link> links = new ArrayList<>();
+
+			String licenseLink = metadataElement.getChildText("License_Link", gmlNS);
+			if (null != licenseLink) {
+				Link link = new Link();
+				try {
+					link.setHref(new URI(licenseLink));
+					link.setRel("licence");
+					link.setTitle("License Link");
+
+					String linkType = metadataElement.getChildText("License_Link_Type", gmlNS);
+					if (null != linkType) {
+						link.setType(linkType);
+					}
+					links.add(link);
+				} catch (URISyntaxException e) {
+					log.error("Error invalid licence of {}", coverageID, e);
+					continue COLLECTIONS;
+				}
 			}
+
+			String license = metadataElement.getChildText("License", gmlNS);
 			if (license == null) {
 				license = "No License Information Available";
 			}
+
 			currentCollection.setLicense(license);
-			links.add(0, link1);
 			currentCollection.setLinks(links);
 
-			String title = null;
-			String citation = null;
-			String description = null;
-			String tempStep = null;
-			try {
-				title = metadataElement.getChildText("Title", gmlNS);
-			} catch (Exception e) {
-			}
+			/*
+			 * Other metadata
+			 */
+			String title = metadataElement.getChildText("Title", gmlNS);
 			if (title == null) {
 				title = "No Title Available";
 			}
 			currentCollection.setTitle(title);
 
-			try {
-				citation = metadataElement.getChildText("Citation", gmlNS);
-				currentCollection.setCitation(citation);
-			} catch (Exception e) {
-			}
+			String citation = metadataElement.getChildText("Citation", gmlNS);
+			currentCollection.setCitation(citation);
 
-			try {
-				description = metadataElement.getChildText("Description", gmlNS);
-			} catch (Exception e) {	}
+			String description = metadataElement.getChildText("Description", gmlNS);
 			if (description == null) {
 				description = "No Description Available";
 			}
 			currentCollection.setDescription(description);
 
-			try {
-				tempStep = metadataElement.getChildText("Temporal_Step", gmlNS);
-				dimensionTemporal.setStep(tempStep);
-			} catch (Exception e) {	}
+			String tempStep = metadataElement.getChildText("Temporal_Step", gmlNS);
+			if (null != tempStep) {
+				if (!hasTimeCrs) {
+					log.warn("Temporal step provided but time axis not found in coverage {}.", coverageID);
 
-			List<String> keywords = new ArrayList<String>();
+					// fetch other dimension with temporal type:
+					List<DimensionOther> otherTimeDims = cubeDimensions.values().stream()
+							.filter(dim -> TypeEnum.TEMPORAL.equals(dim.getType()))
+							.filter(dim -> dim instanceof DimensionOther)
+							.map(dim -> (DimensionOther) dim)
+							.toList();
 
-			try {
-				keywords = Arrays.asList(metadataElement.getChildText("Keywords", gmlNS).split(", "));
-			} catch (Exception e) {
+					for (DimensionOther dim : otherTimeDims) {
+						dim.setStep(tempStep);
+					}
+				} else {
+					DimensionTemporal dim = timeDims.get(0);
+					dim.setStep(tempStep);
+
+					if (timeDims.size() != 1) {
+						log.warn("Multiple time dimension. Assume temporal step is for '{}'", dim);
+					}
+				}
 			}
-			log.debug("Keywords : " + keywords);
-			if (keywords.isEmpty()) {
-				keywords.add("No Keywords Available");
+
+			/*
+			 * keywords
+			 */
+			List<String> keywords = new ArrayList<>();
+
+			String keywordsText = metadataElement.getChildText("Keywords", gmlNS);
+			if (null != keywordsText) {
+				keywords.addAll(Arrays.asList(keywordsText.split(", ")));
+				log.debug("Keywords : {}", keywords);
+			} else {
+				keywords.add("No keywords Available");
 			}
+
 			currentCollection.setKeywords(keywords);
 
-			Set<String> stacExtensions = new HashSet<String>();
-			stacExtensions.add("datacube");
+			/*
+			 * STAC extensions
+			 */
+			Set<String> stacExtensions = new HashSet<>();
+			stacExtensions.add(DATACUBE_STAC_EXT);
 			currentCollection.setStacExtensions(stacExtensions);
 
-			List<Providers> providers = new ArrayList<Providers>();
-			Providers provider1 = new Providers();
-			String provider1Name = wcpsProviderName;
-			String provider1Role = wcpsProviderType;
-			String provider1Link = wcpsProviderUrl;
-			List<String> roles1 = new ArrayList<String>();
-			Providers provider2 = new Providers();
-			String provider2Name = null;
-			String provider2Role = null;
-			String provider2Link = null;
-			List<String> roles2 = new ArrayList<String>();
-			Providers provider3 = new Providers();
-			String provider3Name = null;
-			String provider3Role = null;
-			String provider3Link = null;
-			List<String> roles3 = new ArrayList<String>();
-			Providers provider4 = new Providers();
-			String provider4Name = null;
-			String provider4Role = null;
-			String provider4Link = null;
-			List<String> roles4 = new ArrayList<String>();
+			/*
+			 * Data providers
+			 */
+			List<Providers> providers = new ArrayList<>();
 
+			// force THIS provider
+			Providers thisProvider = new Providers();
 			try {
-				provider1Name = metadataElement.getChildText("Provider1_Name", gmlNS);
-				provider1Role = metadataElement.getChildText("Provider1_Roles", gmlNS);
-				provider1Link = metadataElement.getChildText("Provider1_Link", gmlNS);
-			} catch (Exception e) {
-
+				thisProvider.setName(wcpsProviderName);
+				thisProvider.setRoles(Arrays.asList(wcpsProviderType));
+				thisProvider.setUrl(new URI(wcpsProviderUrl));
+			} catch (URISyntaxException e) {
+				log.error("Invalid local provider configuration. ", e);
+				continue COLLECTIONS;
 			}
-			try {
-				provider1.setName(provider1Name);
-				roles1.add(provider1Role);
-				provider1.setRoles(roles1);
-				provider1.setUrl(new URI(provider1Link));
-				providers.add(0, provider1);}
-			catch (Exception e) {}
-			
-			try {
-				provider2Name = metadataElement.getChildText("Provider2_Name", gmlNS);
-				provider2Role = metadataElement.getChildText("Provider2_Roles", gmlNS);
-				provider2Link = metadataElement.getChildText("Provider2_Link", gmlNS);
-				provider2.setName(provider2Name);
-				roles2.add(provider2Role);
-				provider2.setRoles(roles2);
-				provider2.setUrl(new URI(provider2Link));
-				providers.add(1, provider2);
-			} catch (Exception e) {
+			providers.add(thisProvider);
 
+			// import source providers
+			int prvi = 1;
+			boolean done = false;
+			while (!done) {
+				List<String> roles = new ArrayList<>();
+				Providers provider = new Providers();
+
+				String name = metadataElement.getChildText("Provider%d_Name".formatted(prvi), gmlNS);
+				String role = metadataElement.getChildText("Provider%d_Roles".formatted(prvi), gmlNS);
+				String link = metadataElement.getChildText("Provider%d_Link".formatted(prvi), gmlNS);
+
+				if (null == name) {
+					done = true; // no more providers
+				} else {
+					try {
+						provider.setName(name);
+						roles.add(role);
+						provider.setRoles(roles);
+						provider.setUrl(new URI(link));
+						providers.add(provider);
+					} catch (URISyntaxException e) {
+						log.error("Invalid provider link. ", e);
+						continue COLLECTIONS;
+					}
+				}
+				++prvi;
 			}
 
-			try {
-				provider3Name = metadataElement.getChildText("Provider3_Name", gmlNS);
-				provider3Role = metadataElement.getChildText("Provider3_Roles", gmlNS);
-				provider3Link = metadataElement.getChildText("Provider3_Link", gmlNS);
-				provider3.setName(provider3Name);
-				roles3.add(provider3Role);
-				provider3.setRoles(roles3);
-				provider3.setUrl(new URI(provider3Link));
-				providers.add(2, provider3);
-			} catch (Exception e) {
-
-			}
-
-			try {
-				provider4Name = metadataElement.getChildText("Provider4_Name", gmlNS);
-				provider4Role = metadataElement.getChildText("Provider4_Roles", gmlNS);
-				provider4Link = metadataElement.getChildText("Provider4_Link", gmlNS);
-				provider4.setName(provider4Name);
-				roles4.add(provider4Role);
-				provider4.setRoles(roles4);
-				provider4.setUrl(new URI(provider4Link));
-				providers.add(3, provider4);
-			} catch (Exception e) {
-
-			}
 			currentCollection.setProviders(providers);
 
+			/*
+			 * summaries
+			 */
 			CollectionSummaries summaries = new CollectionSummaries();
-			List<String> platform = new ArrayList<String>();
-			List<String> constellation = new ArrayList<String>();
-			List<Double> gsd = new ArrayList<Double>();
-			List<String> instruments = new ArrayList<String>();
-			List<BandSummary> bandsSummary = new ArrayList<BandSummary>();
-			CollectionSummaryStats cloudCover = new CollectionSummaryStats();
 
-			List<Element> slicesList = null;
+			Set<String> platforms = new LinkedHashSet<>();
+			String platform = metadataElement.getChildText("Platform", gmlNS);
+			if (null != platform) {
+				platforms.add(platform);
+			}
+
+			CollectionSummaryStats cloudCover = new CollectionSummaryStats();
 			JSONArray cloudCovArray = new JSONArray();
 
-			try {
-				platform.add(metadataElement.getChildText("Platform", gmlNS));
-			} catch (Exception e) {	}
-
-			try {
-				slicesList = metadataElement.getChild("slices", gmlNS).getChildren();
-				for (int c = 0; c < slicesList.size(); c++) {
-					try {
-						platform.add(slicesList.get(c).getChildText("DATATAKE_1_SPACECRAFT_NAME"));
-						platform = platform.stream().distinct().collect(Collectors.toList());
-					} catch (Exception e) {	}
+			/*
+			 * slices detail
+			 */
+			Element slicesEl = metadataElement.getChild("slices", gmlNS);
+			if (null != slicesEl) {
+				for (Element slice : slicesEl.getChildren()) {
+					// spacecraft
+					String spacecraft = slice.getChildText("DATATAKE_1_SPACECRAFT_NAME");
+					if (null != spacecraft) {
+						platforms.add(spacecraft);
+					}
+					// cloud-coverage
+					String cloudCovStr = slice.getChildText("CLOUD_COVERAGE_ASSESSMENT");
+					if (null != cloudCovStr) {
+						try {
+							double cloudCov = Double.parseDouble(cloudCovStr);
+							cloudCovArray.put(cloudCov);
+						} catch (NumberFormatException e) {
+							log.error("Invalid cloud-coverage value found: '{}'", cloudCovStr, e);
+						}
+					}
 				}
-			} catch (Exception e) {	}
+			}
 
-			try {
-				constellation.add(metadataElement.getChildText("Constellation", gmlNS));
-			} catch (Exception e) {	}
+			List<String> constellations = new ArrayList<>();
+			String constellation = metadataElement.getChildText("Constellation", gmlNS);
+			if (null != constellation) {
+				constellations.add(constellation);
+			}
 
-			try {
-				instruments.add(metadataElement.getChildText("Instruments", gmlNS));
-			} catch (Exception e) {	}
+			List<String> instruments = new ArrayList<>();
+			String instrument = metadataElement.getChildText("Instruments", gmlNS);
+			if (null != instrument) {
+				instruments.add(instrument);
+			}
 
 //		try {
 //			rows = Integer.parseInt(metadataElement.getChildText("Rows", gmlNS));
 //		}catch(Exception e) {
 //			log.warn("Error in parsing Rows:" + e.getMessage());
 //		}
-//		
+//
 //		try {
 //			columns = Integer.parseInt(metadataElement.getChildText("Columns", gmlNS));
 //		}catch(Exception e) {
 //			log.warn("Error in parsing Columns:" + e.getMessage());
 //		}
 
-			try {
-				slicesList = metadataElement.getChild("slices", gmlNS).getChildren();
-				for (int c = 0; c < slicesList.size(); c++) {
-					try {
-						double cloudCov = Double
-								.parseDouble(slicesList.get(c).getChildText("CLOUD_COVERAGE_ASSESSMENT"));
-						cloudCovArray.put(cloudCov);
-					} catch (Exception e) {
-						log.warn("Error in parsing Cloud Coverage:" + e.getMessage());
-					}
-				}
-			} catch (Exception e) {
-				log.warn("Error in parsing metadata slice :" + e.getMessage());
-			}
-
+			/*
+			 * cloud coverage
+			 */
 			double maxCCValue = 0;
 			double minCCValue = 0;
-			Boolean cloudCoverFlag = false;
-			try {
-				maxCCValue = cloudCovArray.getDouble(0);
-				minCCValue = cloudCovArray.getDouble(0);
-				cloudCoverFlag = true;
-			} catch (Exception e) {
-				log.warn("Error in parsing cloud cover Extents :" + e.getMessage());
+			boolean cloudCoverFlag = false;
+
+			// FIXME optimize cloud-cover min/max extraction:
+
+			if (!cloudCovArray.isEmpty()) {
+				try {
+					maxCCValue = cloudCovArray.getDouble(0);
+					minCCValue = cloudCovArray.getDouble(0);
+					cloudCoverFlag = true;
+
+				} catch (JSONException e) {
+					log.warn("Error in parsing cloud cover Extents :" + e.getMessage());
+				}
 			}
 
 			if (cloudCoverFlag) {
 				for (int i = 1; i < cloudCovArray.length(); i++) {
-					if (cloudCovArray.getDouble(i) > maxCCValue) {
-						maxCCValue = cloudCovArray.getDouble(i);
+					double ccov = cloudCovArray.getDouble(i);
+					if (ccov > maxCCValue) {
+						maxCCValue = ccov;
 					}
-					if (cloudCovArray.getDouble(i) < minCCValue) {
-						minCCValue = cloudCovArray.getDouble(i);
+					if (ccov < minCCValue) {
+						minCCValue = ccov;
 					}
 				}
 			}
@@ -1097,24 +1212,17 @@ public class CollectionsApiController implements CollectionsApi {
 			cloudCover.setMin(minCCValue);
 			cloudCover.setMax(maxCCValue);
 
-			List<Element> bandsList = null;
-			List<Element> bandsListSwe = null;
-			Boolean bandsMeta = false;
-			try {
-				bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
-				bandsMeta = true;
-			} catch (Exception e) {
-			}
-			try {
-				bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS)
-						.getChild("DataRecord", sweNS).getChildren("field", sweNS);
-			} catch (Exception e) {
-			}
-			if (bandsMeta) {
+			/*
+			 * summaries
+			 */
+			List<BandSummary> bandsSummary = new ArrayList<>();
+			Set<Double> gsd = new LinkedHashSet<>();
+
+			if (hasBandsMetadata) {
 				try {
-					for (int c = 0; c < bandsList.size(); c++) {
+					// TODO here parsing is lenient: is that ok?
+					for (Element band : bandsList) {
 						BandSummary bandsSummaryList = new BandSummary();
-						Element band = bandsList.get(c);
 						String bandWave = "0";
 						String bandCommonName = "No Band Common Name found";
 						String bandGSD = "0";
@@ -1123,165 +1231,396 @@ public class CollectionsApiController implements CollectionsApi {
 						bandId = band.getName();
 						bandsSummaryList.setName(bandId);
 
-						try {
-							bandGSD = band.getChildText("gsd");
-							gsd.add(Double.parseDouble(bandGSD));
-							gsd = gsd.stream().distinct().collect(Collectors.toList());
-							bandsSummaryList.setGsd(Double.parseDouble(bandGSD));
-						} catch (Exception e) {
-							log.warn("Error in parsing band gsd:" + e.getMessage());
+						bandGSD = band.getChildText("gsd");
+						if (null != bandGSD) {
+							try {
+								gsd.add(Double.parseDouble(bandGSD));
+								bandsSummaryList.setGsd(Double.parseDouble(bandGSD));
+							} catch (NumberFormatException e) {
+								log.warn("Error in parsing band gsd:" + e.getMessage());
+							}
 						}
 
-						try {
-							bandCommonName = band.getChildText("common_name");
+						bandCommonName = band.getChildText("common_name");
+						if (null != bandCommonName) {
 							bandsSummaryList.setCommonname(bandCommonName);
-						} catch (Exception e) {
-							log.warn("Error in parsing band common name:" + e.getMessage());
 						}
 
-						try {
-							bandWave = band.getChildText("wavelength");
-							bandsSummaryList.setCenterwavelength(Double.parseDouble(bandWave));
-						} catch (Exception e) {
-							log.warn("Error in parsing band wave-lenght:" + e.getMessage());
+						bandWave = band.getChildText("wavelength");
+						if (null != bandWave) {
+							try {
+								double w = Double.parseDouble(bandWave);
+								bandsSummaryList.setCenterwavelength(w);
+							} catch (NumberFormatException e) {
+								log.warn("Error in parsing band wave-lenght:" + e.getMessage());
+							}
 						}
 
-						bandsSummary.add(c, bandsSummaryList);
+						bandsSummary.add(bandsSummaryList);
 					}
 				} catch (Exception e) {
 					log.warn("Error in parsing bands :" + e.getMessage());
 				}
+
 			} else {
-				for (int c = 0; c < bandsListSwe.size(); c++) {
+				for (Element band : bandsListSwe) {
 					BandSummary bandsSummaryList = new BandSummary();
-					String bandId = bandsListSwe.get(c).getAttributeValue("name");
+					String bandId = band.getAttributeValue("name");
 					bandsSummaryList.setName(bandId);
-					bandsSummary.add(c, bandsSummaryList);
+					bandsSummary.add(bandsSummaryList);
 				}
 			}
 
-			summaries.setPlatform(platform);
-			summaries.setConstellation(constellation);
+			summaries.setPlatform(platforms.stream().toList());
+			summaries.setConstellation(constellations);
 			summaries.setInstruments(instruments);
 			summaries.setCloudCover(cloudCover);
-			summaries.setGsd(gsd);
-			summaries.setRows(rows);
-			summaries.setColumns(columns);
-//		summaries.setEpsg(epsg);
+			summaries.setGsd(gsd.stream().toList());
+//			summaries.setRows(rows);
+//			summaries.setColumns(columns);
+//		    summaries.setEpsg(epsg);
 			summaries.setBands(bandsSummary);
-
 			currentCollection.setSummaries(summaries);
 
 			Map<String, Asset> assets = new HashMap<String, Asset>();
-
 			currentCollection.setAssets(assets);
 
 			collectionsList.addCollectionsItem(currentCollection);
 		}
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.enable(SerializationFeature.INDENT_OUTPUT);
-		mapper.registerModule(new JavaTimeModule());
-		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-		// Java object to JSON file
-		try {
-			log.info(collectionsFileWCPS.getFilename());
-			String rootPath = System.getProperty("user.dir");
-			File collectionsFile = new File(rootPath + "/" + collectionsFileWCPS.getFilename());
-			if (!collectionsFile.exists()) {
-				collectionsFile.createNewFile();
+		// ~~ END OF COLLECTIONS LOOP
+
+		// cache catalog to JSON file:
+		new Thread(() -> {
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.enable(SerializationFeature.INDENT_OUTPUT);
+			mapper.registerModule(new JavaTimeModule());
+			mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+			try {
+				log.info(collectionsFileWCPS.getFilename());
+				File collectionsFile = new File(USER_DIR + "/" + collectionsFileWCPS.getFilename());
+				if (!collectionsFile.exists()) {
+					collectionsFile.createNewFile();
+				}
+				mapper.writeValue(collectionsFile, collectionsList);
+
+			} catch (JsonGenerationException | JsonMappingException jse) {
+				log.error("JSON error while serializing the WCPS catalog.", jse);
+
+			} catch (IOException ioe) {
+				log.error("I/O error while serializing the WCPS catalog to file.", ioe);
 			}
-			mapper.writeValue(collectionsFile, collectionsList);
-		} catch (JsonGenerationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JsonMappingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		}).start();
+
 		return collectionsList;
 	}
 
+	/**
+	 * Loads collections from the OpenDataCube endpoint.
+	 *
+	 * @see CollectionsApiController#odcCollEndpoint
+	 */
 	private Collections loadOdcCollections() {
 
 		Collections collectionsList = new Collections();
-
-		JSONObject odcSTACMetdata = null;
-		try {
-			odcSTACMetdata = readJsonFromUrl(odcCollEndpoint);
-		} catch (JSONException e) {
-			log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builderODC = new StringBuilder();
-			for (StackTraceElement element : e.getStackTrace()) {
-				builderODC.append(element.toString() + "\n");
-			}
-			log.error(builderODC.toString());
-		} catch (IOException e) {
-			log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builderODC = new StringBuilder();
-			for (StackTraceElement element : e.getStackTrace()) {
-				builderODC.append(element.toString() + "\n");
-			}
-			log.error(builderODC.toString());
-		}
+		JSONObject odcSTACMetdata =  readJsonFromUrl(odcCollEndpoint);
 
 		if (odcSTACMetdata != null) {
 
-			//JSONObject odcCollections = odcSTACMetdata.getJSONObject("collections");
+			// JSONObject odcCollections = odcSTACMetdata.getJSONObject("collections");
+			final String odcSTACMetdataStr = odcSTACMetdata.toString(4);
 
 			ObjectMapper mapper = new ObjectMapper();
 			mapper.registerModule(new JavaTimeModule());
 			mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-			String rootPath = System.getProperty("user.dir");
-			File collectionsFile = new File(rootPath + "/" + collectionsFileODC.getFilename());
-			if (!collectionsFile.exists()) {
-				try {
-					collectionsFile.createNewFile();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+
+			// parallelize writing of catalog to disk
+			new Thread(() -> {
+				File collectionsFile = new File(USER_DIR + "/" + collectionsFileODC.getFilename());
+
+				if (!collectionsFile.exists()) {
+					try {
+						collectionsFile.createNewFile();
+						try (FileWriter file = new FileWriter(collectionsFile)) {
+							file.write(odcSTACMetdataStr);
+						}
+					} catch (IOException e) {
+						log.error("Error while serializing ODC catalog to disk.", e);
+					}
 				}
-			}
+			}).start();
+
 			try {
-				FileWriter file = new FileWriter(collectionsFile);
-				file.write(odcSTACMetdata.toString(4));
-				file.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			
-			try {
-				collectionsList = mapper.readValue(collectionsFile, Collections.class);
-			} catch (Exception e) {
-				addStackTraceAndErrorToLog(e);
+				collectionsList = mapper.readValue(odcSTACMetdataStr, Collections.class);
+				//collectionsList = mapper.readValue(collectionsFile, Collections.class);
+			} catch (JsonProcessingException e) {
+				log.error("Error while unmarshalling remote catalog '{}'", odcCollEndpoint, e);
 			}
-			}
+		}
 		return collectionsList;
 	}
 
+	/** Loads openEO collections from a cached JSON catalog. */
 	private Collections loadCollectionsFromFile(Resource collectionResource) {
 		Collections collectionsList = null;
+
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.registerModule(new JavaTimeModule());
 		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+		String filePath = USER_DIR + "/" + collectionResource.getFilename();
+
 		try {
-			String rootPath = System.getProperty("user.dir");
-			File collectionsFile = new File(rootPath + "/" + collectionResource.getFilename());
+			File collectionsFile = new File(filePath);
 			collectionsList = mapper.readValue(collectionsFile, Collections.class);
-		} catch (Exception e) {
-			addStackTraceAndErrorToLog(e);
+		} catch (IOException e) {
+			log.error("Error while unmarshalling '{}'.", filePath, e);
 		}
 		return collectionsList;
 	}
 
-	private void addStackTraceAndErrorToLog(Exception e) {
-		log.error(e.getMessage());
-		StringBuilder builder = new StringBuilder();
-		for (StackTraceElement element : e.getStackTrace()) {
-			builder.append(element.toString() + "\n");
-		}
-		log.error(builder.toString());
+	// consts
+	private static final int EPSG_WGS84 = 4326;
+	private static enum CsType {
+		PROJCS, GEOGCS;
 	}
+	// FIXME GDAL library UnsatisfiedLinkError:
+//	private /*static*/ /*final*/ SpatialReference WGS84 = new SpatialReference();
+//	/*static*/ {
+//		WGS84.ImportFromEPSG(EPSG_WGS84);
+//	}
+
+	// heuristic to identify axis type
+	private static final List<String> TEMPORAL_AXIS_LABELS = Arrays.asList(
+			"DATE", "Date", "date",
+			"TIME", "Time", "time",
+			"ANSI", "Ansi", "ansi",
+			"UNIX", "Unix", "unix",
+			"YEAR", "Year", "year",
+			"t");
+
+	/*
+	 * EPSG database: what are the axis labels in there?
+	 */
+
+//	epsg=# \d epsg_coordinateaxis
+//	            Table "public.epsg_coordinateaxis"
+//	Column          |         Type          | Collation | Nullable | Default
+//	-------------------------+-----------------------+-----------+----------+---------
+//	coord_sys_code          | integer               |           | not null |
+//	coord_axis_name_code    | integer               |           | not null |
+//	coord_axis_orientation  | character varying(24) |           | not null |
+//	coord_axis_abbreviation | character varying(24) |           | not null |
+//	uom_code                | integer               |           | not null |
+//	coord_axis_order        | smallint              |           | not null |
+//	Indexes:
+//	    "pk_coordinateaxis" PRIMARY KEY, btree (coord_sys_code, coord_axis_name_code)
+//
+//  #
+//	# Which axis orientation types are there?
+//  #
+//	epsg=# SELECT DISTINCT coord_axis_orientation AS o FROM epsg_coordinateaxis ORDER BY o;
+//	 Geocentre > equator/90dE      #
+//	 Geocentre > equator/PM        # Geocentric CRSs
+//	 Geocentre > north pole        #
+//	 North along 0 deg East
+//	 North along 130 deg West
+//	 North along 140 deg East
+//	 North along 160 deg East
+//	 North along 70 deg East
+//	 North along 90 deg East
+//	 South along 180 deg East
+//	 South along 90 deg East
+//	 down
+//	 east
+//	 east south east
+//	 east-south-east
+//	 north
+//	 north north east
+//	 north-east
+//	 north-north-east
+//	 north-west
+//	 south
+//	 up
+//	 west
+//
+//  #
+//	# Which axes have either north or south orientation?
+//  #
+//    epsg=# SELECT DISTINCT coord_axis_abbreviation AS abbrv
+//	  FROM epsg_coordinateaxis
+//	  WHERE (coord_axis_orientation ILIKE 'north%'
+//	     OR  coord_axis_orientation ILIKE 'south%')
+//	    AND  coord_axis_orientation NOT ILIKE 'Geocentre%'
+//	  ORDER BY abbrv;
+//	 E   # <----- !
+//	 J
+//	 Lat
+//	 N
+// 	 N(Y)
+//	 P
+//	 X  # <----- !
+//	 Y
+//	 e  # <----- !
+//	 n
+//	 x  # <----- !
+//
+	private static final List<String> Y_AXIS_LABELS = Arrays.asList(
+			"J", "Lat", "n", "N", "N(Y)", "P", "Y");
+
+//  #
+//  # Which axes have either east or west orientation?
+//  #
+//	epsg=# SELECT DISTINCT coord_axis_abbreviation AS abbrv
+//	  FROM epsg_coordinateaxis
+//	  WHERE (coord_axis_orientation ILIKE 'west%'
+//	     OR  coord_axis_orientation ILIKE 'east%')
+//	    AND  coord_axis_orientation NOT ILIKE 'Geocentre%'
+//	  ORDER BY abbrv;
+//	 E
+//	 E(X)
+//	 I
+//	 Long
+//	 M
+//	 W
+//	 X
+//	 Y  # <----- !
+//	 y  # <----- !
+//
+	private static final List<String> X_AXIS_LABELS = Arrays.asList(
+			"I", "Long", "E", "E(X)", "M", "W", "X");
+
+//  #
+//  # Which axes have either vertical (z) orientation?
+//  #
+//	epsg=# SELECT DISTINCT coord_axis_abbreviation AS abbrv
+//	  FROM epsg_coordinateaxis
+//	  WHERE coord_axis_orientation = 'up'
+//	     OR coord_axis_orientation = 'down'
+//       OR coord_axis_orientation = 'Geocentre > north pole'
+//	  ORDER BY abbrv;
+//	 D
+//	 H
+//	 R
+//   Z
+//	 h
+//
+	private static final List<String> Z_AXIS_LABELS = Arrays.asList("D", "H", "R", "Z", "h");
+
+	/**
+	 * Infers the type of a spatial axis from its label (abbreviation).
+	 *
+	 * @param axisLabel the abbreviation of an axis
+	 * @return the inferred axis orientation/type; {@code null} if no suitable
+	 *         orientation is found.
+	 * @deprecated use the more precise {@link #getAxisType(CSAxisOrientation)}.
+	 */
+	private static AxisEnum getAxisTypeHeu(String axisLabel) {
+		AxisEnum type = null;
+
+		if (X_AXIS_LABELS.contains(axisLabel)) {
+			type = AxisEnum.X;
+
+		} else if (Y_AXIS_LABELS.contains(axisLabel)) {
+			type = AxisEnum.Y;
+
+		} else if (Z_AXIS_LABELS.contains(axisLabel)) {
+			type = AxisEnum.Z;
+		}
+
+		return type;
+	}
+
+	/**
+	 * Returns the type of axis given its original orientation.
+	 *
+	 * @param axisOrientation
+	 * @return the inferred axis type, {@code null} if no match found
+	 * ({@link CSAxisOrientation#OAO_Other}).
+	 */
+	private static AxisEnum getAxisType(CSAxisOrientation axisOrientation) {
+		AxisEnum type = null;
+
+		if (CS_H_AXES.contains(axisOrientation)) {
+			type = AxisEnum.X;
+
+		} else if (CS_V_AXES.contains(axisOrientation)) {
+			type = AxisEnum.Y;
+
+		} else if (CS_Z_AXES.contains(axisOrientation)) {
+			type = AxisEnum.Z;
+		}
+
+		return type;
+	}
+
+	/**
+	 * Fetches the abbreviation of the {@code i}-th axis of a given
+	 * coordinate reference system.
+	 *
+	 * @param crs  Parsed JSON of a CRS definition
+	 * @param i    0-based index of the axis in the CRS
+	 * @return the "abbreviation" attribute of the {@code i}-th axis
+	 *         in the {@code crs} (base CRS is ignored here);
+	 *         {@code null} if the element is not found.
+	 */
+	private static final String getAxisAbbrev(JsonNode crs, int i) {
+		String abbrev = null;
+		try {
+			JsonNode csNode = crs.get(JSON_CS);
+			JsonNode axNodes = csNode.get(JSON_CS_AXIS);
+			JsonNode abbrNode = axNodes.get(i).get(JSON_CS_AXIS_ABBREVIATION);
+			abbrev = abbrNode.toString().replace("\"", "");
+
+		} catch (NullPointerException e) {
+			// unsupported JSON structure
+		}
+
+		return abbrev;
+	}
+
+	/** Key of the coordinate system element in a CRS JSON. */
+	private static final String JSON_CS = "coordinate_system";
+
+	/** Key of the coordinate system axis element in a CRS JSON. */
+	private static final String JSON_CS_AXIS = "axis";
+
+	/** Key of the abbreviation of a coordinate system axis in a CRS JSON. */
+	private static final String JSON_CS_AXIS_ABBREVIATION = "abbreviation";
+
+	/**
+	 * GDAL axis orientations (corresponds to CS_AxisOrientationEnum).
+	 *
+	 * Taken from {@code OGRAxisOrientation} enum in {@code ogr_srs_api.h}.
+	 *
+	 * @see <a href="https://gdal.org/java/org/gdal/osr/SpatialReference.html#GetAxisOrientation(java.lang.String,int)">Class SpatialReference</a>
+	 */
+	private static enum CSAxisOrientation {
+		OAO_Other, /**< Other */
+		OAO_North, /**< North */
+		OAO_South, /**< South */
+		OAO_East,  /**< East */
+		OAO_West,  /**< West */
+		OAO_Up,    /**< Up (to space) */
+		OAO_Down;  /**< Down (to Earth center) */
+
+		static CSAxisOrientation of(int index) {
+			return values()[index];
+		}
+	}
+
+	/** Types of GDAL axes orientations to be considered as horizontal/X spatial axes. */
+	private static final EnumSet<CSAxisOrientation> CS_H_AXES = EnumSet.of(
+			CSAxisOrientation.OAO_East,
+			CSAxisOrientation.OAO_West);
+
+	/** Types of GDAL axes orientations to be considered as horizontal/Y spatial axes. */
+	private static final EnumSet<CSAxisOrientation> CS_V_AXES = EnumSet.of(
+			CSAxisOrientation.OAO_North,
+			CSAxisOrientation.OAO_South);
+
+	/** Types of GDAL axes orientations to be considered as vertical/Z spatial axes. */
+	private static final EnumSet<CSAxisOrientation> CS_Z_AXES = EnumSet.of(
+			CSAxisOrientation.OAO_Up,
+			CSAxisOrientation.OAO_Down);
 }
