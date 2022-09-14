@@ -31,13 +31,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @RequestMapping("${openapi.openEO.base-path:}")
 public class DefaultApiController implements DefaultApi {
 
+	public static final String DEFAULT_OPENEO_API_VERSION = "1.0.0";
+	public static final String DEFAULT_STAC_VERSION = "0.9.0";
+
 	private final NativeWebRequest request;
-	
+
 	private final Logger log = LogManager.getLogger(DefaultApiController.class);
 
 	@Value("${org.openeo.public.endpoint}")
 	private String openEOEndpoint;
-	
+
 	@Value("${org.openeo.wcps.provider.url}")
 	private String providerUrl;
 
@@ -62,13 +65,13 @@ public class DefaultApiController implements DefaultApi {
 
 		Capabilities capabilities = new Capabilities();
 
-		capabilities.apiVersion("1.0.0");
+		capabilities.apiVersion(DEFAULT_OPENEO_API_VERSION);
 		capabilities.backendVersion("Spring-Dev-1.0.0");
 		capabilities.description(
 				"The Eurac Research backend provides EO data available for processing using OGC WC(P)S and the open data cube");
 		capabilities.title("Eurac Research - openEO - backend");
 		capabilities.setId("Eurac_openEO");
-		capabilities.setStacVersion("0.9.0");
+		capabilities.setStacVersion(DEFAULT_STAC_VERSION);
 
 		Endpoint capabilitiesEndPoint = new Endpoint();
 		capabilitiesEndPoint.setPath("/");
@@ -79,7 +82,7 @@ public class DefaultApiController implements DefaultApi {
 		wellKnownEndPoint.setPath("/.well-known/openeo");
 		wellKnownEndPoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(wellKnownEndPoint);
-		
+
 		Endpoint meEndPoint = new Endpoint();
 		meEndPoint.setPath("/me");
 		meEndPoint.addMethodsItem(MethodsEnum.GET);
@@ -104,52 +107,52 @@ public class DefaultApiController implements DefaultApi {
 		processesEndpoint.setPath("/processes");
 		processesEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(processesEndpoint);
-		
+
 		Endpoint fileFormatsEndpoint = new Endpoint();
 		fileFormatsEndpoint.setPath("/file_formats");
 		fileFormatsEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(fileFormatsEndpoint);
-		
+
 		Endpoint udfEndpoint = new Endpoint();
 		udfEndpoint.setPath("/udf_runtimes");
 		udfEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(udfEndpoint);
-		
+
 		Endpoint conformanceEndpoint = new Endpoint();
 		conformanceEndpoint.setPath("/conformance");
 		conformanceEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(conformanceEndpoint);
-		
+
 		Endpoint credntialsOIDCEndpoint = new Endpoint();
 		credntialsOIDCEndpoint.setPath("/credentials/oidc");
 		credntialsOIDCEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(credntialsOIDCEndpoint);
-		
+
 		Endpoint jobsEndpoint = new Endpoint();
 		jobsEndpoint.setPath("/jobs");
 		jobsEndpoint.addMethodsItem(MethodsEnum.GET);
 		jobsEndpoint.addMethodsItem(MethodsEnum.POST);
 		capabilities.addEndpointsItem(jobsEndpoint);
-		
+
 		Endpoint jobEndpoint = new Endpoint();
 		jobEndpoint.setPath("/jobs/{job_id}");
 		jobEndpoint.addMethodsItem(MethodsEnum.GET);
 		jobEndpoint.addMethodsItem(MethodsEnum.PATCH);
 		jobEndpoint.addMethodsItem(MethodsEnum.DELETE);
 		capabilities.addEndpointsItem(jobEndpoint);
-		
+
 		Endpoint jobDebugEndpoint = new Endpoint();
 		jobDebugEndpoint.setPath("/jobs/{job_id}/logs");
 		jobDebugEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(jobDebugEndpoint);
-		
+
 		Endpoint jobResultEndpoint = new Endpoint();
 		jobResultEndpoint.setPath("/jobs/{job_id}/results");
 		jobResultEndpoint.addMethodsItem(MethodsEnum.GET);
 		jobResultEndpoint.addMethodsItem(MethodsEnum.POST);
 //		jobResultEndpoint.addMethodsItem(MethodsEnum.DELETE);
 		capabilities.addEndpointsItem(jobResultEndpoint);
-		
+
 		Endpoint downloadEndpoint = new Endpoint();
 		downloadEndpoint.setPath("/download/{file_name}");
 		downloadEndpoint.addMethodsItem(MethodsEnum.GET);
@@ -169,7 +172,7 @@ public class DefaultApiController implements DefaultApi {
 		}
 		billing.addPlansItem(billingPlan);
 		capabilities.setBilling(billing);
-		
+
 		Link operatorUrl = new Link();
 		try {
 			operatorUrl.setHref(new URI(providerUrl));
@@ -191,7 +194,7 @@ public class DefaultApiController implements DefaultApi {
 		openEOUrl.setType("applicaton/json");
 		openEOUrl.setRel("self");
 		capabilities.addLinksItem(openEOUrl);
-		
+
 		String versionHistoryUrl = String.format("%s/.well-known/openeo", this.openEOEndpoint);
 		Link versionHistoryLink = new Link();
 		try {
@@ -203,7 +206,7 @@ public class DefaultApiController implements DefaultApi {
 		versionHistoryLink.setType("applicaton/json");
 		versionHistoryLink.setRel("version-history");
 		capabilities.addLinksItem(versionHistoryLink);
-		
+
 		String collDataUrl = String.format("%s/collections", this.openEOEndpoint);
 		Link collDataLink = new Link();
 		try {
