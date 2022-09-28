@@ -205,10 +205,18 @@ public class ResultApiController implements ResultApi {
 				String responseString = new String(response);				
 				JSONObject responseJson = new JSONObject(responseString.toString());
 				String outputFilePath = tmpDir + responseJson.getString("output");
-				log.debug(outputFilePath);
+				log.debug("Result path "+outputFilePath);
 			    File outputFile = new File(outputFilePath);
 			    String mime = URLConnection.guessContentTypeFromName(outputFile.getName());
-			    
+				if (mime == null) {
+					try {
+						mime = getMimeFromFilename(outputFile.getName());
+					}
+					catch (Exception e1){
+						addStackTraceAndErrorToLog(e1);
+					}
+				}
+			    log.debug("Guessed mime type: "+mime);
 			    byte[] outputFileBytes = Files.readAllBytes(Paths.get(outputFilePath));
 			    
 				if (mime == null) {
@@ -384,6 +392,20 @@ public class ResultApiController implements ResultApi {
 			}
 		return true;
 	}
+	// TODO: this fixes the automatic retrieval of mime type for json only at the moment
+	public String getMimeFromFilename(String fileName) {
+	    String[] arrStr = fileName.split("\\.(?=[^\\.]+$)");
+	  	String fileExtension = new String();
+	    fileExtension = arrStr[arrStr.length-1];
+	    System.out.println("file extension: "+fileExtension);
+	    String mime = new String();
+	    mime = null;
+	    if (fileExtension.equalsIgnoreCase("json")) {
+	      mime = "application/json";
+	    }		
+		return mime;
+	} 
+	
 	
 	private void addStackTraceAndErrorToLog(Exception e) {
 		log.error(e.getMessage());
