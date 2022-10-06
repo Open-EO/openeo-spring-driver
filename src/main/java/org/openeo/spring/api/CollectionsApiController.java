@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.validation.Valid;
@@ -116,8 +115,13 @@ public class CollectionsApiController implements CollectionsApi {
 	/** The version assigned to a collection when not stated otherwise in the input. */
 	public static final String DEFAULT_COLL_VERSION = "v1";
 
+	/** Label of the dimension of type "bands" where to put variables. */
+	// NOTE: datacube STAC extension v2 adds "variables": we should use that to store GML rangeType fields
+	// https://github.com/stac-extensions/datacube/blob/main/examples/item.json
+	public static final String BANDS_DIM = "bands";
+
 	/** Characters set assumed in remote catalogs. */
-	public static final Charset UTF8 = Charset.forName("UTF-8");
+	private static final Charset UTF8 = Charset.forName("UTF-8");
 
 	/** Home directory used as root for cached catalogs. */
 	private static final String USER_DIR = System.getProperty("user.dir");
@@ -484,7 +488,8 @@ public class CollectionsApiController implements CollectionsApi {
 			Namespace defaultNS = rootNode.getNamespace();
 			Namespace gmlNS = null;
 			Namespace sweNS = null;
-//			Namespace gmlCovNS = null;
+			Namespace rasdamanNS = null;
+			Namespace gmlcovNS = null;
 //			Namespace gmlrgridNS = null;
 
 			for (int n = 0; n < namespaces.size(); n++) {
@@ -493,8 +498,10 @@ public class CollectionsApiController implements CollectionsApi {
 					sweNS = current;
 				} else if (current.getPrefix().equals("gml")) {
 					gmlNS = current;
-//				} else if (current.getPrefix().equals("gmlcov")) {
-//					gmlCovNS = current;
+				} else if (current.getPrefix().equals("rasdaman")) {
+                    rasdamanNS = current;
+				} else if (current.getPrefix().equals("gmlcov")) {
+					gmlcovNS = current;
 //				} else if (current.getPrefix().equals("gmlrgrid")) {
 //					gmlrgridNS = current;
 				}
@@ -538,9 +545,9 @@ public class CollectionsApiController implements CollectionsApi {
 			try {
 				metadataElement = rootNode
 						.getChild("CoverageDescription", defaultNS)
-						.getChild("metadata", gmlNS)
-						.getChild("Extension", gmlNS)
-						.getChild("covMetadata", gmlNS);
+						.getChild("metadata", gmlcovNS)
+						.getChild("Extension", gmlcovNS)
+						.getChild("covMetadata", rasdamanNS);
 			} catch (Exception e) {
 				log.warn("Error in parsing bands.", e);
 				// continue COLLECTION; ? skip or ignore?
@@ -830,77 +837,53 @@ public class CollectionsApiController implements CollectionsApi {
 			/*
 			 * Range Set: BANDS
 			 */
-			List<Element> bandsList = null;
+			List<Element> bandsMetadataList = null;
 			List<Element> bandsListSwe = null;
-			boolean hasBandsMetadata = false;
 
-			try {
-				Element bandsMd = metadataElement.getChild("bands", gmlNS);
-				if (null != bandsMd) {
-					bandsList = bandsMd.getChildren();
-					hasBandsMetadata = true;
-				}
-			} catch (Exception e) {
-				log.warn("Error in parsing bands metadata.", e);
-				continue COLLECTIONS;
-			}
+			// hack to save some SWE metadata in eo:bands summary later on
+			Map<String, String> band2SweDescr = new LinkedHashMap<>();
 
-			try {
-				bandsListSwe = rootNode
-						.getChild("CoverageDescription", defaultNS)
-						.getChild("rangeType", gmlNS)
-						.getChild("DataRecord", sweNS)
-						.getChildren("field", sweNS);
-			} catch (Exception e) {
-				log.error("Error in parsing bands definition.", e);
-				continue COLLECTIONS;
-			}
+	        DimensionBands dimensionBands = new DimensionBands();
+	        dimensionBands.setType(TypeEnum.BANDS);
 
-			DimensionBands dimensionbands = new DimensionBands();
-			dimensionbands.setType(TypeEnum.BANDS);
+	        try {
+	            bandsListSwe = rootNode
+	                    .getChild("CoverageDescription", defaultNS)
+	                    .getChild("rangeType", gmlcovNS)
+	                    .getChild("DataRecord", sweNS)
+	                    .getChildren("field", sweNS);
+	        } catch (Exception e) {
+	            log.error("Error in parsing bands definition.", e);
+	            continue COLLECTIONS;
+	        }
 
-			if (hasBandsMetadata) {
-				// richer bands description
-				for (Element band : bandsList) {
+            for (Element band : bandsListSwe) {
+                String bandId = band.getAttributeValue("name");
+                dimensionBands.addValuesItem(bandId);
+                // TODO where does the Dimension "Bands" come from?
+                // will try to put bands metadata in the eo:bands summaries.
 
-					String bandId = band.getName();
-					dimensionbands.addValuesItem(bandId);
+                Element quantity = band.getChild("Quantity", sweNS);
+                if (null == quantity) {
+                    log.warn("No SWE quantity element in range variable {}.", bandId);
 
-//					String bandWave = null;
-//					try {
-//						bandWave = band.getChildText("wavelength");
-//					} catch (Exception e) {
-//						log.warn("Error in parsing band wave-length: {}", e.getMessage());
-//					}
-//
-//					String bandCommonName = null;
-//					try {
-//						bandCommonName = band.getChildText("common_name");
-//					} catch (Exception e) {
-//						log.warn("Error in parsing band common name: {}", e.getMessage());
-//					}
-//
-//					String bandGSD = null;
-//					try {
-//						bandGSD = band.getChildText("gsd");
-//					} catch (Exception e) {
-//						log.warn("Error in parsing band gsd: {}", e.getMessage());
-//					}
-//					CollectionSummaryStats gsd = new CollectionSummaryStats();
-//					CollectionSummaryStats[] eoGsd = { gsd };
-//					 // FIXME: why is this commented?
-//					 summaries.put("eo:bands", eoGsd);
-//					 currentCollection.setSummaries(summaries);
-//					 currentCollection.putSummariesItem("eo:gsd", eoGsd);
-				}
-			} else {
-				// only band names available
-				for (Element band : bandsListSwe) {
-					String bandId = band.getAttributeValue("name");
-					dimensionbands.addValuesItem(bandId);
-				}
-			}
-			cubeDimensions.put("bands", dimensionbands);
+                } else {
+                    String sweLabel = quantity.getChildText("label", sweNS);
+                    // ...
+
+                    String sweDescr = quantity.getChildText("description", sweNS);
+                    if (null != sweDescr) {
+                        band2SweDescr.put(bandId, sweDescr);
+                    }
+                }
+
+                // uom code ...
+                // nilValues ...
+                // constraint ...
+            }
+			cubeDimensions.put(BANDS_DIM, dimensionBands);
+
+			// ok cube:dimensions
 			currentCollection.setCubeColonDimensions(cubeDimensions);
 
 			/*
@@ -1203,6 +1186,8 @@ public class CollectionsApiController implements CollectionsApi {
 							log.error("Invalid cloud-coverage value found: '{}'", cloudCovStr, e);
 						}
 					}
+					// boundedBy
+					// ... -> single slices' extent could be added to the list of cube's extents
 				}
 			}
 
@@ -1266,29 +1251,59 @@ public class CollectionsApiController implements CollectionsApi {
 			cloudCover.setMax(maxCCValue);
 
 			/*
-			 * summaries
+			 * bands
 			 */
-			List<BandSummary> bandsSummary = new ArrayList<>();
+			List<BandSummary> bandsSummaries = new ArrayList<>();
 			Set<Double> gsd = new LinkedHashSet<>();
+			boolean hasBandsMetadata = false;
+
+            Element bandsMetadata = metadataElement.getChild("bands", gmlNS);
+            if (null != bandsMetadata) {
+                bandsMetadataList = bandsMetadata.getChildren();
+                hasBandsMetadata = true;
+            }
 
 			if (hasBandsMetadata) {
 				try {
 					// TODO here parsing is lenient: is that ok?
-					for (Element band : bandsList) {
-						BandSummary bandsSummaryList = new BandSummary();
+				    // TODO where to put metadata that are not in the eo:bands schema?
+				    // https://github.com/stac-extensions/eo
+					for (Element band : bandsMetadataList) {
+
+						BandSummary bandsSummary = new BandSummary();
 						String bandWave = "0";
 						String bandCommonName = "No Band Common Name found";
 						String bandGSD = "0";
 						String bandId = "No Band Name found";
 
 						bandId = band.getName();
-						bandsSummaryList.setName(bandId);
+						bandsSummary.setName(bandId);
+
+						// (hack)
+						// fetch SWE:description + metadata:long_name (arbitrary..) to describe the band
+						String sweDescr = band2SweDescr.get(bandId);
+						String longName = band.getChildText("long_name");
+						if (null != longName && longName.equals(sweDescr)) {
+						    longName = null;
+						}
+						if (null != sweDescr || null != longName) {
+		                    String bandDescr = String.format("%s%s%s",
+		                            (null == longName) ? "" : String.format("[%s]", longName),
+                                    (null != sweDescr && null != longName) ? " - " : "",
+		                            (null == sweDescr) ? "" : sweDescr );
+						    bandsSummary.setDescription(bandDescr);
+						}
+
+						if (!dimensionBands.containsValue(bandId)) {
+						    log.warn("{} band has metadata found, but is not listed in coverage's range.", bandId);
+						    continue; // skip metadata
+						}
 
 						bandGSD = band.getChildText("gsd");
 						if (null != bandGSD) {
 							try {
 								gsd.add(Double.parseDouble(bandGSD));
-								bandsSummaryList.setGsd(Double.parseDouble(bandGSD));
+								bandsSummary.setGsd(Double.parseDouble(bandGSD));
 							} catch (NumberFormatException e) {
 								log.warn("Error in parsing band gsd:" + e.getMessage());
 							}
@@ -1296,31 +1311,32 @@ public class CollectionsApiController implements CollectionsApi {
 
 						bandCommonName = band.getChildText("common_name");
 						if (null != bandCommonName) {
-							bandsSummaryList.setCommonname(bandCommonName);
+							bandsSummary.setCommonname(bandCommonName);
 						}
 
 						bandWave = band.getChildText("wavelength");
 						if (null != bandWave) {
 							try {
 								double w = Double.parseDouble(bandWave);
-								bandsSummaryList.setCenterwavelength(w);
+								bandsSummary.setCenterwavelength(w);
 							} catch (NumberFormatException e) {
 								log.warn("Error in parsing band wave-lenght:" + e.getMessage());
 							}
 						}
 
-						bandsSummary.add(bandsSummaryList);
+						bandsSummaries.add(bandsSummary);
 					}
 				} catch (Exception e) {
 					log.warn("Error in parsing bands :" + e.getMessage());
 				}
-
 			} else {
+			    // simple summaries: just the band label
+			    // (but there is more data in SWE quantities that is ignored)
 				for (Element band : bandsListSwe) {
-					BandSummary bandsSummaryList = new BandSummary();
+					BandSummary bandsSummary = new BandSummary();
 					String bandId = band.getAttributeValue("name");
-					bandsSummaryList.setName(bandId);
-					bandsSummary.add(bandsSummaryList);
+					bandsSummary.setName(bandId);
+					bandsSummaries.add(bandsSummary);
 				}
 			}
 
@@ -1332,7 +1348,7 @@ public class CollectionsApiController implements CollectionsApi {
 //			summaries.setRows(rows);
 //			summaries.setColumns(columns);
 //		    summaries.setEpsg(epsg);
-			summaries.setBands(bandsSummary);
+			summaries.setBands(bandsSummaries);
 			currentCollection.setSummaries(summaries);
 
 			Map<String, Asset> assets = new HashMap<String, Asset>();
