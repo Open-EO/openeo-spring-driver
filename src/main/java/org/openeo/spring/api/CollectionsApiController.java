@@ -103,14 +103,15 @@ public class CollectionsApiController implements CollectionsApi {
 	public static final String STAC_VERSION = DefaultApiController.DEFAULT_STAC_VERSION;
 
 	/**
-	 * The {@code datacube} STAC extension, used to allow the
-	 * {@code cube:dimensions} element.
+	 * The STAC extensions used in the catalog.
 	 *
-	 * @see <a href=
-	 *      "https://stac-extensions.github.io/datacube/v1.0.0/schema.json">datacube
-	 *      extension</a>
+	 * @see <a href="https://github.com/stac-extensions">STAC extensions GitHub repositories</a>
 	 */
-	public static final String DATACUBE_STAC_EXT = "datacube";
+	public static final List<String> STAC_EXTENSIONS = Arrays.asList(
+	        "https://stac-extensions.github.io/datacube/v1.0.0/schema.json", // datacube:
+	        "https://stac-extensions.github.io/eo/v1.0.0/schema.json", // eo:
+	        "https://stac-extensions.github.io/scientific/v1.0.0/schema.json" // sci:
+	);
 
 	/** The version assigned to a collection when not stated otherwise in the input. */
 	public static final String DEFAULT_COLL_VERSION = "v1";
@@ -976,12 +977,13 @@ public class CollectionsApiController implements CollectionsApi {
 			 */
 			List<Link> links = new ArrayList<>();
 
+			// licence link
 			String licenseLink = metadataElement.getChildText("License_Link", gmlNS);
 			if (null != licenseLink) {
 				Link link = new Link();
 				try {
 					link.setHref(new URI(licenseLink));
-					link.setRel("licence");
+					link.setRel(LinkRelType.LICENCE.toString());
 					link.setTitle("License Link");
 
 					String linkType = metadataElement.getChildText("License_Link_Type", gmlNS);
@@ -995,13 +997,37 @@ public class CollectionsApiController implements CollectionsApi {
 				}
 			}
 
+			// about link
+			String aboutLink = metadataElement.getChildText("About_Link");
+            if (null != aboutLink) {
+                Link link = new Link();
+                try {
+                    link.setHref(new URI(aboutLink));
+                    link.setRel(LinkRelType.ABOUT.toString());
+                    link.setTitle("About Link");
+
+                    String linkType = metadataElement.getChildText("About_Link_Type", gmlNS);
+                    if (null != linkType) {
+                        link.setType(linkType);
+                    }
+
+                    links.add(link);
+                } catch (URISyntaxException e) {
+                    log.error("Error invalid licence of {}", coverageID, e);
+                    continue COLLECTIONS;
+                }
+            }
+
+			currentCollection.setLinks(links);
+
+			/*
+			 * licence
+			 */
 			String license = metadataElement.getChildText("License", gmlNS);
 			if (license == null) {
 				license = "No License Information Available";
 			}
-
 			currentCollection.setLicense(license);
-			currentCollection.setLinks(links);
 
 			/*
 			 * Other metadata
@@ -1065,7 +1091,7 @@ public class CollectionsApiController implements CollectionsApi {
 			 * STAC extensions
 			 */
 			Set<String> stacExtensions = new HashSet<>();
-			stacExtensions.add(DATACUBE_STAC_EXT);
+			stacExtensions.addAll(STAC_EXTENSIONS);
 			currentCollection.setStacExtensions(stacExtensions);
 
 			/*
