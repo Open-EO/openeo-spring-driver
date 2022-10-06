@@ -66,6 +66,7 @@ import org.openeo.spring.model.DimensionSpatial;
 import org.openeo.spring.model.DimensionSpatial.AxisEnum;
 import org.openeo.spring.model.DimensionTemporal;
 import org.openeo.spring.model.EngineTypes;
+import org.openeo.spring.model.HasUnit;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.Providers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -511,8 +512,12 @@ public class CollectionsApiController implements CollectionsApi {
 			String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");
 
 			// (C)CRS axes labels
-			String envelopeLabels = boundingBoxElement.getAttribute("axisLabels").getValue();
-			List<String> axisLabels = Arrays.asList(envelopeLabels.split(" "));
+			String axisLabelsAttr = boundingBoxElement.getAttribute("axisLabels").getValue();
+			List<String> axisLabels = Arrays.asList(axisLabelsAttr.split(" "));
+
+			// (C)CRS axes UoMs
+			String uomLabelsAttr = boundingBoxElement.getAttribute("uomLabels").getValue();
+			List<String> uomLabels = Arrays.asList(uomLabelsAttr.split(" "));
 
 			// handy lists to keep track of axes related to spatial dimensions:
 			List<String> spatialAxisLabels = new ArrayList<>();
@@ -700,7 +705,6 @@ public class CollectionsApiController implements CollectionsApi {
 							// skip or lenient?
 						}
 					}
-
 					hasSpatialCrs = true;
 				}
 			}
@@ -710,6 +714,8 @@ public class CollectionsApiController implements CollectionsApi {
 			for (String label : axisLabels) {
 				log.trace("{}:{} axis", coverageID, label);
 				int index = axisLabels.indexOf(label);
+
+				String uom = uomLabels.get(index);
 
 				/*
 				 * spatial axis
@@ -743,6 +749,9 @@ public class CollectionsApiController implements CollectionsApi {
 							BigDecimal.valueOf(Double.parseDouble(minValues[index])),
 							BigDecimal.valueOf(Double.parseDouble(maxValues[index])));
 					dim.setExtent(extent);
+
+					// unit
+					dim.setUnit(uom);
 
 					cubeDimensions.put(label, dim);
 					spatialDims.add(dim);
@@ -796,13 +805,21 @@ public class CollectionsApiController implements CollectionsApi {
 					DimensionOther dim = new DimensionOther();
 					dim.setType(TypeEnum.OTHER);
 
-					// TODO shall an "other" dimension's extent be mandatorily numeric?
+					//
 					try {
+						// extent shall be numeric
+						// but in alternative it can have values
+						// https://github.com/stac-extensions/datacube#additional-dimension-object
 						List<BigDecimal> extent = Arrays.asList(
 								BigDecimal.valueOf(Double.parseDouble(minValues[index])),
 								BigDecimal.valueOf(Double.parseDouble(maxValues[index])));
 						dim.setExtent(extent);
+
+						// unit
+						dim.setUnit(uom);
+
 						cubeDimensions.put(label, dim);
+
 					} catch (NumberFormatException e) {
 						log.error("Unsupported extent for dimension '{}'.", label, e);
 						continue COLLECTIONS;
@@ -1128,6 +1145,42 @@ public class CollectionsApiController implements CollectionsApi {
 
 			CollectionSummaryStats cloudCover = new CollectionSummaryStats();
 			JSONArray cloudCovArray = new JSONArray();
+
+			/*
+			 * axes metadata
+			 */
+			Element axesMetadata = metadataElement.getChild("axes", gmlNS);
+			if (null != axesMetadata) {
+				for (Element axis : axesMetadata.getChildren()) {
+					String axisLabel = axis.getName();
+					Dimension dim = cubeDimensions.get(axisLabel);
+
+					if (null == dim) {
+						log.warn("Axis '{}' not found in domain set.", axisLabel);
+						continue; // skip axis metadata
+					}
+
+					// description -> description
+					String descr = axis.getChildText("description");
+					if (null != descr) {
+						dim.setDescription(descr);
+					}
+
+					// standard_name / long_name ?
+					// ...
+
+					// units -> unit
+					String units = axis.getChildText("units");
+					if (null != units && HasUnit.is(dim)) {
+						HasUnit unitDim = (HasUnit) dim;
+						unitDim.setUnit(units);
+						log.debug("Overwrite {} dimension unit of measure with '{}'.", axisLabel, units);
+					}
+
+					// other arbitrary fields ... ?
+					// ...
+				}
+			}
 
 			/*
 			 * slices detail

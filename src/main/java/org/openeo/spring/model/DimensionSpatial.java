@@ -21,15 +21,13 @@ import io.swagger.annotations.ApiModelProperty;
  * DimensionSpatial
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class DimensionSpatial extends Dimension  {
+public class DimensionSpatial extends Dimension implements HasUnit  {
   /**
    * Axis of the spatial dimension (`x`, `y` or `z`).
    */
   public enum AxisEnum {
     X("x"),
-    
     Y("y"),
-    
     Z("z");
 
     private String value;
@@ -72,6 +70,10 @@ public class DimensionSpatial extends Dimension  {
 
   @JsonProperty("step")
   private String step = null;
+
+  /** Units should be compliant with {@link https://ncics.org/portfolio/other-resources/udunits2/}. */
+  @JsonProperty("unit")
+  private String unit = null;
 
   @JsonProperty("reference_system")
   private Integer referenceSystem = null;
@@ -117,7 +119,7 @@ public class DimensionSpatial extends Dimension  {
   @ApiModelProperty(value = "Extent (lower and upper bounds) of the dimension as two-dimensional array. Open intervals with `null` are not allowed.")
 
   @Valid
-@Size(min=2,max=2) 
+@Size(min=2,max=2)
   public List<BigDecimal> getExtent() {
     return extent;
   }
@@ -146,7 +148,7 @@ public class DimensionSpatial extends Dimension  {
   @ApiModelProperty(value = "A set of all potential values.")
 
   @Valid
-@Size(min=1) 
+@Size(min=1)
   public List<BigDecimal> getValues() {
     return values;
   }
@@ -174,6 +176,16 @@ public class DimensionSpatial extends Dimension  {
 
   public void setStep(String step) {
     this.step = step;
+  }
+
+  @Override
+  public String getUnit() {
+    return unit;
+  }
+
+  @Override
+  public void setUnit(String unit) {
+    this.unit = unit;
   }
 
   public DimensionSpatial referenceSystem(Integer referenceSystem) {
