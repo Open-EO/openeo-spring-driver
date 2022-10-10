@@ -109,9 +109,9 @@ public class ODCCollectionsLoader implements ICollectionsLoader {
                 log.info("Dumping ODC catalogue to file...");
 
                 try {
-                    String absPath = String.format("%s/%s".formatted(
+                    String absPath = String.format("%s/%s", 
                             CollectionsApiController.CACHE_ROOT_DIR,
-                            this.cache.getFilename()));
+                            this.cache.getFilename());
                     File collectionsFile = new File(absPath);
 
                     if (!collectionsFile.exists()) {

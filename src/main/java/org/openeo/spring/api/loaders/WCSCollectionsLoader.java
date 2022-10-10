@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -315,9 +316,9 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
             try {
                 log.info("Dumping WCS catalogue to file...");
 
-                String absPath = String.format("%s/%s".formatted(
+                String absPath = String.format("%s/%s",
                         CollectionsApiController.CACHE_ROOT_DIR,
-                        this.cache.getFilename()));
+                        this.cache.getFilename());
                 File collectionsFile = new File(absPath);
 
                 if (!collectionsFile.exists()) {
@@ -518,7 +519,9 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                 log.warn("Compound CRS contains only one CRS: {}", crsUri);
                 singleCrsUris.add(crsUri);
             } else {
-                singleCrsUris.addAll(Arrays.stream(splitted).skip(1).toList());
+                singleCrsUris.addAll(Arrays.stream(splitted)
+                        .skip(1)
+                        .collect(Collectors.toList())); //Java 9: .toList());
                 log.debug("Extracted {} single CRSs from: {}", (splitted.length - 1), crsUri);
             }
         } else {
@@ -809,7 +812,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
 
             List<Integer> indexes = spatialAxisLabels.stream()
                     .map(x -> axisLabels.indexOf(x))
-                    .toList();
+                    .collect(Collectors.toList()); //Java 9: .toList());
 
             double[] lowerCorner = indexes.stream()
                     .map(i -> Double.parseDouble(minValues[i]))
@@ -967,7 +970,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                         .filter(dim -> TypeEnum.TEMPORAL.equals(dim.getType()))
                         .filter(dim -> dim instanceof DimensionOther)
                         .map(dim -> (DimensionOther) dim)
-                        .toList();
+                        .collect(Collectors.toList()); //Java 9: .toList());
 
                 for (DimensionOther dim : otherTimeDims) {
                     dim.setStep(tempStep);
@@ -1019,9 +1022,9 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
             List<String> roles = new ArrayList<>();
             Providers provider = new Providers();
 
-            String name = metadataElement.getChildText("Provider%d_Name".formatted(prvi), gmlNS);
-            String role = metadataElement.getChildText("Provider%d_Roles".formatted(prvi), gmlNS);
-            String link = metadataElement.getChildText("Provider%d_Link".formatted(prvi), gmlNS);
+            String name = metadataElement.getChildText(String.format("Provider%d_Name", prvi), gmlNS);
+            String role = metadataElement.getChildText(String.format("Provider%d_Roles", prvi), gmlNS);
+            String link = metadataElement.getChildText(String.format("Provider%d_Link", prvi), gmlNS);
 
             if (null == name) {
                 done = true; // no more providers
@@ -1267,11 +1270,11 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
             }
         }
 
-        summaries.setPlatform(platforms.stream().toList());
+        summaries.setPlatform(platforms.stream().collect(Collectors.toList())); //Java 9: .toList());
         summaries.setConstellation(constellations);
         summaries.setInstruments(instruments);
         summaries.setCloudCover(cloudCover);
-        summaries.setGsd(gsd.stream().toList());
+        summaries.setGsd(gsd.stream().collect(Collectors.toList())); //Java 9: .toList());
 //      summaries.setRows(rows);
 //      summaries.setColumns(columns);
 //      summaries.setEpsg(epsg);
