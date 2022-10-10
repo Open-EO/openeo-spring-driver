@@ -193,7 +193,7 @@ public class CollectionsApiController implements CollectionsApi {
 
         // profiling
         Instant end = Instant.now();
-        long ds = Duration.between(start, end).toSeconds();
+        long ds = Duration.between(start, end).toMillis() / 1000; // TODO from Java 9: .toSeconds()
         long dms = Duration.between(start, end).minusSeconds(ds).toMillis();
 
         log.printf(Level.INFO, "Catalogues harvesting done (%d.%03d s).", ds, dms);

@@ -82,9 +82,9 @@ public class STACFileCollectionsLoader implements ICollectionsLoader {
         mapper.registerModule(new JavaTimeModule());
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
-        String absPath = String.format("%s/%s".formatted(
+        String absPath = String.format("%s/%s",
                 CollectionsApiController.CACHE_ROOT_DIR,
-                this.resource.getFilename()));
+                this.resource.getFilename());
 
         log.debug("Importing {} collections catalogue from file: {}", engineType, absPath);
 
