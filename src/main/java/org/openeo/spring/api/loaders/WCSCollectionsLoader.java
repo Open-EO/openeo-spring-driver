@@ -849,10 +849,12 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
             collectionExtent.setSpatial(spatialExtent);
         }
 
-        if (hasTimeCrs) {
-            CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
-            List<List<OffsetDateTime>> intervals = new ArrayList<>();
+        // NOTE: temporal extent is mandatory in STAC, even with purely spatial collections.
+        // TODO what to put when there is no time axis in the original coverage?
+        CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
+        List<List<OffsetDateTime>> intervals = new ArrayList<>();
 
+        if (hasTimeCrs) {
             // 1+ time dimensions:
             for (DimensionTemporal dim : timeDims) {
                 String minT = dim.getExtent().get(0);
@@ -875,9 +877,9 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
 
                 intervals.add(interval);
             }
-            temporalExtent.setInterval(intervals);
-            collectionExtent.setTemporal(temporalExtent);
         }
+        temporalExtent.setInterval(intervals);
+        collectionExtent.setTemporal(temporalExtent);
 
         // set the computed spatio-temporal extent:
         currentCollection.setExtent(collectionExtent);
