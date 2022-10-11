@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wcs:CoverageDescriptions xsi:schemaLocation="http://www.opengis.net/gml/3.3/rgrid http://schemas.opengis.net/gml/3.3/referenceableGrid.xsd" xmlns:wcs="http://www.opengis.net/wcs/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:swe="http://www.opengis.net/swe/2.0" xmlns:ows="http://www.opengis.net/ows/2.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:rasdaman="http://www.rasdaman.org" xmlns:gmlrgrid="http://www.opengis.net/gml/3.3/rgrid" xmlns:gmlcov="http://www.opengis.net/gmlcov/1.0">
+    <wcs:CoverageDescription gml:id="rx1day_19712100_tnst_1x1km_year_cordexadj_qdm">
+        <gml:boundedBy>
+            <gml:Envelope srsName="http://localhost:8088/rasdaman/def/crs-compound?1=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;year&quot;&amp;2=http://localhost:8088/rasdaman/def/crs/EPSG/0/3035&amp;3=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;M&quot;&amp;4=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;rcp&quot;" axisLabels="year Y X M rcp" uomLabels="GridSpacing metre metre GridSpacing GridSpacing" srsDimension="5">
+                <gml:lowerCorner>1970 2500257.6335676899 4343890.9318039455 0 4.5</gml:lowerCorner>
+                <gml:upperCorner>2100 2673257.6335676899 4516890.9318039455 22 8.5</gml:upperCorner>
+            </gml:Envelope>
+        </gml:boundedBy>
+        <wcs:CoverageId>rx1day_19712100_tnst_1x1km_year_cordexadj_qdm</wcs:CoverageId>
+        <gml:coverageFunction>
+            <gml:GridFunction>
+                <gml:sequenceRule axisOrder="+5 +4 +3 +2 +1">Linear</gml:sequenceRule>
+                <gml:startPoint>0 0 0 0 0</gml:startPoint>
+            </gml:GridFunction>
+        </gml:coverageFunction>
+        <gmlcov:metadata>
+            <gmlcov:Extension>
+                <rasdaman:covMetadata>
+                    <bands>
+                        <rx1day>
+                            <nilReason>The nil value represents an area outside the region of interest.</nilReason>
+                            <long_name>1-day maximum precipitation</long_name>
+                            <nilValue>-999.0</nilValue>
+                            <uomCode>mm</uomCode>
+                        </rx1day>
+                    </bands>
+                    <axes>
+                        <Y>
+                            <units>m</units>
+                            <long_name>y coordinate of projection</long_name>
+                            <standard_name>projection_y_coordinate</standard_name>
+                        </Y>
+                        <X>
+                            <units>m</units>
+                            <long_name>x coordinate of projection</long_name>
+                            <standard_name>projection_x_coordinate</standard_name>
+                        </X>
+                        <rcp>
+                            <long_name>scenario</long_name>
+                            <description>"representative concentration pathway" scenarios of the input climate projections</description>
+                        </rcp>
+                        <M>
+                            <long_name>ensamble model</long_name>
+                            <lut>{u'EUR-11_CNRM-CERFACS-CNRM-CM5_SMHI-RCA4_r1i1p1_v1_day_19702100': 5, u'EUR-11_MOHC-HadGEM2-ES_KNMI-RACMO22E_r1i1p1_v2_day_19702100': 16, u'EUR-11_CNRM-CERFACS-CNRM-CM5_RMIB-UGent-ALARO-0_r1i1p1_v1_day_19702100': 4, u'EUR-11_ICHEC-EC-EARTH_SMHI-RCA4_r12i1p1_v1_day_19702100': 12, u'EUR-11_MPI-M-MPI-ESM-LR_SMHI-RCA4_r1i1p1_v1a_day_19702100': 20, u'EUR-11_ICHEC-EC-EARTH_ICTP-RegCM4-6_r12i1p1_v1_day_19702100': 9, u'EUR-11_MPI-M-MPI-ESM-LR_MPI-CSC-REMO2009_r1i1p1_v1_day_19702100': 19, u'EUR-11_IPSL-IPSL-CM5A-MR_SMHI-RCA4_r1i1p1_v1_day_19702100': 14, u'EUR-11_CNRM-CERFACS-CNRM-CM5_CNRM-ALADIN63_r1i1p1_v2_day_19702100': 2, u'EUR-11_NCC-NorESM1-M_ICTP-RegCM4-6_r1i1p1_v1_day_19702100': 22, u'EUR-11_IPSL-IPSL-CM5A-MR_IPSL-WRF381P_r1i1p1_v1_day_19702100': 13, u'EUR-11_MOHC-HadGEM2-ES_CLMcom-CCLM4-8-17_r1i1p1_v1_day_19702100': 15, u'EUR-11_ICHEC-EC-EARTH_IPSL-WRF381P_r12i1p1_v1_day_19702100': 10, u'EUR-11_CNRM-CERFACS-CNRM-CM5_CLMcom-CCLM4-8-17_r1i1p1_v1_day_19702100': 0, u'EUR-11_ICHEC-EC-EARTH_KNMI-RACMO22E_r12i1p1_v1_day_19702100': 11, u'EUR-11_ICHEC-EC-EARTH_DMI-HIRHAM5_r3i1p1_v2_day_19702100': 8, u'EUR-11_MPI-M-MPI-ESM-LR_CLMcom-ETH-COSMO-crCLIM-v1-1_r1i1p1_v1_day_19702100': 18, u'EUR-11_CNRM-CERFACS-CNRM-CM5_CLMcom-ETH-COSMO-crCLIM-v1-1_r1i1p1_v1_day_19702100': 1, u'EUR-11_MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17_r1i1p1_v1_day_19702100': 17, u'EUR-11_NCC-NorESM1-M_GERICS-REMO2015_r1i1p1_v1_day_19702100': 21, u'EUR-11_NCC-NorESM1-M_SMHI-RCA4_r1i1p1_v1_day_19702100': 23, u'EUR-11_CNRM-CERFACS-CNRM-CM5_KNMI-RACMO22E_r1i1p1_v2_day_19702100': 3, u'EUR-11_ICHEC-EC-EARTH_CLMcom-ETH-COSMO-crCLIM-v1-1_r12i1p1_v1_day_19702100': 7, u'EUR-11_ICHEC-EC-EARTH_CLMcom-CCLM4-8-17_r12i1p1_v1_day_19702100': 6}</lut>
+                            <description>ensamble model of the input climate projections</description>
+                        </M>
+                        <year>
+                            <units>a</units>
+                            <calendar>standard</calendar>
+                        </year>
+                    </axes>
+                    <slices>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 0 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 0 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_CNRM-CERFACS-CNRM-CM5_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_CNRM-CERFACS-CNRM-CM5_CLMcom-CCLM4-8-17_r1i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 1 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 1 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_CNRM-CERFACS-CNRM-CM5_CLMcom-ETH-COSMO-crCLIM-v1-1_r1i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 2 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 2 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_CNRM-CERFACS-CNRM-CM5_CNRM-ALADIN63_r1i1p1_v2 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_CNRM-CERFACS-CNRM-CM5_CNRM-ALADIN63_r1i1p1_v2_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 3 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 3 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_CNRM-CERFACS-CNRM-CM5_KNMI-RACMO22E_r1i1p1_v2 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_CNRM-CERFACS-CNRM-CM5_KNMI-RACMO22E_r1i1p1_v2_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 4 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 4 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_CNRM-CERFACS-CNRM-CM5_RMIB-UGent-ALARO-0_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_CNRM-CERFACS-CNRM-CM5_RMIB-UGent-ALARO-0_r1i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 6 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 6 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_ICHEC-EC-EARTH_CLMcom-CCLM4-8-17_r12i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_ICHEC-EC-EARTH_CLMcom-CCLM4-8-17_r12i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 7 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 7 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_ICHEC-EC-EARTH_CLMcom-ETH-COSMO-crCLIM-v1-1_r12i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 9 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 9 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_ICHEC-EC-EARTH_ICTP-RegCM4-6_r12i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 10 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 10 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_ICHEC-EC-EARTH_IPSL-WRF381P_r12i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 11 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 11 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_ICHEC-EC-EARTH_KNMI-RACMO22E_r12i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_ICHEC-EC-EARTH_KNMI-RACMO22E_r12i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 13 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 13 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_IPSL-IPSL-CM5A-MR_IPSL-WRF381P_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_IPSL-IPSL-CM5A-MR_IPSL-WRF381P_r1i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 15 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 15 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MOHC-HadGEM2-ES_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_MOHC-HadGEM2-ES_CLMcom-CCLM4-8-17_r1i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 16 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 16 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MOHC-HadGEM2-ES_KNMI-RACMO22E_r1i1p1_v2 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_MOHC-HadGEM2-ES_KNMI-RACMO22E_r1i1p1_v2_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 17 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 17 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17_r1i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 18 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 18 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_MPI-M-MPI-ESM-LR_CLMcom-ETH-COSMO-crCLIM-v1-1_r1i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 19 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 19 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MPI-M-MPI-ESM-LR_MPI-CSC-REMO2009_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_MPI-M-MPI-ESM-LR_MPI-CSC-REMO2009_r1i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 22 4.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 22 4.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp45 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp45/rx1day_EUR-11_NCC-NorESM1-M_ICTP-RegCM4-6_r1i1p1_v1_day_19702100_rcp45.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 0 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 0 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_CNRM-CERFACS-CNRM-CM5_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_CNRM-CERFACS-CNRM-CM5_CLMcom-CCLM4-8-17_r1i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 1 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 1 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_CNRM-CERFACS-CNRM-CM5_CLMcom-ETH-COSMO-crCLIM-v1-1_r1i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_CNRM-CERFACS-CNRM-CM5_CLMcom-ETH-COSMO-crCLIM-v1-1_r1i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 2 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 2 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_CNRM-CERFACS-CNRM-CM5_CNRM-ALADIN63_r1i1p1_v2 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_CNRM-CERFACS-CNRM-CM5_CNRM-ALADIN63_r1i1p1_v2_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 3 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 3 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_CNRM-CERFACS-CNRM-CM5_KNMI-RACMO22E_r1i1p1_v2 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_CNRM-CERFACS-CNRM-CM5_KNMI-RACMO22E_r1i1p1_v2_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 4 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 4 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_CNRM-CERFACS-CNRM-CM5_RMIB-UGent-ALARO-0_r1i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_CNRM-CERFACS-CNRM-CM5_RMIB-UGent-ALARO-0_r1i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 6 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 6 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_ICHEC-EC-EARTH_CLMcom-CCLM4-8-17_r12i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_ICHEC-EC-EARTH_CLMcom-CCLM4-8-17_r12i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 7 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 7 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_ICHEC-EC-EARTH_CLMcom-ETH-COSMO-crCLIM-v1-1_r12i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_ICHEC-EC-EARTH_CLMcom-ETH-COSMO-crCLIM-v1-1_r12i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 9 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 9 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_ICHEC-EC-EARTH_ICTP-RegCM4-6_r12i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_ICHEC-EC-EARTH_ICTP-RegCM4-6_r12i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 10 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 10 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_ICHEC-EC-EARTH_IPSL-WRF381P_r12i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_ICHEC-EC-EARTH_IPSL-WRF381P_r12i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 11 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 11 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_ICHEC-EC-EARTH_KNMI-RACMO22E_r12i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_ICHEC-EC-EARTH_KNMI-RACMO22E_r12i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 13 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 13 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_IPSL-IPSL-CM5A-MR_IPSL-WRF381P_r1i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_IPSL-IPSL-CM5A-MR_IPSL-WRF381P_r1i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 15 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 15 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MOHC-HadGEM2-ES_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_MOHC-HadGEM2-ES_CLMcom-CCLM4-8-17_r1i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 16 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 16 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MOHC-HadGEM2-ES_KNMI-RACMO22E_r1i1p1_v2 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_MOHC-HadGEM2-ES_KNMI-RACMO22E_r1i1p1_v2_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 17 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 17 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17_r1i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17_r1i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 18 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 18 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MPI-M-MPI-ESM-LR_CLMcom-ETH-COSMO-crCLIM-v1-1_r1i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_MPI-M-MPI-ESM-LR_CLMcom-ETH-COSMO-crCLIM-v1-1_r1i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 19 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 19 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_MPI-M-MPI-ESM-LR_MPI-CSC-REMO2009_r1i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_MPI-M-MPI-ESM-LR_MPI-CSC-REMO2009_r1i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                        <slice>
+                            <boundedBy>
+                                <Envelope>
+                                    <axisLabels>year Y X M rcp</axisLabels>
+                                    <srsDimension>5</srsDimension>
+                                    <lowerCorner>1970.0 2500257.63356768990 4343890.93180394550 22 8.5</lowerCorner>
+                                    <upperCorner>2100.0 2673257.63356768990 4516890.93180394550 22 8.5</upperCorner>
+                                </Envelope>
+                            </boundedBy>
+                            <Source>The index is based on the bias-adjusted version of the EURO-CORDEX simulation EUR-11_NCC-NorESM1-M_ICTP-RegCM4-6_r1i1p1_v1 under the rcp85 emissions scenario. The bias-adjusted data has a spatial resolution of 1 km and were obtained by applying a Quantile Delta Mapping procedure using regional gridded observations as reference.</Source>
+                            <fileReferenceHistory>/mnt/CEPH_PROJECTS/FACT_CLIMAX/CORDEX-Adjust/INDICES/rx1day/rcp85/rx1day_EUR-11_NCC-NorESM1-M_ICTP-RegCM4-6_r1i1p1_v1_day_19702100_rcp85.nc</fileReferenceHistory>
+                        </slice>
+                    </slices>
+                    <License_Link>https://creativecommons.org/licenses/by/4.0/</License_Link>
+                    <Provider1_Roles>Host</Provider1_Roles>
+                    <License>CC-BY-4.0</License>
+                    <Title>1-day Maximum Precipitation in Trentino-South Tyrol, IT (1971-2100)</Title>
+                    <Provider2_Name>Alice Crespi</Provider2_Name>
+                    <Temporal_Step>P1Y</Temporal_Step>
+                    <Project>FAct CLIMAX</Project>
+                    <About_Link>https://www.eurac.edu/en/institutes-centers/institute-for-earth-observation/projects/fact-climax</About_Link>
+                    <Provider2_Link>https://www.eurac.edu/en/people/alice-crespi</Provider2_Link>
+                    <Provider1_Link>http://www.eurac.edu</Provider1_Link>
+                    <Provider1_Name>Eurac EO WCS</Provider1_Name>
+                    <Provider2_Roles>Processor</Provider2_Roles>
+                    <Description>Highest one day precipitation amount of the year</Description>
+                    <Creator>Eurac Research (Bolzano, South Tyrol) - Institute for Earth Observation</Creator>
+                    <Citation>TODO</Citation>
+                    <Keywords>rx1day, FAct CLIMAX, Trentino, South Tyrol, Projection</Keywords>
+                </rasdaman:covMetadata>
+            </gmlcov:Extension>
+        </gmlcov:metadata>
+        <gml:domainSet>
+            <gmlrgrid:ReferenceableGridByVectors dimension="5" gmlrgrid:id="rx1day_19712100_tnst_1x1km_year_cordexadj_qdm-grid">
+                <gml:limits>
+                    <gml:GridEnvelope>
+                        <gml:low>0 0 0 0 0</gml:low>
+                        <gml:high>130 172 172 16 1</gml:high>
+                    </gml:GridEnvelope>
+                </gml:limits>
+                <gml:axisLabels>year Y X M rcp</gml:axisLabels>
+                <gmlrgrid:origin>
+                    <gml:Point gml:id="rx1day_19712100_tnst_1x1km_year_cordexadj_qdm-point" srsName="http://localhost:8088/rasdaman/def/crs-compound?1=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;year&quot;&amp;2=http://localhost:8088/rasdaman/def/crs/EPSG/0/3035&amp;3=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;M&quot;&amp;4=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;rcp&quot;">
+                        <gml:pos>1970 2500757.6335676899 4344390.9318039455 0 4.5</gml:pos>
+                    </gml:Point>
+                </gmlrgrid:origin>
+                <gmlrgrid:generalGridAxis>
+                    <gmlrgrid:GeneralGridAxis>
+                        <gmlrgrid:offsetVector srsName="http://localhost:8088/rasdaman/def/crs-compound?1=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;year&quot;&amp;2=http://localhost:8088/rasdaman/def/crs/EPSG/0/3035&amp;3=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;M&quot;&amp;4=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;rcp&quot;">1 0 0 0 0</gmlrgrid:offsetVector>
+                        <gmlrgrid:coefficients>1970 1971 1972 1973 1974 1975 1976 1977 1978 1979 1980 1981 1982 1983 1984 1985 1986 1987 1988 1989 1990 1991 1992 1993 1994 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026 2027 2028 2029 2030 2031 2032 2033 2034 2035 2036 2037 2038 2039 2040 2041 2042 2043 2044 2045 2046 2047 2048 2049 2050 2051 2052 2053 2054 2055 2056 2057 2058 2059 2060 2061 2062 2063 2064 2065 2066 2067 2068 2069 2070 2071 2072 2073 2074 2075 2076 2077 2078 2079 2080 2081 2082 2083 2084 2085 2086 2087 2088 2089 2090 2091 2092 2093 2094 2095 2096 2097 2098 2099 2100</gmlrgrid:coefficients>
+                        <gmlrgrid:gridAxesSpanned>year</gmlrgrid:gridAxesSpanned>
+                        <gmlrgrid:sequenceRule axisOrder="+1">Linear</gmlrgrid:sequenceRule>
+                    </gmlrgrid:GeneralGridAxis>
+                </gmlrgrid:generalGridAxis>
+                <gmlrgrid:generalGridAxis>
+                    <gmlrgrid:GeneralGridAxis>
+                        <gmlrgrid:offsetVector srsName="http://localhost:8088/rasdaman/def/crs-compound?1=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;year&quot;&amp;2=http://localhost:8088/rasdaman/def/crs/EPSG/0/3035&amp;3=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;M&quot;&amp;4=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;rcp&quot;">0 1000 0 0 0</gmlrgrid:offsetVector>
+                        <gmlrgrid:coefficients/>
+                        <gmlrgrid:gridAxesSpanned>Y</gmlrgrid:gridAxesSpanned>
+                        <gmlrgrid:sequenceRule axisOrder="+1">Linear</gmlrgrid:sequenceRule>
+                    </gmlrgrid:GeneralGridAxis>
+                </gmlrgrid:generalGridAxis>
+                <gmlrgrid:generalGridAxis>
+                    <gmlrgrid:GeneralGridAxis>
+                        <gmlrgrid:offsetVector srsName="http://localhost:8088/rasdaman/def/crs-compound?1=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;year&quot;&amp;2=http://localhost:8088/rasdaman/def/crs/EPSG/0/3035&amp;3=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;M&quot;&amp;4=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;rcp&quot;">0 0 1000 0 0</gmlrgrid:offsetVector>
+                        <gmlrgrid:coefficients/>
+                        <gmlrgrid:gridAxesSpanned>X</gmlrgrid:gridAxesSpanned>
+                        <gmlrgrid:sequenceRule axisOrder="+1">Linear</gmlrgrid:sequenceRule>
+                    </gmlrgrid:GeneralGridAxis>
+                </gmlrgrid:generalGridAxis>
+                <gmlrgrid:generalGridAxis>
+                    <gmlrgrid:GeneralGridAxis>
+                        <gmlrgrid:offsetVector srsName="http://localhost:8088/rasdaman/def/crs-compound?1=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;year&quot;&amp;2=http://localhost:8088/rasdaman/def/crs/EPSG/0/3035&amp;3=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;M&quot;&amp;4=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;rcp&quot;">0 0 0 1 0</gmlrgrid:offsetVector>
+                        <gmlrgrid:coefficients>0 1 2 3 4 6 7 9 10 11 13 15 16 17 18 19 22</gmlrgrid:coefficients>
+                        <gmlrgrid:gridAxesSpanned>M</gmlrgrid:gridAxesSpanned>
+                        <gmlrgrid:sequenceRule axisOrder="+1">Linear</gmlrgrid:sequenceRule>
+                    </gmlrgrid:GeneralGridAxis>
+                </gmlrgrid:generalGridAxis>
+                <gmlrgrid:generalGridAxis>
+                    <gmlrgrid:GeneralGridAxis>
+                        <gmlrgrid:offsetVector srsName="http://localhost:8088/rasdaman/def/crs-compound?1=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;year&quot;&amp;2=http://localhost:8088/rasdaman/def/crs/EPSG/0/3035&amp;3=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;M&quot;&amp;4=http://localhost:8088/rasdaman/def/crs/OGC/0/Index1D?axis-label=&quot;rcp&quot;">0 0 0 0 1</gmlrgrid:offsetVector>
+                        <gmlrgrid:coefficients>4.5 8.5</gmlrgrid:coefficients>
+                        <gmlrgrid:gridAxesSpanned>rcp</gmlrgrid:gridAxesSpanned>
+                        <gmlrgrid:sequenceRule axisOrder="+1">Linear</gmlrgrid:sequenceRule>
+                    </gmlrgrid:GeneralGridAxis>
+                </gmlrgrid:generalGridAxis>
+            </gmlrgrid:ReferenceableGridByVectors>
+        </gml:domainSet>
+        <gmlcov:rangeType>
+            <swe:DataRecord>
+                <swe:field name="rx1day">
+                    <swe:Quantity definition="http://www.opengis.net/def/dataType/OGC/0/float32">
+                        <swe:label>rx1day</swe:label>
+                        <swe:description>1-day maximum precipitation</swe:description>
+                        <swe:nilValues>
+                            <swe:NilValues>
+                                <swe:nilValue reason="">-999.0</swe:nilValue>
+                            </swe:NilValues>
+                        </swe:nilValues>
+                        <swe:uom code="mm"/>
+                        <swe:constraint/>
+                    </swe:Quantity>
+                </swe:field>
+            </swe:DataRecord>
+        </gmlcov:rangeType>
+        <wcs:ServiceParameters>
+            <wcs:CoverageSubtype>ReferenceableGridCoverage</wcs:CoverageSubtype>
+            <wcs:nativeFormat>application/octet-stream</wcs:nativeFormat>
+        </wcs:ServiceParameters>
+    </wcs:CoverageDescription>
+</wcs:CoverageDescriptions>

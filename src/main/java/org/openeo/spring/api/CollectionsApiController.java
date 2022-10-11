@@ -135,7 +135,7 @@ public class CollectionsApiController implements CollectionsApi {
                         .version(wcpsVersion)
                         .provider(new Providers()
                                 .name(wcpsProviderName)
-                                .roles(Arrays.asList(wcpsProviderType))
+                                .roles(wcpsProviderType)
                                 .url(new URI(wcpsProviderUrl)))
                         .cache(collectionsFileWCPS)
                         .parallelism(parallelizedHarvest ? -1 : 1)

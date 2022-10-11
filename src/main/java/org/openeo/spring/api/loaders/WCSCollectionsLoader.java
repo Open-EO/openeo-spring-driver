@@ -1,16 +1,17 @@
 package org.openeo.spring.api.loaders;
 
+import static org.openeo.spring.api.loaders.CRSUtils.EPSG_WGS84;
+import static org.openeo.spring.api.loaders.CRSUtils.TEMPORAL_AXIS_LABELS;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InvalidObjectException;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -26,7 +27,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -43,6 +43,8 @@ import org.json.JSONException;
 import org.openeo.spring.api.CollectionsApiController;
 import org.openeo.spring.api.DefaultApiController;
 import org.openeo.spring.api.LinkRelType;
+import org.openeo.spring.api.loaders.CRSUtils.CSAxisOrientation;
+import org.openeo.spring.api.loaders.CRSUtils.CsType;
 import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.BandSummary;
 import org.openeo.spring.model.Collection;
@@ -53,19 +55,17 @@ import org.openeo.spring.model.CollectionSummaryStats;
 import org.openeo.spring.model.CollectionTemporalExtent;
 import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.Dimension;
+import org.openeo.spring.model.Dimension.TypeEnum;
 import org.openeo.spring.model.DimensionBands;
 import org.openeo.spring.model.DimensionOther;
 import org.openeo.spring.model.DimensionSpatial;
+import org.openeo.spring.model.DimensionSpatial.AxisEnum;
 import org.openeo.spring.model.DimensionTemporal;
 import org.openeo.spring.model.EngineTypes;
 import org.openeo.spring.model.HasUnit;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.Providers;
-import org.openeo.spring.model.Dimension.TypeEnum;
-import org.openeo.spring.model.DimensionSpatial.AxisEnum;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -75,16 +75,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import static org.openeo.spring.api.loaders.CRSUtils.CSAxisOrientation;
-import static org.openeo.spring.api.loaders.CRSUtils.CsType;
-import static org.openeo.spring.api.loaders.CRSUtils.*;
-
 /**
  * Loader of collections from a (remote) WCS coverages catalogue.
  */
 public class WCSCollectionsLoader implements ICollectionsLoader {
 
-    private final Logger log = LogManager.getLogger(WCSCollectionsLoader.class);
+    private static final Logger log = LogManager.getLogger(WCSCollectionsLoader.class);
 
     /** STAC spec. version used. */
     // FIXME this should be dictated by the model implemented
@@ -130,7 +126,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
         this.serviceVersion = serviceVersion;
         this.provider
             .name(providerName)
-            .roles(Arrays.asList(providerType))
+            .roles(providerType)
             .url(providerUrl);
 
         this.cache = cache;
@@ -352,17 +348,10 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
      */
     private Collection parseCollection(String coverageID) {
 
-        Collection currentCollection = new Collection();
-        currentCollection.setEngine(EngineTypes.WCPS);
-
-        log.trace("coverage info: {}", coverageID);
-
-        currentCollection.setId(coverageID);
-        currentCollection.setStacVersion(STAC_VERSION);
+        Collection collection = null;
 
         URL urlCollections;
         HttpURLConnection connCollections;
-        InputStream currentCollectionInputStream;
         try {
             urlCollections = new URL(String.format("%s?"
                     + "SERVICE=WCS&"
@@ -372,20 +361,37 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                     endpoint, serviceVersion, coverageID));
             connCollections = (HttpURLConnection) urlCollections.openConnection();
             connCollections.setRequestMethod("GET");
-            currentCollectionInputStream = connCollections.getInputStream();
-
+            try (InputStream currentCollectionInputStream = connCollections.getInputStream()) {
+                collection = parseCollection(coverageID, currentCollectionInputStream, this.provider);
+            }
         } catch (MalformedURLException mue) {
             log.error("Malformed rasdaman coverage URL.", mue);
-            return null;
         } catch (IOException ioe) {
             log.error("Could not fetch metadata of rasdaman coverage '{}'.", coverageID, ioe);
-            return null;
         }
+
+        return collection;
+    }
+
+    /**
+     * Overload method that parses a collection from an input stream.
+     * @see #parseCollection(String)
+     */
+    static Collection parseCollection(String coverageID, InputStream stream,
+            Providers ... extraProviders) {
+
+        Collection currentCollection = new Collection();
+        currentCollection.setEngine(EngineTypes.WCPS);
+
+        log.trace("coverage info: {}", coverageID);
+
+        currentCollection.setId(coverageID);
+        currentCollection.setStacVersion(STAC_VERSION);
 
         SAXBuilder builderInt = new SAXBuilder();
         Document descriptionDocInt;
         try {
-            descriptionDocInt = builderInt.build(currentCollectionInputStream);
+            descriptionDocInt = builderInt.build(stream);
         } catch (JDOMException e) {
             log.error("Invalid rasdaman '{}' coverage document.", coverageID, e);
             return null;
@@ -707,13 +713,21 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                     dim.setExtent(extent);
                     cubeDimensions.put(label, dim);
                     timeDims.add(dim);
-                } else { // time-encoded numeric coordinate
+                } else { // time-encoded numeric coordinate:
+                    // TODO manually derive time extent from CRS' time datum + direction + resolution
                     DimensionOther dim = new DimensionOther();
                     //dim.setType(TypeEnum.TEMPORAL); // <-- NO: otherwise marshalling creates a DimensionTemporal
-                    dim.setType(TypeEnum.OTHER);    //           which is differnet (eg. it does not have unit)
-                    List<BigDecimal> extent = Arrays.asList(
-                            BigDecimal.valueOf(Double.parseDouble(minT)),
-                            BigDecimal.valueOf(Double.parseDouble(maxT)));
+                    dim.setType(TypeEnum.OTHER);    //           which is different (eg. it does not have unit)
+                    List<BigDecimal> extent = new ArrayList<>(2);
+                    try {
+                        // integer extent
+                        extent.add(BigDecimal.valueOf(Long.parseLong(minT)));
+                        extent.add(BigDecimal.valueOf(Long.parseLong(maxT)));
+                    } catch (NumberFormatException e) {
+                        // decimal extent
+                        extent.add(BigDecimal.valueOf(Double.parseDouble(minT)));
+                        extent.add(BigDecimal.valueOf(Double.parseDouble(maxT)));
+                    }
                     dim.setExtent(extent);
                     cubeDimensions.put(label, dim);
                 }
@@ -731,9 +745,16 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                     // extent shall be numeric
                     // but in alternative it can have values
                     // https://github.com/stac-extensions/datacube#additional-dimension-object
-                    List<BigDecimal> extent = Arrays.asList(
-                            BigDecimal.valueOf(Double.parseDouble(minValues[index])),
-                            BigDecimal.valueOf(Double.parseDouble(maxValues[index])));
+                    List<BigDecimal> extent = new ArrayList<>(2);
+                    try {
+                        // integer extent
+                        extent.add(BigDecimal.valueOf(Long.parseLong(minValues[index])));
+                        extent.add(BigDecimal.valueOf(Long.parseLong(maxValues[index])));
+                    } catch (NumberFormatException e) {
+                        // decimal extent
+                        extent.add(BigDecimal.valueOf(Double.parseDouble(minValues[index])));
+                        extent.add(BigDecimal.valueOf(Double.parseDouble(maxValues[index])));
+                    }
                     dim.setExtent(extent);
 
                     // unit
@@ -1015,7 +1036,9 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
         List<Providers> providers = new ArrayList<>();
 
         // force THIS provider
-        providers.add(this.provider);
+        for (Providers p : extraProviders) {
+            providers.add(p);
+        }
 
         // import source providers
         int prvi = 1;

@@ -1,0 +1,149 @@
+{
+  "engine": "WCPS",
+  "stac_version": "0.9.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v1.0.0/schema.json"
+  ],
+  "type": "Collection",
+  "id": "rx1day_19712100_tnst_1x1km_year_cordexadj_qdm",
+  "title": "1-day Maximum Precipitation in Trentino-South Tyrol, IT (1971-2100)",
+  "description": "Highest one day precipitation amount of the year",
+  "keywords": [
+    "rx1day",
+    "FAct CLIMAX",
+    "Trentino",
+    "South Tyrol",
+    "Projection"
+  ],
+  "version": "v1",
+  "deprecated": false,
+  "license": "CC-BY-4.0",
+  "sci:citation": "TODO",
+  "providers": [
+    {
+      "name": "Eurac_EO_WCS",
+      "url": "http://www.eurac.edu",
+      "roles": [
+        "host"
+      ]
+    },
+    {
+      "name": "Eurac EO WCS",
+      "url": "http://www.eurac.edu",
+      "roles": [
+        "Host"
+      ]
+    },
+    {
+      "name": "Alice Crespi",
+      "url": "https://www.eurac.edu/en/people/alice-crespi",
+      "roles": [
+        "Processor"
+      ]
+    }
+  ],
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          45.61443989663384,
+          47.14218071084979
+        ],
+        [
+          10.293056040808795,
+          12.580988155437245
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": []
+    }
+  },
+  "links": [
+    {
+      "rel": "licence",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "title": "License Link"
+    },
+    {
+      "rel": "about",
+      "href": "https://www.eurac.edu/en/institutes-centers/institute-for-earth-observation/projects/fact-climax",
+      "title": "About Link"
+    }
+  ],
+  "cube:dimensions": {
+    "year": {
+      "type": "other",
+      "extent": [
+        1970,
+        2100
+      ],
+      "unit": "a"
+    },
+    "X": {
+      "type": "spatial",
+      "axis": "x",
+      "extent": [
+        4343890.931803945,
+        4516890.931803945
+      ],
+      "unit": "m",
+      "reference_system": 3035
+    },
+    "Y": {
+      "type": "spatial",
+      "axis": "y",
+      "extent": [
+        2500257.63356769,
+        2673257.63356769
+      ],
+      "unit": "m",
+      "reference_system": 3035
+    },
+    "bands": {
+      "type": "bands",
+      "values": [
+        "rx1day"
+      ]
+    },
+    "M": {
+      "type": "other",
+      "description": "ensamble model of the input climate projections",
+      "extent": [
+        0,
+        22
+      ],
+      "unit": "GridSpacing"
+    },
+    "rcp": {
+      "type": "other",
+      "description": "\"representative concentration pathway\" scenarios of the input climate projections",
+      "extent": [
+        4.5,
+        8.5
+      ],
+      "unit": "GridSpacing"
+    }
+  },
+  "summaries": {
+    "constellation": [],
+    "platform": [],
+    "instruments": [],
+    "eo:cloud cover": {
+      "min": 0,
+      "max": 0
+    },
+    "gsd": [],
+    "eo:bands": [
+      {
+        "name": "rx1day",
+        "description": "1-day maximum precipitation",
+        "center_wavelength": 0,
+        "gsd": 0
+      }
+    ]
+  },
+  "assets": {}
+}
