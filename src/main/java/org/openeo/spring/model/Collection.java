@@ -1,6 +1,7 @@
 package org.openeo.spring.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -24,7 +25,7 @@ import io.swagger.annotations.ApiModelProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Collection   {
 
-  private static final String TYPE = "Collection"; // STAC >=v1.0.0-rc.1
+  public static final String TYPE = "Collection"; // STAC >=v1.0.0-rc.1
 
   private EngineTypes engine;
 
@@ -506,6 +507,7 @@ public Collection stacVersion(String stacVersion) {
       return false;
     }
     Collection collection = (Collection) o;
+    
     return Objects.equals(this.stacVersion, collection.stacVersion) &&
         Objects.equals(this.stacExtensions, collection.stacExtensions) &&
         Objects.equals(this.id, collection.id) &&
