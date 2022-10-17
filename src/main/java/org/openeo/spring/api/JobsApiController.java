@@ -1,8 +1,6 @@
 package org.openeo.spring.api;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,17 +9,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.StringBufferInputStream;
-import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.file.Files;
 import java.security.Principal;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,12 +28,9 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.entity.mime.MIME;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
-import org.apache.tomcat.util.json.JSONParser;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
@@ -58,7 +48,6 @@ import org.openeo.spring.model.Link;
 import org.openeo.spring.model.LogEntries;
 import org.openeo.spring.model.LogEntry;
 import org.openeo.spring.model.LogEntry.LevelEnum;
-import org.openeo.spring.api.ResultApiController;
 import org.openeo.wcps.ConvenienceHelper;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
@@ -75,15 +64,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -105,7 +91,7 @@ public class JobsApiController implements JobsApi {
 
 	@Value("${org.openeo.endpoint}")
 	private String openEOEndpoint;
-	
+
 	@Value("${org.openeo.public.endpoint}")
 	private String openEOPublicEndpoint;
 
@@ -114,22 +100,22 @@ public class JobsApiController implements JobsApi {
 
 	@Value("${org.openeo.tmp.dir}")
 	private String tmpDir;
-	
+
 	@Value("${co.elasticsearch.endpoint}")
 	private String elasticSearchEndpoint;
-	
+
 	@Value("${co.elasticsearch.service.name}")
 	private String serviceName;
-	
+
 	@Value("${co.elasticsearch.service.node.name}")
 	private String serviceNodeName;
 
 	@Autowired
 	private JobScheduler jobScheduler;
-	
+
 	@Autowired
 	private AuthzService authzService;
-	
+
 	@Autowired
 	private ResultApiController resultApiController;
 
@@ -158,7 +144,7 @@ public class JobsApiController implements JobsApi {
 	public Optional<NativeWebRequest> getRequest() {
 		return Optional.ofNullable(request);
 	}
-	
+
 //	@Autowired
 //	public Identity identity;
 
@@ -167,7 +153,7 @@ public class JobsApiController implements JobsApi {
 	 * from one or more (chained) processes at the back-end. Processing the data
 	 * doesn&#39;t start yet. The job status gets initialized as &#x60;created&#x60;
 	 * by default.
-	 * @param Principal 
+	 * @param Principal
 	 * @param storeBatchJobRequest (required)
 	 * @return The batch job has been created successfully. (status code 201) or The
 	 *         request can&#39;t be fulfilled due to an error on client-side, i.e.
@@ -208,28 +194,28 @@ public class JobsApiController implements JobsApi {
 		//TODO add validity check of the job using ValidationApiController
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
-		
+
 		job.setStatus(JobStates.CREATED);
 		job.setPlan("free");
 		job.setCreated(OffsetDateTime.now());
 		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
-	     
-		
+
+
 		Set<String> roles = new HashSet<>();
 		Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
 		for (Map.Entry<String, AccessToken.Access> e : resourceAccess.entrySet()) {
 			if (e.getValue().getRoles() != null){
 				for(String r: e.getValue().getRoles()) {
-					roles.add(r);					
-				}			
-			}		
+					roles.add(r);
+				}
+			}
 		}
-		
+
 
 		boolean isEuracUser = roles.contains("eurac");
-	
+
 		Iterator<String> keys = processGraph.keys();
 		boolean isCreateJobAllow= true;
 		while(keys.hasNext()) {
@@ -237,13 +223,13 @@ public class JobsApiController implements JobsApi {
 			JSONObject processNode = (JSONObject) processGraph.get(key);
 			String process_id = processNode.get("process_id").toString();
 			if (process_id.equals("run_udf") && !isEuracUser) {
-				isCreateJobAllow =false;				    
+				isCreateJobAllow =false;
 			}
 		}
-	
+
 		log.trace("Process Graph attached: " + processGraph.toString(4));
 		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
-		
+
 		if (isCreateJobAllow) {
 			try {
 				EngineTypes resultEngine = null;
@@ -256,9 +242,9 @@ public class JobsApiController implements JobsApi {
 				log.error(error.getMessage());
 				ThreadContext.clearMap();
 				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-			}	
+			}
 		jobDAO.save(job);
-		
+
 		ThreadContext.put("jobid", job.getId().toString());
 		ObjectMapper mapper = new ObjectMapper();
 		try {
@@ -270,7 +256,7 @@ public class JobsApiController implements JobsApi {
 		Job verifiedSave = jobDAO.findOne(job.getId());
 		if (verifiedSave != null) {
 			if(token != null) {
-			
+
 				authzService.createProtectedResource(job, token);
 			}
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
@@ -288,7 +274,7 @@ public class JobsApiController implements JobsApi {
 				ThreadContext.clearMap();
 				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 			}
-			
+
 		} else {
 			Error error = new Error();
 			error.setCode("500");
@@ -303,9 +289,9 @@ public class JobsApiController implements JobsApi {
 			error.setCode("401");
 			error.setMessage("You are not authorized to create this job");
 			log.error("You are not authorized to create this job");
-			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED); 
+			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED);
 		}
-		
+
 	}
 
 	/**
@@ -694,14 +680,14 @@ public class JobsApiController implements JobsApi {
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit, Principal principal) {
 		BatchJobs batchJobs = new BatchJobs();
 		//I added///
-				AccessToken token = TokenUtil.getAccessToken(principal); 
+				AccessToken token = TokenUtil.getAccessToken(principal);
 				for (Job job : jobDAO.findWithOwner(token.getPreferredUsername())) {
 					batchJobs.addJobsItem(job);
-				
+
 				}
 //		for (Job job : jobDAO.findAll()) {
 //			batchJobs.addJobsItem(job);
-//			
+//
 //		}
 		Link linkToJob = new Link();
 		linkToJob.setTitle("next");

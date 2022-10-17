@@ -34,6 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.openeo.spring.api.DefaultApiController;
 import org.openeo.spring.api.ResultApiController;
 import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
@@ -68,10 +69,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @EnableAsync(proxyTargetClass=true)
 public class JobScheduler implements JobEventListener, UDFEventListener {
 
-	Logger log = LogManager.getLogger(JobScheduler.class);
+    /** STAC spec. version used. */
+    public static final String STAC_VERSION = DefaultApiController.DEFAULT_STAC_VERSION;
+
+	private static final Logger log = LogManager.getLogger(JobScheduler.class);
 
 	JobDAO jobDAO;
-
 	BatchJobResultDAO resultDAO;
 
 	@Autowired
@@ -79,7 +82,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		jobDAO = injectedJObDAO;
 		resultDAO = injectResultDao;
 	}
-	
+
 	@Autowired
 	private CollectionMap collectionMap;
 
@@ -88,7 +91,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 	@Value("${org.openeo.endpoint}")
 	private String openEOEndpoint;
-	
+
 	@Value("${org.openeo.public.endpoint}")
 	private String openEOPublicEndpoint;
 
@@ -97,10 +100,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 	@Value("${org.openeo.tmp.dir}")
 	private String tmpDir;
-	
+
 	@Value("${org.openeo.udf.dir}")
 	private String tmpDirUDF;
-	
+
 	@Value("${org.openeo.udf.importscript}")
 	private String udfimport;
 
@@ -121,9 +124,9 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	}
 
 	public EngineTypes getProcessingEngine(Job job) {
-		return job.getEngine();	
+		return job.getEngine();
 	}
-	
+
 	@Override
 	@Async
 	public void jobQueued(JobEvent jobEvent) {
@@ -137,7 +140,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 			processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
 			JSONArray nodesSortedArray = getProcessesNodesSequence();
-			
+
 			JSONArray processesSequence = new JSONArray();
 
 			for (int i = 0; i < nodesSortedArray.length(); i++) {
@@ -456,7 +459,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	public void jobExecuted(JobEvent jobEvent) {
 		// TODO check if this is still needed. Currently this event chain is unused...
 	}
-	
+
 	private void deleteUDFCube(UUID jobId) {
 		Job job = jobDAO.findOne(jobId);
 		if(job != null && job.getStatus() == JobStates.FINISHED) {
@@ -465,9 +468,9 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 						+ "&COVERAGEID=udfCube_" + job.getId());
 				URLConnection con =  url.openConnection();
 				con.getContent();
-				File f = new File(tmpDirUDF + "udf_result");			
+				File f = new File(tmpDirUDF + "udf_result");
 				File[] listFiles = f.listFiles();
-				
+
 				for (int i=0; i<listFiles.length; i++) {
 					File currentFile = listFiles[i];
 					if(currentFile.isFile() && !Files.isSymbolicLink(currentFile.toPath())) {
@@ -494,9 +497,9 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	}
 
 	private Error executeWCPS(URL url, Job job, WCPSQueryFactory wcpsQuery) {
-		
+
 		BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
-		
+
 		//Skip computing if result is already available.
 		if(batchJobResult != null) {
 			return null;
@@ -518,9 +521,9 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		}
 		String dataFileName = "data." + wcpsQuery.getOutputFormat();
 		log.debug("The output file will be saved here: \n" + (tmpDir + dataFileName).toString());
-		
+
 		HttpURLConnection connection = null;
-		
+
 		try {
 			connection = (HttpURLConnection) url.openConnection();
 			InputStream errorStream = connection.getErrorStream();
@@ -551,7 +554,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			error.setMessage("An error occured when opening connection to rasdaman: " + e.getMessage());
 			return error;
 		}
-		
+
 
 		try (BufferedInputStream in = new BufferedInputStream(connection.getInputStream());
 				FileOutputStream fileOutputStream = new FileOutputStream(jobResultPath + dataFileName)) {
@@ -561,8 +564,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				fileOutputStream.write(dataBuffer, 0, bytesRead);
 			}
 			log.debug("File saved correctly");
-			in.close();
-			fileOutputStream.close();
+
 		} catch (IOException e) {
 			log.error("An error occured when downloading the file of the current job: " + e.getMessage());
 			StringBuilder builder = new StringBuilder();
@@ -573,10 +575,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			//logErrorStream(e);
 			log.error(builder.toString());
 		}
-		
+
 		batchJobResult.setId(job.getId());
 		batchJobResult.bbox(null);
-		batchJobResult.setStacVersion("1.0.0");
+		batchJobResult.setStacVersion(STAC_VERSION);
 		batchJobResult.setGeometry(null);
 		LinkedHashMap<String, Asset> assetMap = new LinkedHashMap<String, Asset>();
 
@@ -680,11 +682,11 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		log.debug("The following job was set to status finished: \n" + job.toString());
 		return null;
 	}
-	
+
 	private void executeODC(Job job) {
-		
+
 		BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
-		
+
 		//Skip computing if result is already available.
 		if(batchJobResult != null) {
 			return;
@@ -700,7 +702,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			JSONObject process = new JSONObject();
 			process.put("id", job.getId());
 			process.put("process_graph", processGraphJSON);
-			
+
 			URL url;
 			HttpURLConnection conn = null;
 			try {
@@ -720,7 +722,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				jobDAO.update(job);
 				return;
 			}
-			
+
 			String jobResultPath = tmpDir + job.getId() + "/";
 			File jobResultDirectory = new File(jobResultPath);
 			if(!jobResultDirectory.exists()) {
@@ -742,7 +744,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				dataFileName = "result.json";
 				}
 			log.debug("The output file will be saved here: \n" + (jobResultPath + dataFileName).toString());
-			
+
 			String dataMimeType = "application/octet-stream";
 			try {
 				try (OutputStream os = conn.getOutputStream()) {
@@ -766,7 +768,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				dataMimeType = conn.getContentType();
 				byte[] response = IOUtils.toByteArray(is);
 				FileOutputStream fileOutputStream = new FileOutputStream(jobResultPath + "result_path.json");
-				fileOutputStream.write(response, 0, response.length); 
+				fileOutputStream.write(response, 0, response.length);
 				log.debug("File saved correctly");
 				fileOutputStream.close();
 				boolean outputFileExists = new File(jobResultPath + dataFileName).isFile();
@@ -782,10 +784,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				jobDAO.update(job);
 				addStackTraceAndErrorToLog(e);
 			}
-					
+
 			batchJobResult.setId(job.getId());
 			batchJobResult.bbox(null);
-			batchJobResult.setStacVersion("1.0.0");
+			batchJobResult.setStacVersion(STAC_VERSION);
 			batchJobResult.setGeometry(null);
 			LinkedHashMap<String, Asset> assetMap = new LinkedHashMap<String, Asset>();
 
@@ -849,7 +851,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			job.setProgress(new BigDecimal(100));
 			jobDAO.update(job);
 			log.debug("The following job was set to status finished: \n" + job.toString());
-			
+
 	}
 
 	public JSONArray getProcessesNodesSequence() {
@@ -912,7 +914,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		}
 		return null;
 	}
-	
+
 	public List<JSONObject> getProcessNode(String process_id, JSONObject inputProcessGraphJSON) {
 		ArrayList<JSONObject> nodesList = new ArrayList<JSONObject>();
 		for (String processNodeKey : inputProcessGraphJSON.keySet()) {
@@ -942,7 +944,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		}
 		return null;
 	}
-	
+
 	private String getSaveNodeFormat() {
 		for (String processNodeKey : processGraphJSON.keySet()) {
 			JSONObject processNode = processGraphJSON.getJSONObject(processNodeKey);

@@ -288,11 +288,7 @@ class TestWCSCollectionsLoader {
             Collection coll = getCollection();
             Resource res = Resource.OYXOO_COLL;
 
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new JavaTimeModule());
-            mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-
-            Collection oColl = mapper.readValue(res.getInputStream() , Collection.class);
+            Collection oColl = JSONMarshaller.readValue(res.getInputStream() , Collection.class);
 
             assertEquals(oColl, coll, "GML and STAC oracle unmarshalling do not coincide");
         }

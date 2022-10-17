@@ -507,7 +507,7 @@ public Collection stacVersion(String stacVersion) {
       return false;
     }
     Collection collection = (Collection) o;
-    
+
     return Objects.equals(this.stacVersion, collection.stacVersion) &&
         Objects.equals(this.stacExtensions, collection.stacExtensions) &&
         Objects.equals(this.id, collection.id) &&
