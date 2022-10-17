@@ -6,14 +6,9 @@ import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.openeo.spring.api.CollectionsApiController;
-import org.openeo.spring.api.loaders.ODCCollectionsLoader.Builder;
 import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.EngineTypes;
 import org.springframework.core.io.Resource;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * Loader of collections from a local JSON STAC catalogue.
@@ -78,10 +73,6 @@ public class STACFileCollectionsLoader implements ICollectionsLoader {
 
         Collections collectionsList = new Collections();
 
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-
         String absPath = String.format("%s/%s",
                 CollectionsApiController.CACHE_ROOT_DIR,
                 this.resource.getFilename());
@@ -90,7 +81,7 @@ public class STACFileCollectionsLoader implements ICollectionsLoader {
 
         try {
             File collectionsFile = new File(absPath);
-            collectionsList = mapper.readValue(collectionsFile, Collections.class);
+            collectionsList = JSONMarshaller.readValue(collectionsFile, Collections.class);
         } catch (IOException e) {
             log.error("Error while unmarshalling '{}'.", absPath, e);
         }

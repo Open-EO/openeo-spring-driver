@@ -72,8 +72,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * Loader of collections from a (remote) WCS coverages catalogue.
@@ -304,11 +302,6 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
         // cache catalog to JSON file:
         // TODO sync/async options
         new Thread(() -> {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.enable(SerializationFeature.INDENT_OUTPUT);
-            mapper.registerModule(new JavaTimeModule());
-            mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-
             try {
                 log.info("Dumping WCS catalogue to file...");
 
@@ -317,10 +310,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                         this.cache.getFilename());
                 File collectionsFile = new File(absPath);
 
-                if (!collectionsFile.exists()) {
-                    collectionsFile.createNewFile();
-                }
-                mapper.writeValue(collectionsFile, collectionsList);
+                JSONMarshaller.syncWiteToFile(collectionsList, collectionsFile);
                 log.info("WCS catalogue serialized: {}.", collectionsFile.getName());
 
             } catch (JsonGenerationException | JsonMappingException jse) {
