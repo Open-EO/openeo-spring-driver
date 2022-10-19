@@ -72,7 +72,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Component
 @EnableAsync(proxyTargetClass=true)
 public class JobScheduler implements JobEventListener, UDFEventListener {
-
+    
     /** STAC spec. version used. */
     public static final String STAC_VERSION = DefaultApiController.DEFAULT_STAC_VERSION;
 
