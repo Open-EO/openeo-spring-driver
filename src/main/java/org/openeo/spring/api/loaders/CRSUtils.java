@@ -27,6 +27,21 @@ public final class CRSUtils {
 //      WGS84.ImportFromEPSG(EPSG_WGS84);
 //  }
 
+    /**
+     * Mapping strategy (axes order) for CRSs.
+     * @see <a href="https://github.com/OSGeo/gdal/blob/master/ogr/ogr_srs_api.h">ogr_srs_api.h</a>
+     *
+     */
+    public static enum AxisMappingStrategy {
+        OAMS_TRADITIONAL_GIS_ORDER,
+        OAMS_AUTHORITY_COMPLIANT,
+        OAMS_CUSTOM;
+
+        public int get() {
+            return this.ordinal();
+        }
+    }
+
     // heuristic to identify axis type
     public static final List<String> TEMPORAL_AXIS_LABELS = Arrays.asList(
             "DATE", "Date", "date",

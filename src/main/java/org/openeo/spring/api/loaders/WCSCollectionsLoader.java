@@ -43,6 +43,7 @@ import org.json.JSONException;
 import org.openeo.spring.api.CollectionsApiController;
 import org.openeo.spring.api.DefaultApiController;
 import org.openeo.spring.api.LinkRelType;
+import org.openeo.spring.api.loaders.CRSUtils.AxisMappingStrategy;
 import org.openeo.spring.api.loaders.CRSUtils.CSAxisOrientation;
 import org.openeo.spring.api.loaders.CRSUtils.CsType;
 import org.openeo.spring.model.Asset;
@@ -556,6 +557,9 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                 final SpatialReference WGS84 = new SpatialReference();
                 WGS84.ImportFromEPSG(EPSG_WGS84);
 
+                // STAC imposes lon/lat order
+                WGS84.SetAxisMappingStrategy(AxisMappingStrategy.OAMS_TRADITIONAL_GIS_ORDER.get());
+
                 SpatialReference src = new SpatialReference();
                 src.ImportFromEPSG(epsgCode);
                 toWgs84 = new CoordinateTransformation(src, WGS84);
@@ -814,7 +818,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
         /*
          * Overall spatio-temporal extent
          *
-         * (spatial bbox shall be WGS84:)
+         * (spatial bbox shall be WGS84 lon/lat order:)
          *  https://github.com/radiantearth/stac-spec/blob/master/collection-spec/collection-spec.md#spatial-extent-object
          */
         if (hasSpatialCrs) {
@@ -849,12 +853,24 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
             CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
             List<List<BigDecimal>> bbox = new ArrayList<>();
 
-            for (int i=0; i<ndims; ++i) {
-                List<BigDecimal> coord = Arrays.asList(
-                        BigDecimal.valueOf(llWgs84[i]),
-                        BigDecimal.valueOf(urWgs84[i]));
-                bbox.add(coord);
+            // overall bbox
+            List<BigDecimal> overallBbox = new ArrayList<>();
+            for (double[] corner : Arrays.asList(llWgs84, urWgs84)) {
+                overallBbox.addAll(
+                        Arrays.stream(corner)
+                        .limit(ndims)
+                        .boxed()
+                        .map(c -> BigDecimal.valueOf(c))
+                        .collect(Collectors.toList())
+                       );
             }
+            bbox.add(overallBbox);
+
+            // subsequent sub-bboxes:
+            // openEO API: "The first bounding box describes the overall spatial extent of the data.
+            //              All subsequent bounding boxes describe more precise bounding boxes, e.g.
+            //              to identify clusters of data."
+            // ...
 
             spatialExtent.setBbox(bbox);
             collectionExtent.setSpatial(spatialExtent);
