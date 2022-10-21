@@ -78,6 +78,9 @@ public class BatchJobs   {
     this.links = links;
   }
 
+  public int size() {
+      return this.jobs.size();
+  }
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -101,7 +104,7 @@ public class BatchJobs   {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class BatchJobs {\n");
-    
+
     sb.append("    jobs: ").append(toIndentedString(jobs)).append("\n");
     sb.append("    links: ").append(toIndentedString(links)).append("\n");
     sb.append("}");
