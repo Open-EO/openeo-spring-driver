@@ -12,9 +12,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.math.BigDecimal;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
@@ -27,14 +32,13 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.openeo.spring.api.ResultApiController;
 import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.Asset;
@@ -53,12 +57,11 @@ import org.openeo.wcps.events.UDFEvent;
 import org.openeo.wcps.events.UDFEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -82,7 +85,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	
 	@Autowired
 	private CollectionMap collectionMap;
-
+	
 	@Value("${org.openeo.wcps.endpoint}")
 	private String wcpsEndpoint;
 
@@ -94,7 +97,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 	@Value("${org.openeo.odc.endpoint}")
 	private String odcEndpoint;
-
+	
+	@Value("${org.openeo.odc.deleteResultEndpoint}")
+	private String odcDeleteResultEndpoint;
+	
 	@Value("${org.openeo.tmp.dir}")
 	private String tmpDir;
 	
@@ -681,6 +687,17 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		return null;
 	}
 	
+    public HttpResponse<String> send_odc_request(String odcEndpoint, String requestBody) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(odcEndpoint))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+            .build();
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        return response;
+    }
+	
 	private void executeODC(Job job) {
 		
 		BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
@@ -694,32 +711,52 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 			job.setUpdated(OffsetDateTime.now());
 			job.setStatus(JobStates.RUNNING);
+			
 			jobDAO.update(job);
 			JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
 
 			JSONObject process = new JSONObject();
 			process.put("id", job.getId());
 			process.put("process_graph", processGraphJSON);
-			
-			URL url;
-			HttpURLConnection conn = null;
+			String dataMimeType = "application/octet-stream";
+
 			try {
-				url = new URL(odcEndpoint);
-				conn = (HttpURLConnection) url.openConnection();
-				conn.setRequestMethod("POST");
-				conn.setRequestProperty("Content-Type", "application/json; utf-8");
-				conn.setDoOutput(true);
-				log.debug("+++ Successfully connected to ODC!");
-			} catch (Exception e) {
-				addStackTraceAndErrorToLog(e);
+				HttpResponse<String> response = send_odc_request(odcEndpoint, process.toString());
+				JSONObject responseJson = new JSONObject(response.body());
+				dataMimeType = ConvenienceHelper.getMimeFromFilename(responseJson.get("output").toString());
+			}
+			catch (ConnectException e) {
 				Error error = new Error();
 				error.setCode("500");
-				error.setMessage("Not possible to establish connection with ODC Endpoint!");
+				error.setMessage("Connection refused from the ODC engine.");
 				log.error(error.getMessage());
 				job.setStatus(JobStates.ERROR);
 				jobDAO.update(job);
 				return;
 			}
+			catch (Exception e) {
+				addStackTraceAndErrorToLog(e);
+				log.error(e);
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage("The job has been stop or an error occurred.");
+				log.error(error.getMessage());
+				// Change the status only if it is not "Canceled" which mean that it has been stopped on purpose
+				// Difficult to do: the database is accessed at the same time from more threads
+				// Try to wait a couple of seconds before checking
+				try {
+					TimeUnit.SECONDS.sleep(1);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				Job currentJob = jobDAO.findOne(job.getId());
+				if (currentJob.getStatus()!=JobStates.CANCELED) {
+					currentJob.setStatus(JobStates.ERROR);
+					jobDAO.update(currentJob);
+				}
+				return;
+				}
 			
 			String jobResultPath = tmpDir + job.getId() + "/";
 			File jobResultDirectory = new File(jobResultPath);
@@ -743,46 +780,15 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				}
 			log.debug("The output file will be saved here: \n" + (jobResultPath + dataFileName).toString());
 			
-			String dataMimeType = "application/octet-stream";
-			try {
-				try (OutputStream os = conn.getOutputStream()) {
-					byte[] requestBody = process.toString().getBytes("utf-8");
-					os.write(requestBody, 0, requestBody.length);
-				} catch (IOException e) {
-					job.setStatus(JobStates.ERROR);
-					jobDAO.update(job);
-					addStackTraceAndErrorToLog(e);
-					return;
-				}
-				InputStream is = null;
-				try{
-					is = conn.getInputStream();
-					} catch (IOException e) {
-						job.setStatus(JobStates.ERROR);
-						jobDAO.update(job);
-						addStackTraceAndErrorToLog(e);
-						return;
-					}
-				dataMimeType = conn.getContentType();
-				byte[] response = IOUtils.toByteArray(is);
-				FileOutputStream fileOutputStream = new FileOutputStream(jobResultPath + "result_path.json");
-				fileOutputStream.write(response, 0, response.length); 
-				log.debug("File saved correctly");
-				fileOutputStream.close();
-				boolean outputFileExists = new File(jobResultPath + dataFileName).isFile();
-				if (!outputFileExists){
-					String errorMessage = new String("Output file not found! Job id" + job.getId().toString());
-					log.error(errorMessage);
-					job.setStatus(JobStates.ERROR);
-					jobDAO.update(job);
-					return;
-				}
-			} catch (IOException e) {
+			boolean outputFileExists = new File(jobResultPath + dataFileName).isFile();
+			if (!outputFileExists){
+				String errorMessage = new String("Output file not found! Job id" + job.getId().toString());
+				log.error(errorMessage);
 				job.setStatus(JobStates.ERROR);
 				jobDAO.update(job);
-				addStackTraceAndErrorToLog(e);
+				return;
 			}
-					
+			
 			batchJobResult.setId(job.getId());
 			batchJobResult.bbox(null);
 			batchJobResult.setStacVersion("1.0.0");
@@ -851,6 +857,36 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			log.debug("The following job was set to status finished: \n" + job.toString());
 			
 	}
+	
+	public void sendDelete(String URL, String jobId) {
+	    // send DELETE request to delete post with `id` 10
+        RestTemplate template = new RestTemplate();
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(URL).queryParam("id", jobId);
+        template.delete(builder.build().toUri());
+	}
+
+	private void stopODC(Job job) {
+				
+		try {
+			sendDelete(odcDeleteResultEndpoint,job.getId().toString());
+
+
+		} catch (Exception e) {
+			addStackTraceAndErrorToLog(e);
+			Error error = new Error();
+			error.setCode("500");
+			error.setMessage("Not possible to establish connection with ODC Endpoint!");
+			log.error(error.getMessage());
+			job.setStatus(JobStates.ERROR);
+			jobDAO.update(job);
+			return;
+		}
+
+			job.setStatus(JobStates.CANCELED);
+			job.setUpdated(OffsetDateTime.now());
+			jobDAO.update(job);
+			return;
+			}
 
 	public JSONArray getProcessesNodesSequence() {
 		JSONArray nodesArray = new JSONArray();
@@ -954,6 +990,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			}
 			if (processID.equals("save_result")) {
 				String outputFormat = processNode.getJSONObject("arguments").getString("format");
+				return outputFormat;
+			}
+			else if (processID.equals("save_ml_model")) {
+				String outputFormat = "Pickle";
 				return outputFormat;
 			}
 		}
@@ -1110,5 +1150,17 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			builder.append(element.toString() + "\n");
 		}
 		log.error(builder.toString());
+	}
+
+	@Override
+	public void jobStopped(JobEvent jobEvent) {
+		Job job = null;
+		job = jobDAO.findOne(jobEvent.getJobId());
+		if(job.getEngine()==EngineTypes.WCPS){
+			log.error("Stopping of WCPS jobs not implemented.");
+		}
+		else if(job.getEngine()==EngineTypes.ODC_DASK) {
+			stopODC(job);
+		}
 	}
 }

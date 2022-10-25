@@ -103,5 +103,24 @@ public class ConvenienceHelper {
 		log.error("rasdman type could not be matched to mime type: " + rasName);
 		return MimeTypeUtils.ALL.toString();
 	}
-
+	
+	public static String getMimeFromFilename(String fileName) throws IOException {
+		String[] arrStr = fileName.split("\\.(?=[^\\.]+$)");
+	  	String fileExtension = new String();
+	    fileExtension = arrStr[arrStr.length-1];
+	    log.debug("file extension: " + fileExtension);
+	    
+		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		InputStream stream = classLoader.getResourceAsStream("output_formats.json");
+		JSONObject outputFormats = new JSONObject(IOUtils.toString(stream, StandardCharsets.UTF_8.name()));
+		stream.close();
+		for (String formatName : outputFormats.keySet()) {
+			JSONObject currentObject = outputFormats.getJSONObject(formatName);
+			if (currentObject.getString("rasdaman_name").equals(fileExtension)) {
+				return currentObject.getString("mime-type");
+			}
+		}
+		log.error("filename could not be matched to mime type: " + fileExtension);
+		return MimeTypeUtils.ALL.toString();
+	}
 }

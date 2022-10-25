@@ -58,7 +58,6 @@ import org.openeo.spring.model.Link;
 import org.openeo.spring.model.LogEntries;
 import org.openeo.spring.model.LogEntry;
 import org.openeo.spring.model.LogEntry.LevelEnum;
-import org.openeo.spring.api.ResultApiController;
 import org.openeo.wcps.ConvenienceHelper;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
@@ -105,7 +104,7 @@ public class JobsApiController implements JobsApi {
 
 	@Value("${org.openeo.endpoint}")
 	private String openEOEndpoint;
-
+	
 	@Value("${org.openeo.public.endpoint}")
 	private String openEOPublicEndpoint;
 
@@ -114,22 +113,22 @@ public class JobsApiController implements JobsApi {
 
 	@Value("${org.openeo.tmp.dir}")
 	private String tmpDir;
-
+	
 	@Value("${co.elasticsearch.endpoint}")
 	private String elasticSearchEndpoint;
-
+	
 	@Value("${co.elasticsearch.service.name}")
 	private String serviceName;
-
+	
 	@Value("${co.elasticsearch.service.node.name}")
 	private String serviceNodeName;
 
 	@Autowired
 	private JobScheduler jobScheduler;
-
+	
 	@Autowired
 	private AuthzService authzService;
-
+	
 	@Autowired
 	private ResultApiController resultApiController;
 
@@ -158,7 +157,7 @@ public class JobsApiController implements JobsApi {
 	public Optional<NativeWebRequest> getRequest() {
 		return Optional.ofNullable(request);
 	}
-
+	
 //	@Autowired
 //	public Identity identity;
 
@@ -167,7 +166,7 @@ public class JobsApiController implements JobsApi {
 	 * from one or more (chained) processes at the back-end. Processing the data
 	 * doesn&#39;t start yet. The job status gets initialized as &#x60;created&#x60;
 	 * by default.
-	 * @param Principal
+	 * @param Principal 
 	 * @param storeBatchJobRequest (required)
 	 * @return The batch job has been created successfully. (status code 201) or The
 	 *         request can&#39;t be fulfilled due to an error on client-side, i.e.
@@ -208,28 +207,28 @@ public class JobsApiController implements JobsApi {
 		//TODO add validity check of the job using ValidationApiController
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
-
+		
 		job.setStatus(JobStates.CREATED);
 		job.setPlan("free");
 		job.setCreated(OffsetDateTime.now());
 		job.setUpdated(OffsetDateTime.now());
 		log.debug("received jobs POST request for new job with ID + " + job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
-
-
+	     
+		
 		Set<String> roles = new HashSet<>();
 		Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
 		for (Map.Entry<String, AccessToken.Access> e : resourceAccess.entrySet()) {
 			if (e.getValue().getRoles() != null){
 				for(String r: e.getValue().getRoles()) {
-					roles.add(r);
-				}
-			}
+					roles.add(r);					
+				}			
+			}		
 		}
-
+		
 
 		boolean isEuracUser = roles.contains("eurac");
-
+	
 		Iterator<String> keys = processGraph.keys();
 		boolean isCreateJobAllow= true;
 		while(keys.hasNext()) {
@@ -237,13 +236,13 @@ public class JobsApiController implements JobsApi {
 			JSONObject processNode = (JSONObject) processGraph.get(key);
 			String process_id = processNode.get("process_id").toString();
 			if (process_id.equals("run_udf") && !isEuracUser) {
-				isCreateJobAllow =false;
+				isCreateJobAllow =false;				    
 			}
 		}
-
+	
 		log.trace("Process Graph attached: " + processGraph.toString(4));
 		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
-
+		
 		if (isCreateJobAllow) {
 			try {
 				EngineTypes resultEngine = null;
@@ -256,9 +255,9 @@ public class JobsApiController implements JobsApi {
 				log.error(error.getMessage());
 				ThreadContext.clearMap();
 				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-			}
+			}	
 		jobDAO.save(job);
-
+		
 		ThreadContext.put("jobid", job.getId().toString());
 		ObjectMapper mapper = new ObjectMapper();
 		try {
@@ -270,7 +269,7 @@ public class JobsApiController implements JobsApi {
 		Job verifiedSave = jobDAO.findOne(job.getId());
 		if (verifiedSave != null) {
 			if(token != null) {
-
+			
 				authzService.createProtectedResource(job, token);
 			}
 //			WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
@@ -288,7 +287,7 @@ public class JobsApiController implements JobsApi {
 				ThreadContext.clearMap();
 				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 			}
-
+			
 		} else {
 			Error error = new Error();
 			error.setCode("500");
@@ -303,9 +302,9 @@ public class JobsApiController implements JobsApi {
 			error.setCode("401");
 			error.setMessage("You are not authorized to create this job");
 			log.error("You are not authorized to create this job");
-			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED);
+			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED); 
 		}
-
+		
 	}
 
 	/**
@@ -375,7 +374,7 @@ public class JobsApiController implements JobsApi {
 			@Parameter(description = "The last identifier (property `id` of a log entry) the client has received. If provided, the back-ends only sends the entries that occured after the specified identifier. If not provided or empty, start with the first entry.") @Valid @RequestParam(value = "offset", required = false) String offset,
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
 		LogEntries logEntries = new LogEntries();
-		//TODO describe query
+//		TODO describe query
 		String elasticSearchQuery = "filebeat-7.13.3-2021.07.13-000001/_search";
 		try {
 			//TODO query elastic search endpoint here for all log information regarding a job queued for processing.
@@ -970,10 +969,33 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/jobs/{job_id}/results", produces = { "application/json" }, method = RequestMethod.DELETE)
-	public ResponseEntity<Void> stopJob(
+	public ResponseEntity<?> stopJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
-		return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-
+		ThreadContext.put("jobid", jobId);
+		Job job = jobDAO.findOne(UUID.fromString(jobId));
+		if (job != null) {
+			if (job.getStatus()==JobStates.RUNNING) {
+					job.setStatus(JobStates.CANCELED);
+					job.setUpdated(OffsetDateTime.now());
+					jobDAO.update(job);
+					this.fireJobStoppedEvent(job.getId());
+					ThreadContext.clearMap();
+					return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+				}
+			else if(job.getStatus()==JobStates.QUEUED) {
+				job.setStatus(JobStates.CREATED);
+				job.setUpdated(OffsetDateTime.now());
+				jobDAO.update(job);
+				this.fireJobStoppedEvent(job.getId());
+				ThreadContext.clearMap();
+				return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+			}
+		}
+		Error error = new Error();
+			error.setCode("400");
+			error.setMessage("The requested job " + jobId + " could not be found.");
+			ThreadContext.clearMap();
+			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 	}
 
 	/**
@@ -1083,6 +1105,19 @@ public class JobsApiController implements JobsApi {
 			}
 		}
 		log.debug("Job Queue Event fired for job: " + jobId);
+		ThreadContext.clearMap();
+	}
+	
+	private void fireJobStoppedEvent(UUID jobId) {
+		ThreadContext.put("jobid", jobId.toString());
+		Object[] listeners = listenerList.getListenerList();
+		for (int i = listeners.length - 2; i >= 0; i -= 2) {
+			if (listeners[i] == JobEventListener.class) {
+				JobEvent jobEvent = new JobEvent(this, jobId);
+				((JobEventListener) listeners[i + 1]).jobStopped(jobEvent);
+			}
+		}
+		log.debug("Job Stop Event fired for job: " + jobId);
 		ThreadContext.clearMap();
 	}
 

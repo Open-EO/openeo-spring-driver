@@ -54,6 +54,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -210,7 +211,7 @@ public class ResultApiController implements ResultApi {
 			    String mime = URLConnection.guessContentTypeFromName(outputFile.getName());
 				if (mime == null) {
 					try {
-						mime = getMimeFromFilename(outputFile.getName());
+						mime = ConvenienceHelper.getMimeFromFilename(outputFile.getName());
 					}
 					catch (Exception e1){
 						addStackTraceAndErrorToLog(e1);
@@ -392,21 +393,7 @@ public class ResultApiController implements ResultApi {
 			}
 		return true;
 	}
-	// TODO: this fixes the automatic retrieval of mime type for json only at the moment
-	public String getMimeFromFilename(String fileName) {
-	    String[] arrStr = fileName.split("\\.(?=[^\\.]+$)");
-	  	String fileExtension = new String();
-	    fileExtension = arrStr[arrStr.length-1];
-	    System.out.println("file extension: "+fileExtension);
-	    String mime = new String();
-	    mime = null;
-	    if (fileExtension.equalsIgnoreCase("json")) {
-	      mime = "application/json";
-	    }		
-		return mime;
-	} 
-	
-	
+		
 	private void addStackTraceAndErrorToLog(Exception e) {
 		log.error(e.getMessage());
 		StringBuilder builder = new StringBuilder();
