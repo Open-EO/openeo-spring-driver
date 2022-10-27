@@ -82,10 +82,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		jobDAO = injectedJObDAO;
 		resultDAO = injectResultDao;
 	}
-	
+
 	@Autowired
 	private CollectionMap collectionMap;
-	
+
 	@Value("${org.openeo.wcps.endpoint}")
 	private String wcpsEndpoint;
 
@@ -723,12 +723,14 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			try {
 				HttpResponse<String> response = send_odc_request(odcEndpoint, process.toString());
 				JSONObject responseJson = new JSONObject(response.body());
-				dataMimeType = ConvenienceHelper.getMimeFromFilename(responseJson.get("output").toString());
+				String outputFilename = responseJson.get("output").toString(); // ODC returns a json with format {"output":"/path/to/outputfile"}
+				dataMimeType = ConvenienceHelper.getMimeFromFilename(outputFilename);
 			}
 			catch (ConnectException e) {
+				addStackTraceAndErrorToLog(e);
 				Error error = new Error();
 				error.setCode("500");
-				error.setMessage("Connection refused from the ODC engine.");
+				error.setMessage("Not possible to establish connection with ODC endpoint.");
 				log.error(error.getMessage());
 				job.setStatus(JobStates.ERROR);
 				jobDAO.update(job);

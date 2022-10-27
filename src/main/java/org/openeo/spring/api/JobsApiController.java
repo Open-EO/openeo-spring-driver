@@ -236,7 +236,7 @@ public class JobsApiController implements JobsApi {
 			JSONObject processNode = (JSONObject) processGraph.get(key);
 			String process_id = processNode.get("process_id").toString();
 			if (process_id.equals("run_udf") && !isEuracUser) {
-				isCreateJobAllow =false;				    
+				isCreateJobAllow =false;
 			}
 		}
 
