@@ -742,14 +742,6 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				error.setMessage("The job has been stop or an error occurred.");
 				log.error(error.getMessage());
 				// Change the status only if it is not "Canceled" which mean that it has been stopped on purpose
-				// Difficult to do: the database is accessed at the same time from more threads
-				// Try to wait a couple of seconds before checking
-				try {
-					TimeUnit.SECONDS.sleep(1);
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
 				Job currentJob = jobDAO.findOne(job.getId());
 				if (currentJob.getStatus()!=JobStates.CANCELED) {
 					currentJob.setStatus(JobStates.ERROR);
@@ -860,17 +852,15 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	
 	public void sendDelete(String URL, String jobId) {
 	    // send DELETE request to delete post with `id` 10
+		log.info("+++++ sendDelete +++++");
         RestTemplate template = new RestTemplate();
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(URL).queryParam("id", jobId);
         template.delete(builder.build().toUri());
 	}
 
 	private void stopODC(Job job) {
-				
 		try {
 			sendDelete(odcDeleteResultEndpoint,job.getId().toString());
-
-
 		} catch (Exception e) {
 			addStackTraceAndErrorToLog(e);
 			Error error = new Error();
@@ -880,13 +870,12 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			job.setStatus(JobStates.ERROR);
 			jobDAO.update(job);
 			return;
-		}
-
-			job.setStatus(JobStates.CANCELED);
-			job.setUpdated(OffsetDateTime.now());
-			jobDAO.update(job);
-			return;
 			}
+		job.setStatus(JobStates.CANCELED);
+		job.setUpdated(OffsetDateTime.now());
+		jobDAO.update(job);
+		return;
+		}
 
 	public JSONArray getProcessesNodesSequence() {
 		JSONArray nodesArray = new JSONArray();
