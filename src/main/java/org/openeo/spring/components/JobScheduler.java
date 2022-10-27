@@ -777,6 +777,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			boolean outputFileExists = new File(jobResultPath + dataFileName).isFile();
 			if (!outputFileExists){
 				String errorMessage = new String("Output file not found! Job id" + job.getId().toString());
+				addStackTraceAndErrorToLog(new Exception(errorMessage));
 				log.error(errorMessage);
 				job.setStatus(JobStates.ERROR);
 				jobDAO.update(job);
@@ -853,8 +854,6 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	}
 	
 	public void sendDelete(String URL, String jobId) {
-	    // send DELETE request to delete post with `id` 10
-		log.info("+++++ sendDelete +++++");
         RestTemplate template = new RestTemplate();
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(URL).queryParam("id", jobId);
         template.delete(builder.build().toUri());
