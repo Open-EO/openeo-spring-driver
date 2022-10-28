@@ -6,9 +6,9 @@
 	<artifactId>openeo-spring-driver</artifactId>
 	<packaging>jar</packaging>
 	<name>openeo-spring-driver</name>
-	<version>1.0.0-draft</version>
+	<version>1.0.0</version>
 	<properties>
-		<java.version>1.8</java.version>
+		<java.version>1.11</java.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<springfox-version>3.0.0</springfox-version>
