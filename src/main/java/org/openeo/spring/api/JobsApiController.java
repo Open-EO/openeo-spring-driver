@@ -58,7 +58,6 @@ import org.openeo.spring.model.Link;
 import org.openeo.spring.model.LogEntries;
 import org.openeo.spring.model.LogEntry;
 import org.openeo.spring.model.LogEntry.LevelEnum;
-import org.openeo.spring.api.ResultApiController;
 import org.openeo.wcps.ConvenienceHelper;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
@@ -970,10 +969,41 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/jobs/{job_id}/results", produces = { "application/json" }, method = RequestMethod.DELETE)
-	public ResponseEntity<Void> stopJob(
+	public ResponseEntity<?> stopJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
-		return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-
+		ThreadContext.put("jobid", jobId);
+		Job job = jobDAO.findOne(UUID.fromString(jobId));
+		if (job != null) {
+			if(job.getEngine()==EngineTypes.WCPS){
+				Error error = new Error();
+				error.setMessage("The requested WCPS job " + jobId + " cannot be stopped, not implemented.");
+				ThreadContext.clearMap();
+				return new ResponseEntity<Error>(error, HttpStatus.NOT_IMPLEMENTED);
+			}
+			else if(job.getEngine()==EngineTypes.ODC_DASK) {
+				if (job.getStatus()==JobStates.RUNNING) {
+						job.setStatus(JobStates.CANCELED);
+						job.setUpdated(OffsetDateTime.now());
+						jobDAO.update(job);
+						this.fireJobStoppedEvent(job.getId());
+						ThreadContext.clearMap();
+						return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+					}
+				else if(job.getStatus()==JobStates.QUEUED) {
+					job.setStatus(JobStates.CREATED);
+					job.setUpdated(OffsetDateTime.now());
+					jobDAO.update(job);
+					this.fireJobStoppedEvent(job.getId());
+					ThreadContext.clearMap();
+					return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+				}
+			}
+		}
+		Error error = new Error();
+		error.setCode("400");
+		error.setMessage("The requested job " + jobId + " could not be found.");
+		ThreadContext.clearMap();
+		return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
 	}
 
 	/**
@@ -1083,6 +1113,19 @@ public class JobsApiController implements JobsApi {
 			}
 		}
 		log.debug("Job Queue Event fired for job: " + jobId);
+		ThreadContext.clearMap();
+	}
+	
+	private void fireJobStoppedEvent(UUID jobId) {
+		ThreadContext.put("jobid", jobId.toString());
+		Object[] listeners = listenerList.getListenerList();
+		for (int i = listeners.length - 2; i >= 0; i -= 2) {
+			if (listeners[i] == JobEventListener.class) {
+				JobEvent jobEvent = new JobEvent(this, jobId);
+				((JobEventListener) listeners[i + 1]).jobStopped(jobEvent);
+			}
+		}
+		log.debug("Job Stop Event fired for job: " + jobId);
 		ThreadContext.clearMap();
 	}
 
