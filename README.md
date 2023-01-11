@@ -51,6 +51,7 @@ org.openeo.wcps.processes.list=classpath:processes_wcps.json
 org.openeo.wcps.collections.list=collections_wcps.json
 
 org.openeo.odc.endpoint=http://my_open_data_cube_endpoint
+org.openeo.odc.deleteResultEndpoint=http://my_open_data_cube_endpoint_for_stopping_a_job
 org.openeo.odc.collectionsEndpoint=http://my_open_data_cube_endpoint/collections/
 org.openeo.odc.provider.name=open data cube provider name
 org.openeo.odc.provider.url=http://www.open_data_cube_provider.url
