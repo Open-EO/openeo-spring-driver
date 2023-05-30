@@ -215,7 +215,6 @@ public class ResultApiController implements ResultApi {
 				}
 			    log.debug("Guessed mime type: "+mime);
 
->>>>>>> 5457ff5 (Accept job drafts at creation time with no identifiable engine.)
 			    byte[] outputFileBytes = Files.readAllBytes(Paths.get(outputFilePath));
 
 				if (mime == null) {

@@ -75,6 +75,9 @@ class TestWCSCollectionsLoader {
     @BeforeAll
     @Order(1)
     static void setup() throws IOException, URISyntaxException {
+        
+        // TEST
+        printEnvLibs(false);
 
         txyoo_is = txyoo_res.getInputStream();
         oxyoo_is = oxyoo_res.getInputStream(); // no time dimension
@@ -87,7 +90,7 @@ class TestWCSCollectionsLoader {
 
         txyoo_id = txyoo_res.getBaseName();
         oxyoo_id = oxyoo_res.getBaseName();
-
+        
         oxyoo_coll = WCSCollectionsLoader.parseCollection(oxyoo_id, oxyoo_is, extraProvider);
         txyoo_coll = WCSCollectionsLoader.parseCollection(txyoo_id, txyoo_is, extraProvider);
     }
@@ -199,13 +202,11 @@ class TestWCSCollectionsLoader {
             CollectionSpatialExtent spExt = coll.getExtent().getSpatial();
             CollectionTemporalExtent tExt = coll.getExtent().getTemporal();
 
-            // FIXME is bbox correctly formatted? it should be array of array of 4/6 elements, not minmaxs
             // being the first array the overall extent, etc
             assertAll("spatial",
                     () -> assertNotNull(spExt, "collection should have a spatial extent"),
-                    () -> assertEquals(2, spExt.getBbox().size(), "bbox is made of 2 corners"),
-                    () -> assertEquals(2, spExt.getBbox().get(0).size(), "bbox.0 is spatially 2D"),
-                    () -> assertEquals(2, spExt.getBbox().get(1).size(), "bbox.1 is spatially 2D")
+                    () -> assertEquals(1, spExt.getBbox().size(), "there is only 1 main bbox"),
+                    () -> assertEquals(2*2, spExt.getBbox().get(0).size(), "bbox is spatially 2D")
                     );
 
             assertAll("temporal",
@@ -310,5 +311,31 @@ class TestWCSCollectionsLoader {
             txyoo_coll = WCSCollectionsLoader.parseCollection(txyoo_id, txyoo_is, extraProvider);
         }
 //        assertTrue(coll.getCubeColonDimensions().size() == 6, "Cube has 5+1 dimensions");
+    }
+    
+    /**
+     * Prints the version of PROJ and GDAL bound libraries + all system runtime environment. 
+     */
+    private static void printEnvLibs(boolean env) {
+        ////////////////////////////////////////////////////////////////////////////
+        // Environment
+        if (env) {
+            System.out.println("ENVIRONMENT\n--------");
+            for (Map.Entry<String, String> envItem : System.getenv().entrySet()) {
+                System.out.format("%s=%s%n", envItem.getKey(), envItem.getValue());
+            }
+            System.out.println("--------");
+        }
+        
+        // GDAL version
+        System.out.println(String.format("GDAL VERSION >>> %s",
+                org.gdal.gdal.gdal.VersionInfo("RELEASE_NAME")));
+        
+        // PROJ version
+        System.out.println(String.format("PROJ VERSION >>> %d.%d.%d",
+                org.gdal.osr.osr.GetPROJVersionMajor(),
+                org.gdal.osr.osr.GetPROJVersionMinor(),
+                org.gdal.osr.osr.GetPROJVersionMicro()));
+        ////////////////////////////////////////////////////////////////////////////
     }
 }
