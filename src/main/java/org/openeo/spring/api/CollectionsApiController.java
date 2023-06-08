@@ -128,23 +128,37 @@ public class CollectionsApiController implements CollectionsApi {
 
         try {
             if (queryCollectionsOnStartup) {
+
+                boolean hasWcpsEndpoint = !wcpsEndpoint.isEmpty();
+                boolean hasOdcEndpoint = !odcCollEndpoint.isEmpty();
+
                 // WC(P)S collections loader
-                wcsLoader = WCSCollectionsLoader.Builder
-                        .of(wcpsEndpoint)
-                        .version(wcpsVersion)
-                        .provider(new Providers()
-                                .name(wcpsProviderName)
-                                .roles(wcpsProviderType)
-                                .url(new URI(wcpsProviderUrl)))
-                        .cache(collectionsFileWCPS)
-                        .parallelism(parallelizedHarvest ? -1 : 1)
-                        .build();
+                if (hasWcpsEndpoint) {
+                    wcsLoader = WCSCollectionsLoader.Builder
+                            .of(wcpsEndpoint)
+                            .version(wcpsVersion)
+                            .provider(new Providers()
+                                    .name(wcpsProviderName)
+                                    .roles(wcpsProviderType)
+                                    .url(new URI(wcpsProviderUrl)))
+                            .cache(collectionsFileWCPS)
+                            .parallelism(parallelizedHarvest ? -1 : 1)
+                            .build();
+                }
 
                 // ODC collections loader
-                odcLoader = ODCCollectionsLoader.Builder
-                        .of(odcCollEndpoint)
-                        .cache(collectionsFileODC)
-                        .build();
+                if (hasOdcEndpoint) {
+                    odcLoader = ODCCollectionsLoader.Builder
+                            .of(odcCollEndpoint)
+                            .cache(collectionsFileODC)
+                            .build();
+                }
+
+                if (!hasWcpsEndpoint && !hasOdcEndpoint) {
+                    log.error("No STAC endpoint was specified.");
+                    // TOD: what to do here? Throw exception?
+                }
+
             } else {
                 // cached STAC-WCS catalogue loader
                 wcsLoader = STACFileCollectionsLoader.Builder
