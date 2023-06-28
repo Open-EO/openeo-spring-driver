@@ -18,7 +18,7 @@ import io.swagger.annotations.ApiModelProperty;
  * DimensionOther
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class DimensionOther extends Dimension  {
+public class DimensionOther extends Dimension implements HasUnit {
   @JsonProperty("extent")
   @Valid
   private List<BigDecimal> extent = null;
@@ -56,7 +56,7 @@ public class DimensionOther extends Dimension  {
   @ApiModelProperty(value = "If the dimension consists of [ordinal](https://en.wikipedia.org/wiki/Level_of_measurement#Ordinal_scale) values, the extent (lower and upper bounds) of the values as two-dimensional array. Use `null` for open intervals.")
 
   @Valid
-@Size(min=2,max=2) 
+@Size(min=2,max=2)
   public List<BigDecimal> getExtent() {
     return extent;
   }
@@ -85,7 +85,7 @@ public class DimensionOther extends Dimension  {
   @ApiModelProperty(value = "A set of all potential values, especially useful for [nominal](https://en.wikipedia.org/wiki/Level_of_measurement#Nominal_level) values.  **Important:** The order of the values MUST be exactly how the dimension values are also ordered in the data (cube). If the values specify band names, the values MUST be in the same order as they are in the corresponding band fields (i.e. `eo:bands` or `sar:bands`).")
 
   @Valid
-@Size(min=1) 
+@Size(min=1)
   public List<String> getValues() {
     return values;
   }
@@ -127,10 +127,12 @@ public class DimensionOther extends Dimension  {
   @ApiModelProperty(value = "The unit of measurement for the data, preferably the symbols from [SI](https://physics.nist.gov/cuu/Units/units.html) or [UDUNITS](https://ncics.org/portfolio/other-resources/udunits2/).")
 
 
+  @Override
   public String getUnit() {
     return unit;
   }
 
+  @Override
   public void setUnit(String unit) {
     this.unit = unit;
   }

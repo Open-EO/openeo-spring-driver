@@ -1,0 +1,151 @@
+{
+  "engine": "WCPS",
+  "stac_version": "0.9.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v1.0.0/schema.json"
+  ],
+  "type": "Collection",
+  "id": "spi12_19712100_tnst_1x1km_mon_cordexadj_qdm",
+  "title": "Standardized Precipitation Index in Trentino-South Tyrol, IT (1971-2100)",
+  "description": "Anomalies of precipitation for 12-month cumulated values",
+  "keywords": [
+    "spi12",
+    "FAct CLIMAX",
+    "South Tyrol",
+    "Projection"
+  ],
+  "version": "v1",
+  "deprecated": false,
+  "license": "CC-BY-4.0",
+  "sci:citation": "TODO",
+  "providers": [
+    {
+      "name": "Eurac_EO_WCS",
+      "url": "http://www.eurac.edu",
+      "roles": [
+        "host"
+      ]
+    },
+    {
+      "name": "Eurac EO WCS",
+      "url": "http://www.eurac.edu",
+      "roles": [
+        "Host"
+      ]
+    },
+    {
+      "name": "Alice Crespi",
+      "url": "https://www.eurac.edu/en/people/alice-crespi",
+      "roles": [
+        "Processor"
+      ]
+    }
+  ],
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          10.293056040808795,
+          45.61443989663384,
+          12.580988155437245,
+          47.14218071084979
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "1970-01-01T00:00:00Z",
+          "2100-12-01T00:00:00Z"
+        ]
+      ]
+    }
+  },
+  "links": [
+    {
+      "rel": "licence",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "title": "License Link"
+    },
+    {
+      "rel": "about",
+      "href": "https://www.eurac.edu/en/institutes-centers/institute-for-earth-observation/projects/fact-climax",
+      "title": "About Link"
+    }
+  ],
+  "cube:dimensions": {
+    "t": {
+      "type": "temporal",
+      "extent": [
+        "1970-01-01T00:00:00.000Z",
+        "2100-12-01T00:00:00.000Z"
+      ],
+      "step": "P1M"
+    },
+    "X": {
+      "type": "spatial",
+      "axis": "x",
+      "extent": [
+        4343890.93180395,
+        4516890.93180395
+      ],
+      "unit": "m",
+      "reference_system": 3035
+    },
+    "Y": {
+      "type": "spatial",
+      "axis": "y",
+      "extent": [
+        2500257.63356769,
+        2673257.63356769
+      ],
+      "unit": "m",
+      "reference_system": 3035
+    },
+    "bands": {
+      "type": "bands",
+      "values": [
+        "spi12"
+      ]
+    },
+    "M": {
+      "type": "other",
+      "description": "ensamble model of the input climate projections",
+      "extent": [
+        0,
+        22
+      ],
+      "unit": "GridSpacing"
+    },
+    "rcp": {
+      "type": "other",
+      "description": "\"representative concentration pathway\" scenarios of the input climate projections",
+      "extent": [
+        4.5,
+        8.5
+      ],
+      "unit": "GridSpacing"
+    }
+  },
+  "summaries": {
+    "constellation": [],
+    "platform": [],
+    "instruments": [],
+    "eo:cloud cover": {
+      "min": 0,
+      "max": 0
+    },
+    "gsd": [],
+    "eo:bands": [
+      {
+        "name": "spi12",
+        "description": "Standardized Precipitation Index",
+        "center_wavelength": 0,
+        "gsd": 0
+      }
+    ]
+  },
+  "assets": {}
+}

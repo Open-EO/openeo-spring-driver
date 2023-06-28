@@ -1,6 +1,7 @@
 package org.openeo.spring.model;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -82,7 +83,10 @@ public class Providers   {
     return this;
   }
 
-  
+  public Providers roles(String ... roles) {
+      return this.roles(Arrays.asList(roles));
+  }
+
   @ApiModelProperty(example = "[producer, host]", value = "The value MUST be a list of strings that gives the providers status.")
 
 
@@ -139,7 +143,7 @@ public class Providers   {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class Providers {\n");
-    
+
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    url: ").append(toIndentedString(url)).append("\n");
     sb.append("    roles: ").append(toIndentedString(roles)).append("\n");

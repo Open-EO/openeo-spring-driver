@@ -18,7 +18,7 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Collections   {
-	
+
   @JsonProperty("collections")
   @Valid
   private List<Collection> collections = new ArrayList<>();
@@ -81,6 +81,9 @@ public class Collections   {
     this.links = links;
   }
 
+  public int size() {
+      return collections.size();
+  }
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -104,7 +107,6 @@ public class Collections   {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class Collections {\n");
-    
     sb.append("    collections: ").append(toIndentedString(collections)).append("\n");
     sb.append("    links: ").append(toIndentedString(links)).append("\n");
     sb.append("}");
