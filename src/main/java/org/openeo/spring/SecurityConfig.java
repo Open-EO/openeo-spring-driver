@@ -2,17 +2,10 @@ package org.openeo.spring;
 
 import java.io.InputStream;
 
-import javax.servlet.Filter;
-import javax.servlet.ServletException;
-
-import org.hibernate.Hibernate;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.spi.HttpFacade;
-//import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
-import org.keycloak.adapters.springsecurity.KeycloakConfiguration;
-import org.keycloak.adapters.springsecurity.KeycloakSecurityComponents;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider;
 import org.keycloak.adapters.springsecurity.client.KeycloakClientRequestFactory;
 import org.keycloak.adapters.springsecurity.client.KeycloakRestTemplate;
@@ -24,32 +17,38 @@ import org.keycloak.adapters.springsecurity.filter.KeycloakSecurityContextReques
 import org.keycloak.adapters.springsecurity.management.HttpSessionManager;
 import org.openeo.spring.keycloak.OpenEOKeycloakAuthenticationProcessingFilter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.web.HttpSecurityBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionRegistryImpl;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.header.HeaderWriterFilter;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 
-@Configuration
-@EnableWebSecurity(debug = false)
-@ComponentScan(basePackageClasses = KeycloakSecurityComponents.class)
-@KeycloakConfiguration
+//@Configuration
+//@EnableWebSecurity(debug = false)
+//@ComponentScan(basePackageClasses = KeycloakSecurityComponents.class)
+//@KeycloakConfiguration
+
+/* ERROR: org.springframework.beans.factory.BeanCreationException
+--------------------------------------------------------------
+
+org/springframework/security/config/annotation/web/configuration/WebSecurityConfiguration.class
+  ..cannot define bean with name 'springSecurityFilterChain', because:
+  "Found WebSecurityConfigurerAdapter as well as SecurityFilterChain. Please select just one."
+
+--> Keycloak configuration still provides a WebSecurityConfigurerAdapter: needs to be migrated?
+"In Spring Security 5.7.0-M2 we deprecated the WebSecurityConfigurerAdapter" [1]
+
+
+  [1] https://spring.io/blog/2022/02/21/spring-security-without-the-websecurityconfigureradapter 
+ */
 public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 
     public static final String EURAC_ROLE = "eurac";

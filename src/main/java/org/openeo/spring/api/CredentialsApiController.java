@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.openeo.spring.model.Error;
+import org.openeo.spring.model.HTTPBasicAccessToken;
 import org.openeo.spring.model.OpenIDConnectProviders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -65,4 +66,13 @@ public class CredentialsApiController implements CredentialsApi {
     	return new ResponseEntity<OpenIDConnectProviders>(providers, HttpStatus.OK);
     }
 
+    @GetMapping(value = "/credentials/basic", produces = { "application/json" })
+    @Override
+    public ResponseEntity<HTTPBasicAccessToken> authenticateBasic() {
+        /**TODO**/
+        // see interface default method example
+        // token: https://github.com/Open-EO/openeo-wcps-driver/tree/master/src/main/java/eu/openeo/backend/auth/filter
+        // also: https://github.com/Open-EO/openeo-wcps-driver/blob/master/src/main/java/eu/openeo/api/impl/CredentialsApiServiceImpl.java
+        return null;
+    }
 }
