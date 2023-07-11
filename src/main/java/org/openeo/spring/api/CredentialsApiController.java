@@ -1,5 +1,7 @@
 package org.openeo.spring.api;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import java.io.IOException;
 import java.util.Optional;
 
@@ -31,11 +33,18 @@ public class CredentialsApiController implements CredentialsApi {
     @Value("${org.openeo.oidc.providers.list}")
 	private Resource oidcProvidersFile;
 
+    @Value("${spring.security.enable-basic}")
+    boolean enableBasicAuth;
+    
+    @Value("${spring.security.enable-keycloak}")
+    boolean enableKeycloakAuth;
+
     @org.springframework.beans.factory.annotation.Autowired
     public CredentialsApiController(NativeWebRequest request) {
         this.request = request;
     }
 
+    
     @Override
     public Optional<NativeWebRequest> getRequest() {
         return Optional.ofNullable(request);
@@ -44,12 +53,23 @@ public class CredentialsApiController implements CredentialsApi {
     @GetMapping(value = "/credentials/oidc", produces = { "application/json" })
     @Override
     public ResponseEntity<?>  authenticateOidc() {
-    	ObjectMapper mapper = new ObjectMapper();
+        ResponseEntity<?> resp;    	
     	
-    	OpenIDConnectProviders providers;
 		try {
-			log.debug(oidcProvidersFile.getFilename());
-			providers = mapper.readValue(oidcProvidersFile.getInputStream(), OpenIDConnectProviders.class);
+		    OpenIDConnectProviders providers = new OpenIDConnectProviders();
+		    if (enableKeycloakAuth) {		        
+		        log.debug(oidcProvidersFile.getFilename());
+		        ObjectMapper mapper = new ObjectMapper();
+		        providers = mapper.readValue(oidcProvidersFile.getInputStream(), OpenIDConnectProviders.class);
+		        assertFalse(providers.getProviders().isEmpty());
+		        resp = ResponseEntity.ok(providers);
+		    } else {
+		        log.debug("OIDC authentication is disabled.");
+		        Error error = new Error();
+	            error.setCode("501");
+	            error.setMessage("OIDC authentication is not enabled.");
+		        resp = ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(error);
+		    }
 		} catch (IOException e) {
 			log.error("The list of oidc providers is currently not available! " + e.getMessage());
 			StringBuilder builder = new StringBuilder();
@@ -60,19 +80,44 @@ public class CredentialsApiController implements CredentialsApi {
 			Error error = new Error();
 			error.setCode("500");
 			error.setMessage("The list of oidc providers is currently not available!");
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			resp = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
 		}
    
-    	return new ResponseEntity<OpenIDConnectProviders>(providers, HttpStatus.OK);
+    	return resp;
     }
 
     @GetMapping(value = "/credentials/basic", produces = { "application/json" })
     @Override
-    public ResponseEntity<HTTPBasicAccessToken> authenticateBasic() {
+    // FIXME handle errors elsewhere and keep HTTPBasicAccessToken response type?
+    public ResponseEntity</*HTTPBasicAccessToken*/?> authenticateBasic() {
+        ResponseEntity<?> resp;
+//        getRequest().ifPresent(request -> {
+//            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
+//                if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
+//                    // fetch access token
+//                    String user = request.getRemoteUser();
+//                    String accessToken = String.format("{ \"access_token\" : \"{}\" }", user); // FIXME token
+//                    ApiUtil.setExampleResponse(request, "application/json", accessToken); // FIXME
+//                    break;
+//                }
+//            }
+//        });
+        if (enableBasicAuth) {
+            String username = request.getUserPrincipal().getName();            
+            String token = TokenUtil.getBAAccessToken(request.getUserPrincipal());
+            log.debug("Access token for user {}: {}", username, token);
+            resp = ResponseEntity.ok(new HTTPBasicAccessToken().accessToken(token));
+        } else {
+            Error error = new Error();
+            error.setCode("501");
+            error.setMessage("Basic authentication mechanism not supported by the server.");
+            resp = ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(error);
+        }
+        return resp;
+
         /**TODO**/
         // see interface default method example
         // token: https://github.com/Open-EO/openeo-wcps-driver/tree/master/src/main/java/eu/openeo/backend/auth/filter
         // also: https://github.com/Open-EO/openeo-wcps-driver/blob/master/src/main/java/eu/openeo/api/impl/CredentialsApiServiceImpl.java
-        return null;
     }
 }

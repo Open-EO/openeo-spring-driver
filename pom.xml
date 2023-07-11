@@ -12,10 +12,13 @@
     <parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.5.1</version>
+		<version>2.6.1</version>
 		<!--
 		  2.5.1  ->  Spring Framework v5.3.8
 		  2.5.1  ->  Spring Security  v5.5.0
+		  
+		  2.6.1  ->  Spring Framework v5.3.13
+		  2.6.1  ->  Spring Security  v5.6.0
 		  
 		  See : https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/2.5.1/spring-boot-dependencies-2.5.1.pom 
 		-->
@@ -26,7 +29,7 @@
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<springfox-version>3.0.0</springfox-version>
-		<springdoc-version>1.4.6</springdoc-version>
+		<springdoc-version>1.5.13</springdoc-version>
 		<!--gdal.path>/usr/share/java/gdal.jar</gdal.path-->
 		<gdal.version>3.4.0</gdal.version>
 		<netcdfJavaVersion>5.2.0</netcdfJavaVersion>
@@ -136,6 +139,7 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-config</artifactId>
         </dependency-->
+        <!-- deprecated Keycloak adapters --> 
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-spring-security-adapter</artifactId>
@@ -146,6 +150,20 @@
 			<artifactId>keycloak-authz-client</artifactId>
 			<version>${keycloak.version}</version>
 		</dependency>
+		<!-- / -->
+		<!-- 
+		    Spring Boot - OAuth2 libraries
+		    @see https://www.baeldung.com/spring-boot-keycloak
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
+	    </dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+	    </dependency>
+	     <!-- / -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-ui</artifactId>
@@ -154,7 +172,7 @@
 		<dependency>
 			<groupId>io.springfox</groupId>
 			<artifactId>springfox-boot-starter</artifactId>
-			<version>3.0.0</version>
+			<version>${springfox-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.datatype</groupId>

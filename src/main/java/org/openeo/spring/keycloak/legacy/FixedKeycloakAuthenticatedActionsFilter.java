@@ -1,4 +1,4 @@
-package org.openeo.spring.keycloak;
+package org.openeo.spring.keycloak.legacy;
 
 import java.io.IOException;
 

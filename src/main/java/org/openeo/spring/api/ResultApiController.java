@@ -1,5 +1,7 @@
 package org.openeo.spring.api;
 
+import static org.openeo.spring.KeycloakSecurityConfigAdapter.EURAC_ROLE;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -63,8 +65,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
-import static org.openeo.spring.SecurityConfig.EURAC_ROLE;
-
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Component
 @RestController
@@ -116,7 +116,8 @@ public class ResultApiController implements ResultApi {
 		return Optional.ofNullable(request);
 	}
 
-	@Operation(summary = "Process and download data synchronously", operationId = "computeResult", description = "A user-defined process will be executed directly and the result will be downloaded in the format specified in the process graph. This endpoint can be used to generate small previews or test user-defined processes before starting a batch job. Timeouts on either client- or server-side are to be expected for complex computations. Back-ends MAY send the openEO error `ProcessGraphComplexity` immediately if the computation is expected to time out. Otherwise requests MAY time-out after a certain amount of time by sending openEO error `RequestTimeout`. A header named `OpenEO-Costs` MAY be sent with all responses, which MUST include the costs for processing and downloading the data. Additionally,  a link to a log file MAY be sent in the header.", tags = {
+	@Override
+    @Operation(summary = "Process and download data synchronously", operationId = "computeResult", description = "A user-defined process will be executed directly and the result will be downloaded in the format specified in the process graph. This endpoint can be used to generate small previews or test user-defined processes before starting a batch job. Timeouts on either client- or server-side are to be expected for complex computations. Back-ends MAY send the openEO error `ProcessGraphComplexity` immediately if the computation is expected to time out. Otherwise requests MAY time-out after a certain amount of time by sending openEO error `RequestTimeout`. A header named `OpenEO-Costs` MAY be sent with all responses, which MUST include the costs for processing and downloading the data. Additionally,  a link to a log file MAY be sent in the header.", tags = {
 			"Data Processing", })
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Result data in the requested output format"),
@@ -129,7 +130,7 @@ public class ResultApiController implements ResultApi {
 
 		AccessToken token = null;
 		if(principal != null) {
-			token = TokenUtil.getAccessToken(principal);
+			token = TokenUtil.getKCAccessToken(principal);
 		}
 
 		Set<String> roles = new HashSet<>();

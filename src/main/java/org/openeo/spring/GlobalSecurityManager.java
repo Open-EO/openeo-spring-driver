@@ -12,6 +12,9 @@ public /*final*/ class GlobalSecurityManager {
             "/",
             "/conformance",
             "/file_formats",
-            "/.well-known/openeo"};
+            "/.well-known/**"};
+    
+    public static final String BASIC_AUTH_API_RESOURCE = "/credentials/basic";
+    public static final String OIDC_AUTH_API_RESOURCE = "/credentials/oidc";
 
 }

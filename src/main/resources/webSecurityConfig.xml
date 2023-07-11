@@ -4,21 +4,11 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
                         http://www.springframework.org/schema/security https://www.springframework.org/schema/security/spring-security.xsd">
-
-    <!--http pattern="/securityNone" security="none"/-->
-    <http use-expressions="true">
-        <!-- See: https://docs.spring.io/spring-security/site/docs/3.0.x/reference/el-access.html -->
-        <!-- See: https://docs.spring.io/spring-security/site/docs/5.3.8.RELEASE/reference/html5/#el-common-built-in -->
-        <intercept-url pattern="/" access="permitAll" />
-        <intercept-url pattern="/conformance" access="permitAll" />
-        <intercept-url pattern="/**" access="isAuthenticated()" />
-        <http-basic />
-    </http>
-
-    <authentication-manager>
-        <authentication-provider>
+	
+    <authentication-manager alias="AM">
+        <authentication-provider> <!-- ref="OnOffDaoAuthenticationProvider" : then no children! -->
             <user-service>                
-                <user name="user" password="{noop}changeme" authorities="ROLE_USER" />
+                <user name="satan" password="{noop}changeme" authorities="ROLE_USER" />
                 <!--user name="public" password="{noop}changeme" authorities="ROLE_PUBLIC" /-->
             </user-service>
         </authentication-provider>

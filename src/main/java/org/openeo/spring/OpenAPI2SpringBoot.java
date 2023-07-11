@@ -10,10 +10,12 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.fasterxml.jackson.databind.Module;
 
+@EnableWebMvc
 @SpringBootApplication(exclude = {HibernateJpaAutoConfiguration.class})
 @ComponentScan(basePackages = {"org.openeo.spring" , "org.openapitools.configuration", "org.openeo.wcps", "org.openeo.spring.api"})
 public class OpenAPI2SpringBoot implements CommandLineRunner {
