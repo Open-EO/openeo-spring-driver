@@ -4,8 +4,16 @@ import static org.openeo.spring.GlobalSecurityManager.BASIC_AUTH_API_RESOURCE;
 import static org.openeo.spring.GlobalSecurityManager.NOAUTH_API_RESOURCES;
 import static org.openeo.spring.GlobalSecurityManager.OIDC_AUTH_API_RESOURCE;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.openeo.spring.token.JWTAuthenticationFilter;
+import org.openeo.spring.token.JWTAuthorizationFilter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Primary;
@@ -15,17 +23,27 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.context.HttpRequestResponseHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 
-//@Profile(BasicSecurityFromFileConfig.PROFILE_ID) -> better use:
-@ConditionalOnProperty(prefix="spring.security", value="enable-basic")
 @Configuration
-//@ComponentScan("org.openeo.spring.components")
+@ConditionalOnProperty(prefix="spring.security", value="enable-basic")
 @ImportResource({ "classpath:spring-ba-security.xml" })
+@ComponentScan("org.openeo.spring.token")
+//@Profile(BasicSecurityFromFileConfig.PROFILE_ID) -> better use @ConditionalOnProperty
 public class BasicSecurityConfig {
+    
+    @Autowired
+    JWTAuthenticationFilter jwtAuthenticationFilter;
+    
+    @Autowired
+    JWTAuthorizationFilter jwtAuthorizationFilter;
     
     /** Used to define a {@link Profile}. */
     public static final String PROFILE_ID = "BASIC_AUTH_FILE";
@@ -36,26 +54,27 @@ public class BasicSecurityConfig {
     /** Override default session repository. */
     public static SecurityContextRepository REPO;
     
+    private @Autowired AutowireCapableBeanFactory beanFactory;
+    
     /**
      * Requires login input on the basic-auth endpoint. 
      */
     @Bean
-    public SecurityFilterChain loginFilterChain(HttpSecurity http) throws Exception {
-//        REPO = new HttpSessionSecurityContextRepository();
-        
+    public SecurityFilterChain loginFilterChain(HttpSecurity http) throws Exception {       
         http
         .antMatcher(BASIC_AUTH_API_RESOURCE)
         .authorizeHttpRequests(authorize -> authorize
-                .anyRequest().authenticated()
-                )
-//        .securityContext((context) -> context
-//                .securityContextRepository(REPO))
+                .anyRequest().authenticated())
         .httpBasic()
         .realmName(REALM_LABEL) // [Authenticate: Basic realm="REALM"]
-        .and() // disable session management (JSESSIONID cookies -> security risks)
+        .and()
+        // disable session management (JSESSIONID cookies -> security risks)
         .sessionManagement()
-        .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        //      .rememberMe(Customizer.withDefaults());
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        // add Bearer/JWT tokens management
+        .and()
+        .addFilterAfter(jwtAuthenticationFilter, BasicAuthenticationFilter.class);
+        //      .rememberMe(Customizer.withDefaults()); TODO
 
         return http.build();
     }
@@ -71,7 +90,12 @@ public class BasicSecurityConfig {
         http
         .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().authenticated()
-                );
+                )
+        // disable session management (JSESSIONID cookies -> security risks)
+        .sessionManagement()
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .and()
+        .addFilterBefore(jwtAuthorizationFilter, BasicAuthenticationFilter.class);
         
         return http.build();
     }
@@ -143,4 +167,25 @@ public class BasicSecurityConfig {
 //      authenticationManagerBuilder.authenticationProvider(AP);
 //      return authenticationManagerBuilder.build();
 //  }
+    
+    /**
+     * Custom security context repository, to manually store session information.
+     */
+    static class InternalSecurityRepo extends HttpSessionSecurityContextRepository {
+
+        @Override
+        public SecurityContext loadContext(HttpRequestResponseHolder requestResponseHolder) {
+            return super.loadContext(requestResponseHolder);
+        }
+
+        @Override
+        public void saveContext(SecurityContext context, HttpServletRequest request, HttpServletResponse response) {
+            super.saveContext(context, request, response);
+        }
+
+        @Override
+        public boolean containsContext(HttpServletRequest request) {
+            return super.containsContext(request);
+        }        
+    }
 }

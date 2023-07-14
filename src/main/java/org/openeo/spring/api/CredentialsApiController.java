@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.HTTPBasicAccessToken;
 import org.openeo.spring.model.OpenIDConnectProviders;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -39,11 +40,10 @@ public class CredentialsApiController implements CredentialsApi {
     @Value("${spring.security.enable-keycloak}")
     boolean enableKeycloakAuth;
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
     public CredentialsApiController(NativeWebRequest request) {
         this.request = request;
     }
-
     
     @Override
     public Optional<NativeWebRequest> getRequest() {
@@ -91,20 +91,10 @@ public class CredentialsApiController implements CredentialsApi {
     // FIXME handle errors elsewhere and keep HTTPBasicAccessToken response type?
     public ResponseEntity</*HTTPBasicAccessToken*/?> authenticateBasic() {
         ResponseEntity<?> resp;
-//        getRequest().ifPresent(request -> {
-//            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
-//                if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-//                    // fetch access token
-//                    String user = request.getRemoteUser();
-//                    String accessToken = String.format("{ \"access_token\" : \"{}\" }", user); // FIXME token
-//                    ApiUtil.setExampleResponse(request, "application/json", accessToken); // FIXME
-//                    break;
-//                }
-//            }
-//        });
+        
         if (enableBasicAuth) {
-            String username = request.getUserPrincipal().getName();            
-            String token = TokenUtil.getBAAccessToken(request.getUserPrincipal());
+            String username = request.getUserPrincipal().getName();
+            String token = TokenUtil.getCurrentBAAccessToken(request.getUserPrincipal());
             log.debug("Access token for user {}: {}", username, token);
             resp = ResponseEntity.ok(new HTTPBasicAccessToken().accessToken(token));
         } else {

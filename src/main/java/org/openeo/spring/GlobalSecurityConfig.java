@@ -27,7 +27,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
  */
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(securedEnabled = true)
+@EnableGlobalMethodSecurity(
+        securedEnabled = true, 
+        prePostEnabled = true) // -> @PreAuthorize annotations on controller methods
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class GlobalSecurityConfig implements EnvironmentPostProcessor {
         
