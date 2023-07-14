@@ -14,31 +14,47 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.SecurityContextRepository;
 
 //@Profile(BasicSecurityFromFileConfig.PROFILE_ID) -> better use:
 @ConditionalOnProperty(prefix="spring.security", value="enable-basic")
 @Configuration
 //@ComponentScan("org.openeo.spring.components")
-@ImportResource({ "classpath:webSecurityConfig.xml" })
+@ImportResource({ "classpath:spring-ba-security.xml" })
 public class BasicSecurityConfig {
     
     /** Used to define a {@link Profile}. */
     public static final String PROFILE_ID = "BASIC_AUTH_FILE";
+    
+    /** Label for the "realm" set in {@code WWW-Authenticate} response header. */
+    public static final String REALM_LABEL = "openEO";
+    
+    /** Override default session repository. */
+    public static SecurityContextRepository REPO;
     
     /**
      * Requires login input on the basic-auth endpoint. 
      */
     @Bean
     public SecurityFilterChain loginFilterChain(HttpSecurity http) throws Exception {
+//        REPO = new HttpSessionSecurityContextRepository();
+        
         http
         .antMatcher(BASIC_AUTH_API_RESOURCE)
         .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().authenticated()
                 )
-        .httpBasic();
+//        .securityContext((context) -> context
+//                .securityContextRepository(REPO))
+        .httpBasic()
+        .realmName(REALM_LABEL) // [Authenticate: Basic realm="REALM"]
+        .and() // disable session management (JSESSIONID cookies -> security risks)
+        .sessionManagement()
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         //      .rememberMe(Customizer.withDefaults());
 
         return http.build();
