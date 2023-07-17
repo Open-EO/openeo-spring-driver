@@ -700,7 +700,7 @@ public class JobsApiController implements JobsApi {
 	    AccessToken token = new AccessToken();
 	    try {
 	    	token = TokenUtil.getAccessToken(principal);
-	    } catch (java.lang.NullPointerException e) {
+	    } catch (Exception e) { 
 			Error error = new Error();
 			error.setCode("401");
 			error.setMessage("No acces token found, please authenticate.");
