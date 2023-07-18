@@ -697,7 +697,16 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> listJobs(
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit, Principal principal) {
 
-	    AccessToken token = TokenUtil.getAccessToken(principal);
+	    AccessToken token = new AccessToken();
+	    try {
+	    	token = TokenUtil.getAccessToken(principal);
+	    } catch (Exception e) { 
+			Error error = new Error();
+			error.setCode("401");
+			error.setMessage("No acces token found, please authenticate.");
+			log.error(error);
+			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED);
+	    }
 	    String username =  token.getPreferredUsername();
 	    BatchJobs batchJobs = new BatchJobs();
 
