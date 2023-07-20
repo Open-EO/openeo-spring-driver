@@ -1,18 +1,23 @@
-package org.openeo.spring.token;
+package org.openeo.spring.bearer;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -39,13 +44,23 @@ public class JWTTokenService implements ITokenService {
     @Value("${jwt.exp-minutes}")
     private int jwtExpMinutes;
     
+    @Autowired
+    private UserDetailsService udService;
+    
     /** Algorithm used to encode the token. */
     private static final SignatureAlgorithm SA = SignatureAlgorithm.HS512;
+    
+    private static final Logger LOGGER = LogManager.getLogger(JWTTokenService.class);
 
     @Override
     public String generateToken(UserDetails user) {
+        return generateToken(user, jwtExpMinutes, ChronoUnit.MINUTES);
+    }
+    
+    @Override
+    public String generateToken(UserDetails user, int expUnits, TemporalUnit uom) {
         
-        Instant expirationTime = Instant.now().plus(jwtExpMinutes, ChronoUnit.MINUTES);
+        Instant expirationTime = Instant.now().plus(expUnits, uom);
         Date expirationDate = Date.from(expirationTime);
 
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
@@ -65,19 +80,34 @@ public class JWTTokenService implements ITokenService {
     }
 
     @Override
-    public UserDetails parseToken(String token) {
+    public UserDetails parseToken(String token) throws JwtException {
+        
         byte[] secretBytes = jwtSecret.getBytes();
+        UserDetails user = null;
 
-        Jws<Claims> jwsClaims = Jwts.parserBuilder()
-                .setSigningKey(secretBytes)
-                .build()
-                .parseClaimsJws(token);
+        try {
+            Jws<Claims> jwsClaims = Jwts.parserBuilder()
+                    .setSigningKey(secretBytes)
+                    .requireIssuer(jwtIssuer)
+                    .requireAudience(jwtAudience)
+                    .setAllowedClockSkewSeconds(0)
+                    .build()
+                    .parseClaimsJws(token);
 
-        String username = jwsClaims.getBody().getSubject();
-//        Integer userId = jwsClaims.getBody().get(ID_CLAIM, Integer.class);
-//        boolean isAdmin = jwsClaims.getBody().get(IS_ADMIN_CLAIM, Boolean.class);
+            String username = jwsClaims.getBody().getSubject();
+            //        Integer userId = jwsClaims.getBody().get(ID_CLAIM, Integer.class);
+            //        boolean isAdmin = jwsClaims.getBody().get(IS_ADMIN_CLAIM, Boolean.class);
+            if (null != username) {
+                user = udService.loadUserByUsername(username);
+            }
+        } catch (JwtException ex) { // TODO handle via registered runtime exceptions handler:
+//                ExpiredJwtException | UnsupportedJwtException |
+//                MalformedJwtException | SignatureException | IllegalArgumentException ex) {
+            LOGGER.error("Illegal or expired token received.", ex);
+            throw ex;
+        }
 
-        return User.builder().username(username).build();
+        return user;
     }
     
     // JWT labels

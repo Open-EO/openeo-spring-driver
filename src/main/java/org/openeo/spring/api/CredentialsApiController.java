@@ -3,6 +3,7 @@ package org.openeo.spring.api;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
@@ -93,20 +94,36 @@ public class CredentialsApiController implements CredentialsApi {
         ResponseEntity<?> resp;
         
         if (enableBasicAuth) {
-            String username = request.getUserPrincipal().getName();
-            String token = TokenUtil.getCurrentBAAccessToken(request.getUserPrincipal());
-            log.debug("Access token for user {}: {}", username, token);
-            resp = ResponseEntity.ok(new HTTPBasicAccessToken().accessToken(token));
+            Principal principal = request.getUserPrincipal();
+            
+            if (null != principal) {
+                String username = principal.getName();
+                String token = TokenUtil.getCurrentBAAccessToken(request.getUserPrincipal());
+                log.debug("Access token for user {}: {}", username, token);
+                resp = ResponseEntity
+                        .ok(new HTTPBasicAccessToken()
+                        .accessToken(token));
+                
+            } else {
+                Error error = new Error();
+                error.setCode("401");
+                error.setMessage("Basic Authentication header required.");
+                resp = ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(error);
+            }
         } else {
             Error error = new Error();
             error.setCode("501");
             error.setMessage("Basic authentication mechanism not supported by the server.");
-            resp = ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(error);
+            resp = ResponseEntity
+                    .status(HttpStatus.NOT_IMPLEMENTED)
+                    .body(error);
         }
+        
         return resp;
 
         /**TODO**/
-        // see interface default method example
         // token: https://github.com/Open-EO/openeo-wcps-driver/tree/master/src/main/java/eu/openeo/backend/auth/filter
         // also: https://github.com/Open-EO/openeo-wcps-driver/blob/master/src/main/java/eu/openeo/api/impl/CredentialsApiServiceImpl.java
     }

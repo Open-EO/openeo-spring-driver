@@ -1,6 +1,6 @@
 package org.openeo.spring.components;
 
-import org.openeo.spring.BasicSecurityConfig;
+import org.openeo.spring.security.BasicSecurityConfig;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 

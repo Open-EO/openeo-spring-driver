@@ -1,16 +1,16 @@
-package org.openeo.spring;
+package org.openeo.spring.security;
 
-import static org.openeo.spring.GlobalSecurityManager.BASIC_AUTH_API_RESOURCE;
-import static org.openeo.spring.GlobalSecurityManager.NOAUTH_API_RESOURCES;
-import static org.openeo.spring.GlobalSecurityManager.OIDC_AUTH_API_RESOURCE;
+import static org.openeo.spring.security.GlobalSecurityConfig.BASIC_AUTH_API_RESOURCE;
+import static org.openeo.spring.security.GlobalSecurityConfig.NOAUTH_API_RESOURCES;
+import static org.openeo.spring.security.GlobalSecurityConfig.OIDC_AUTH_API_RESOURCE;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.openeo.spring.token.JWTAuthenticationFilter;
-import org.openeo.spring.token.JWTAuthorizationFilter;
+import org.openeo.spring.bearer.JWTAuthenticationFilter;
+import org.openeo.spring.bearer.JWTAuthorizationFilter;
+import org.openeo.spring.components.FilterChainExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -27,6 +27,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.HttpRequestResponseHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -45,6 +46,9 @@ public class BasicSecurityConfig {
     @Autowired
     JWTAuthorizationFilter jwtAuthorizationFilter;
     
+    @Autowired
+    FilterChainExceptionHandler filterChainExHandler;
+    
     /** Used to define a {@link Profile}. */
     public static final String PROFILE_ID = "BASIC_AUTH_FILE";
     
@@ -53,8 +57,6 @@ public class BasicSecurityConfig {
     
     /** Override default session repository. */
     public static SecurityContextRepository REPO;
-    
-    private @Autowired AutowireCapableBeanFactory beanFactory;
     
     /**
      * Requires login input on the basic-auth endpoint. 
@@ -73,6 +75,7 @@ public class BasicSecurityConfig {
         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         // add Bearer/JWT tokens management
         .and()
+        .addFilterBefore(filterChainExHandler, LogoutFilter.class)
         .addFilterAfter(jwtAuthenticationFilter, BasicAuthenticationFilter.class);
         //      .rememberMe(Customizer.withDefaults()); TODO
 
@@ -95,6 +98,7 @@ public class BasicSecurityConfig {
         .sessionManagement()
         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .and()
+        .addFilterBefore(filterChainExHandler, LogoutFilter.class)
         .addFilterBefore(jwtAuthorizationFilter, BasicAuthenticationFilter.class);
         
         return http.build();

@@ -4,4 +4,4 @@
  * different sources, being it a remote service
  * or a local catalogue file.
  */
-package org.openeo.spring.api.loaders;
+package org.openeo.spring.loaders;

@@ -1,3 +1,3 @@
-package org.openeo.spring.token;
+package org.openeo.spring.bearer;
 
 /** JWT/Bearer token management. */

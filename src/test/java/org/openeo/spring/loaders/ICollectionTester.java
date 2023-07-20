@@ -1,4 +1,4 @@
-package org.openeo.spring.api.loaders;
+package org.openeo.spring.loaders;
 
 import org.openeo.spring.model.Collection;
 

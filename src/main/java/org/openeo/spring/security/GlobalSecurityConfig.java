@@ -1,4 +1,4 @@
-package org.openeo.spring;
+package org.openeo.spring.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -37,7 +37,17 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
     boolean enableBasicAuth;
     
     @Value("${spring.security.enable-keycloak}")
-    boolean enableKeycloakAuth;    
+    boolean enableKeycloakAuth;
+    
+    /** API resources that do not require authentication. */
+    public static final String[] NOAUTH_API_RESOURCES = new String[] {
+            "/",
+            "/conformance",
+            "/file_formats",
+            "/.well-known/**"};
+    
+    public static final String BASIC_AUTH_API_RESOURCE = "/credentials/basic";
+    public static final String OIDC_AUTH_API_RESOURCE = "/credentials/oidc";
     
     /**
      * Configured the application environment (e.g. activate profiles
@@ -70,4 +80,5 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
      */
     @Order(2)
     public static class OptionalSecurityConfig extends BasicSecurityConfig {}
+ 
 }

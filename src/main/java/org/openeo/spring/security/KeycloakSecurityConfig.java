@@ -1,7 +1,7 @@
-package org.openeo.spring;
+package org.openeo.spring.security;
 
-import static org.openeo.spring.GlobalSecurityManager.NOAUTH_API_RESOURCES;
-import static org.openeo.spring.GlobalSecurityManager.OIDC_AUTH_API_RESOURCE;
+import static org.openeo.spring.security.GlobalSecurityConfig.NOAUTH_API_RESOURCES;
+import static org.openeo.spring.security.GlobalSecurityConfig.OIDC_AUTH_API_RESOURCE;
 
 import org.openeo.spring.keycloak.KeycloakLogoutHandler;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,16 +1,18 @@
-package org.openeo.spring.api.loaders;
+package org.openeo.spring.loaders;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.openeo.spring.loaders.WCSCollectionsLoader.BANDS_DIM;
+import static org.openeo.spring.model.Dimension.TypeEnum.BANDS;
+import static org.openeo.spring.model.Dimension.TypeEnum.OTHER;
+import static org.openeo.spring.model.Dimension.TypeEnum.SPATIAL;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -26,29 +28,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.openeo.spring.api.CollectionsApi;
-import org.openeo.spring.api.CollectionsApiController;
 import org.openeo.spring.api.LinkRelType;
+import org.openeo.spring.loaders.JSONMarshaller;
+import org.openeo.spring.loaders.WCSCollectionsLoader;
 import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.CollectionSpatialExtent;
 import org.openeo.spring.model.CollectionSummaries;
 import org.openeo.spring.model.CollectionTemporalExtent;
-import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.Dimension;
-import org.openeo.spring.model.DimensionBands;
 import org.openeo.spring.model.Dimension.TypeEnum;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
+import org.openeo.spring.model.DimensionBands;
 import org.openeo.spring.model.DimensionSpatial;
 import org.openeo.spring.model.HasUnit;
 import org.openeo.spring.model.Link;
 import org.openeo.spring.model.Providers;
-
-import static org.openeo.spring.model.Dimension.TypeEnum.*;
-import static org.openeo.spring.api.loaders.WCSCollectionsLoader.BANDS_DIM;
 
 /**
  * Unit tests for the {@link WCSCollectionsLoader} class.

@@ -1,7 +1,7 @@
-package org.openeo.spring.api.loaders;
+package org.openeo.spring.loaders;
 
-import static org.openeo.spring.api.loaders.CRSUtils.EPSG_WGS84;
-import static org.openeo.spring.api.loaders.CRSUtils.TEMPORAL_AXIS_LABELS;
+import static org.openeo.spring.loaders.CRSUtils.EPSG_WGS84;
+import static org.openeo.spring.loaders.CRSUtils.TEMPORAL_AXIS_LABELS;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,9 +43,9 @@ import org.json.JSONException;
 import org.openeo.spring.api.CollectionsApiController;
 import org.openeo.spring.api.DefaultApiController;
 import org.openeo.spring.api.LinkRelType;
-import org.openeo.spring.api.loaders.CRSUtils.AxisMappingStrategy;
-import org.openeo.spring.api.loaders.CRSUtils.CSAxisOrientation;
-import org.openeo.spring.api.loaders.CRSUtils.CsType;
+import org.openeo.spring.loaders.CRSUtils.AxisMappingStrategy;
+import org.openeo.spring.loaders.CRSUtils.CSAxisOrientation;
+import org.openeo.spring.loaders.CRSUtils.CsType;
 import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.BandSummary;
 import org.openeo.spring.model.Collection;

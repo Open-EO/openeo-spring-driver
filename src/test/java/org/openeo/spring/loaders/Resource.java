@@ -1,4 +1,4 @@
-package org.openeo.spring.api.loaders;
+package org.openeo.spring.loaders;
 
 import java.io.IOException;
 import java.io.InputStream;
