@@ -11,13 +11,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 /**
- * The overarching exception handler in the HTTP chain of filters.
+ * The overarching catch-all exception handler in the HTTP chain of filters.
  * 
  * This filter should be placed before other custom security,
  * authentication or authorization filters so that the new logic
@@ -38,10 +37,6 @@ public class FilterChainExceptionHandler extends OncePerRequestFilter {
 
         try {
             filterChain.doFilter(request, response);
-        } catch (BadCredentialsException bex) {
-            LOGGER.error("TESTING", bex);
-            resolver.resolveException(request, response, null, bex);
-            
         } catch (Exception e) {
             LOGGER.error("Spring Security Filter Chain Exception:", e);
             resolver.resolveException(request, response, null, e); // --> to ExceptionTranslators

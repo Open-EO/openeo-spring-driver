@@ -56,11 +56,15 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
                             "Invalid authorization header. Expected: %s%sTOKEN",
                             BEARER_HEADER_PRE, TOKEN_PREFIX));
                 } else {
-                    UsernamePasswordAuthenticationToken auth = parseToken(authorizationHeader);
-                    if (null != auth) {
-                        SecurityContextHolder.getContext().setAuthentication(auth);
-                    } else {
-                        LOGGER.error("Invalid token received: authentication unsuccessful.");
+                    try {
+                        UsernamePasswordAuthenticationToken auth = parseToken(authorizationHeader);
+                        if (null != auth) {
+                            SecurityContextHolder.getContext().setAuthentication(auth);
+                        } else {
+                            LOGGER.error("Invalid token received: authentication unsuccessful.");
+                        }
+                    } catch (JwtException ex) {
+                        throw ex;
                     }
                 }
             }

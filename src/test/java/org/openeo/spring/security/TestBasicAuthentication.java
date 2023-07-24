@@ -23,31 +23,42 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.context.WebApplicationContext;
 
 import com.jayway.jsonpath.JsonPath;
 
 /**
  * Tests the Basic Authentication login process
  * and Bearer token session management.
+ * 
+ * The class is abstract, to re-use the integration tests
+ * for multiple profiles.
+ * 
+ * @see ActiveProfiles
  */
 @RunWith(SpringRunner.class)
 @WebMvcTest(CredentialsApiController.class)
-public class TestBasicAuthentication {
+//@ActiveProfiles("test") // -> src/test/resources/application-$PROFILE.properties
+public abstract class TestBasicAuthentication {
 
     @Autowired
-    private MockMvc mvc;
+    MockMvc mvc;
     
     @Autowired
-    private JWTTokenService tokenService;
+    JWTTokenService tokenService;
+    
+    @Autowired
+    WebApplicationContext applicationContext;
     
     @Test
     @WithMockUser(username = "satan", password = "petrodragonic")
     public void get_okBasic_shouldSucceedWith200() throws Exception {
         MvcResult mvcResult = mvc.perform(get("/credentials/basic")
-                .contentType(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, "Basic c2F0YW46cGV0cm9kcmFnb25pYw==")
         ).andExpectAll(
                 status().isOk(),
@@ -77,7 +88,6 @@ public class TestBasicAuthentication {
         String token = tokenService.generateToken(user);
         
         mvc.perform(get("/collections")
-                .contentType(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION,
                         String.format("Bearer basic//%s", token))
         ).andExpect(
@@ -87,7 +97,6 @@ public class TestBasicAuthentication {
     @Test
     public void get_protectedResourcewWithWrongToken_shouldReturn403() throws Exception {
         mvc.perform(get("/collections")
-                .contentType(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer basic//00000000000FAKE00000000000")
         ).andExpect(
                 status().is(403));
@@ -96,7 +105,6 @@ public class TestBasicAuthentication {
     @Test
     public void get_wrongTokenPrefix_shouldReturn403() throws Exception {
         mvc.perform(get("/collections")
-                .contentType(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer wysiwyg//00000000000FAKE00000000000")
         ).andExpect(
                 status().is(403));
@@ -111,7 +119,6 @@ public class TestBasicAuthentication {
         String token = tokenService.generateToken(user, -1, ChronoUnit.SECONDS);
         
         mvc.perform(get("/collections")
-                .contentType(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION,
                         String.format("Bearer basic//%s", token))
         ).andExpect(
@@ -121,7 +128,6 @@ public class TestBasicAuthentication {
     @Test
     public void get_noAuth_shouldReturnAuthRequired401() throws Exception {
         mvc.perform(get("/credentials/basic")
-                .contentType(MediaType.APPLICATION_JSON)
         ).andExpectAll(
                 status().is(401),
                 header().exists(HttpHeaders.WWW_AUTHENTICATE));
@@ -132,9 +138,26 @@ public class TestBasicAuthentication {
     @WithMockUser(username = "satan", password = "petrodragonic")
     public void get_wrongAuth_shouldReturn401() throws Exception {
         mvc.perform(get("/credentials/basic")
-                .contentType(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, "Basic _InfestTheRatsNest_=")
         ).andExpect(
                 status().is(401));
+    }
+    
+    /**
+     * Testing if disabling basic authentication returns the proper error.
+     * The test is not optimal: as we are manually changing the internal field
+     * in the controller, a posteriori of the initial mock setup from the properties.
+     * 
+     * TODO create profiles of properties then 
+     */
+    @Test
+    @WithMockUser(username = "charlie")
+    public void disabledBasicAuth_shouldReturn501() throws Exception {
+        CredentialsApiController controller = applicationContext.getBean(CredentialsApiController.class);
+        ReflectionTestUtils.setField(controller, "enableBasicAuth", false);
+        
+        mvc.perform(get("/credentials/basic")
+        ).andExpect(
+                status().is(501));
     }
 }

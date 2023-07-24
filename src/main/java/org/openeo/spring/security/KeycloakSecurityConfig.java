@@ -1,5 +1,6 @@
 package org.openeo.spring.security;
 
+import static org.openeo.spring.security.GlobalSecurityConfig.BASIC_AUTH_API_RESOURCE;
 import static org.openeo.spring.security.GlobalSecurityConfig.NOAUTH_API_RESOURCES;
 import static org.openeo.spring.security.GlobalSecurityConfig.OIDC_AUTH_API_RESOURCE;
 
@@ -85,8 +86,8 @@ public class KeycloakSecurityConfig {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web
                 .ignoring()
-                .antMatchers(NOAUTH_API_RESOURCES);
-//                .antMatchers(BASIC_AUTH_API_RESOURCE);
+                .antMatchers(NOAUTH_API_RESOURCES)
+                .antMatchers(BASIC_AUTH_API_RESOURCE);
     }
     
     /**

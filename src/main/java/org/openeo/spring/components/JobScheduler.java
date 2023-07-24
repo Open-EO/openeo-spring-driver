@@ -74,7 +74,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class JobScheduler implements JobEventListener, UDFEventListener {
     
     /** STAC spec. version used. */
-    public static final String STAC_VERSION = DefaultApiController.DEFAULT_STAC_VERSION;
+    public static final String STAC_VERSION = DefaultApiController.IMPLEMENTED_STAC_VERSION;
 
 	private static final Logger log = LogManager.getLogger(JobScheduler.class);
 

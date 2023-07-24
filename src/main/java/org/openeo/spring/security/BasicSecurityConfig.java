@@ -50,7 +50,7 @@ public class BasicSecurityConfig {
     FilterChainExceptionHandler filterChainExHandler;
     
     /** Used to define a {@link Profile}. */
-    public static final String PROFILE_ID = "BASIC_AUTH_FILE";
+    public static final String PROFILE_ID = "BASIC_AUTH";
     
     /** Label for the "realm" set in {@code WWW-Authenticate} response header. */
     public static final String REALM_LABEL = "openEO";

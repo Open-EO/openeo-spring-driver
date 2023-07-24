@@ -83,7 +83,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
 
     /** STAC spec. version used. */
     // FIXME this should be dictated by the model implemented
-    public static final String STAC_VERSION = DefaultApiController.DEFAULT_STAC_VERSION;
+    public static final String STAC_VERSION = DefaultApiController.IMPLEMENTED_STAC_VERSION;
 
     /**
      * The STAC extensions used in the catalog.

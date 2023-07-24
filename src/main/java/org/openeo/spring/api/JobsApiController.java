@@ -1,6 +1,6 @@
 package org.openeo.spring.api;
 
-import static org.openeo.spring.KeycloakSecurityConfigAdapter.EURAC_ROLE;
+import static org.openeo.spring.keycloak.legacy.KeycloakSecurityConfigAdapter.EURAC_ROLE;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;

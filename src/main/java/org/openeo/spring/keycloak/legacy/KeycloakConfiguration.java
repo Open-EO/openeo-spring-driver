@@ -12,10 +12,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Provides the configuation resolver to the Keycloak auth module. 
+ * Provides the configuation resolver to the Keycloak auth module.
+ * 
+ * @deprecated circular dependency issue form Spring Boot 2.6.X.
+ * @see https://stackoverflow.com/questions/70207564/spring-boot-2-6-regression-how-can-i-fix-keycloak-circular-dependency-in-adapte 
  */
-// Separate file to avoid circular deps with Spring Boot 2.6.x
-// https://stackoverflow.com/questions/70207564/spring-boot-2-6-regression-how-can-i-fix-keycloak-circular-dependency-in-adapte
 @ConditionalOnExpression(value = "false")
 @Configuration
 @Deprecated
