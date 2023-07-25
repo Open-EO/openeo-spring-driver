@@ -70,7 +70,8 @@ public class MeApiController implements MeApi {
 	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
 	 *         in general. * [Common Error Codes](errors.json) (status code 500)
 	 */
-	@Operation(summary = "Information about the authenticated user", operationId = "describeAccount", description = "This endpoint always returns the user id and MAY return the disk quota available to the user. It MAY also return links related to user management and the user profile, e.g. where payments are handled or the user profile could be edited. For back-ends that involve accounting, this service MAY also return the currently available money or credits in the currency the back-end is working with. This endpoint MAY be extended to fulfil the specification of the [OpenID Connect UserInfo Endpoint](http://openid.net/specs/openid-connect-core-1_0.html#UserInfo).", security = {
+	@Override
+    @Operation(summary = "Information about the authenticated user", operationId = "describeAccount", description = "This endpoint always returns the user id and MAY return the disk quota available to the user. It MAY also return links related to user management and the user profile, e.g. where payments are handled or the user profile could be edited. For back-ends that involve accounting, this service MAY also return the currently available money or credits in the currency the back-end is working with. This endpoint MAY be extended to fulfil the specification of the [OpenID Connect UserInfo Endpoint](http://openid.net/specs/openid-connect-core-1_0.html#UserInfo).", security = {
 			@SecurityRequirement(name = "bearer-key") })
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Information about the logged in user."),
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
@@ -85,11 +86,10 @@ public class MeApiController implements MeApi {
 			log.debug("registered user id: " + principal.getName());
 			userData.setName(accessToken.getName());
 			log.debug("registered user name: " + accessToken.getName());
-		}else {
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage("Security Principal is null, verification not possible!");
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		} else {
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+		            "Security Principal is null, verification not possible!");
+			return response;
 		}
 		return new ResponseEntity<UserData>(userData, HttpStatus.OK);
 

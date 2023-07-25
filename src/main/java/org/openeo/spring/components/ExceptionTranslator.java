@@ -2,6 +2,7 @@ package org.openeo.spring.components;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.openeo.spring.api.ApiUtil;
 import org.openeo.spring.model.Error;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,13 +37,8 @@ public class ExceptionTranslator {
     public ResponseEntity<Error> processBearerTokenValidationException(JwtException e) {
         LOGGER.error("JWT token exception caught: ", e);
 
-        Error error = new Error();
-        error.setCode("403");
-        error.setMessage(e.getMessage());
-
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(error);
+        ResponseEntity<Error> resp = ApiUtil.errorResponse(HttpStatus.FORBIDDEN, e.getMessage());
+        return resp;
     }
     
     /**
@@ -55,13 +51,8 @@ public class ExceptionTranslator {
     public ResponseEntity<Error> processAuthenticationException(AuthenticationException e) {
         LOGGER.error("Authentication exception caught: ", e);
 
-        Error error = new Error();
-        error.setCode("403");
-        error.setMessage(e.getMessage());
-
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(error);
+        ResponseEntity<Error> resp = ApiUtil.errorResponse(HttpStatus.FORBIDDEN, e.getMessage());
+        return resp;
     }
     
     /**
@@ -72,12 +63,7 @@ public class ExceptionTranslator {
     public ResponseEntity<Error> processAllException(RuntimeException e) {
         LOGGER.error("Runtime exception caught: ", e);
 
-        Error error = new Error();
-        error.setCode("500");
-        error.setMessage(e.getMessage());
-
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(error);
+        ResponseEntity<Error> resp = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        return resp;
     }
 }

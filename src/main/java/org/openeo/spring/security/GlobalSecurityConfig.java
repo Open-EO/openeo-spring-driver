@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -30,7 +29,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 @EnableGlobalMethodSecurity(
         securedEnabled = true, 
         prePostEnabled = true) // -> @PreAuthorize annotations on controller methods
-@Order(Ordered.LOWEST_PRECEDENCE)
 public class GlobalSecurityConfig implements EnvironmentPostProcessor {
         
     @Value("${spring.security.enable-basic}")
@@ -70,16 +68,23 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
         }
     }
     
+    
+    /**
+     * Global CORS configuration.
+     */
+    @Order(1)
+    public static class GlobalCorsConfig extends CorsConfig {}
+    
     /**
      * Recommended authentication mechanism: OIDC/OAuth2 via Keycloak.
      */
-    @Order(1)
+    @Order(2)
     public static class RecommendedSecurityConfig extends KeycloakSecurityConfig {}
 
     /**
      * Optional "basic" (user/password) authentication mechanism.
      */
-    @Order(2)
+    @Order(3)
     public static class OptionalSecurityConfig extends BasicSecurityConfig {}
  
 }

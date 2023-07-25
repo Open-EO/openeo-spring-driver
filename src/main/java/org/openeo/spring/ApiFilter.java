@@ -20,32 +20,30 @@ public class ApiFilter extends OncePerRequestFilter {
 	@Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) 
     		throws IOException, ServletException {
-        HttpServletResponse res = (HttpServletResponse) response;
-        HttpServletRequest req = (HttpServletRequest) request;
+	    
+        HttpServletResponse res = response;
+        HttpServletRequest req = request;
         log.debug("Filter: URL" + " called: "+req.getRequestURL().toString());
-        Enumeration<String> headerEnum = req.getHeaderNames();
+        
+        Enumeration<String> headerEnum = req.getHeaderNames();        
         while(headerEnum.hasMoreElements()) {
         	String headerName = headerEnum.nextElement();
         	log.trace(headerName + " = " + req.getHeader(headerName));
         }
+        
         String clientIp = req.getHeader("Origin");
         if(clientIp == null) {
-        	clientIp = req.getHeader("X-Forwarded-For");
-        	if(clientIp == null) {
-	        	clientIp = request.getRemoteHost();
-	        	log.debug("Got direct request from the following client: " + clientIp);
-        	}else {
-        		log.debug("Got proxy forwared request from the following client: " + clientIp);
-        	}
-        }else {
-        	log.debug("Got request from the following js client: " + clientIp);
-        }        
-        res.addHeader("Access-Control-Allow-Origin", clientIp);
-        res.addHeader("Access-Control-Allow-Methods", "OPTIONS, GET, POST, DELETE, PUT, PATCH");
-        res.addHeader("Access-Control-Allow-Headers", "origin, content-type, accept, authorization");
-        res.addHeader("Access-Control-Allow-Credentials", "true");
-        res.addHeader("Access-Control-Expose-Headers", "Location, OpenEO-Identifier, OpenEO-Costs");
+            clientIp = req.getHeader("X-Forwarded-For");
+            if(clientIp == null) {
+                clientIp = request.getRemoteHost();
+                log.debug("Got direct request from the following client: " + clientIp);
+            } else {
+                log.debug("Got proxy forwared request from the following client: " + clientIp);
+            }
+        } else {
+            log.debug("Got request from the following js client: " + clientIp);
+        }
+        
         chain.doFilter(request, response);
     }
-
 }

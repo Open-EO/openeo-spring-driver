@@ -287,27 +287,21 @@ public class JobsApiController implements JobsApi {
 		                // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Warning
 		            }
 		        } catch (URISyntaxException e) {
-		            Error error = new Error();
-		            error.setCode("500");
-		            error.setMessage("The submitted job " + job.toString() + " has an invalid URI");
-		            log.error("The submitted job {} has an invalid URI.", job);
+		            response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+		                    String.format("The submitted job \"%s\" has an invalid URI.", job));
+		            log.error(response.getBody());
 		            ThreadContext.clearMap();
-		            response = new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		        }
 		    } else {
-		        Error error = new Error();
-		        error.setCode("500");
-		        error.setMessage("The submitted job " + job.toString() + " was not saved persistently");
-		        log.error("The submitted job {} was not saved persistently.", job);
+		        response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+		                String.format("The submitted job \"%s\" was not saved persistently.", job));
+		        log.error(response.getBody());
 		        ThreadContext.clearMap();
-		        response = new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		    }
 		} else {
-			Error error = new Error();
-			error.setCode("401");
-			error.setMessage("You are not authorized to create this job");
-			log.error("You are not authorized to create this job");
-			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED);
+		    response = ApiUtil.errorResponse(HttpStatus.UNAUTHORIZED,
+		            "You are not authorized to create this job");
+			log.error(response.getBody());
 		}
 
 		return response;
@@ -423,12 +417,11 @@ public class JobsApiController implements JobsApi {
 					errorMessage.append(line);
 					errorMessage.append(System.getProperty("line.separator"));
 				}
-				log.error("An error when accessing logs from elastic stac: " + errorMessage.toString());
-				Error error = new Error();
-				error.setCode("500");
-				error.setMessage("An error when accessing logs from elastic stac: " + errorMessage.toString());
-				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-			}else {
+				ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+				        String.format("An error when accessing logs from elastic stac: %s", errorMessage));
+				log.error(response.getBody());
+				return response;
+			} else {
 				ByteArrayOutputStream result = new ByteArrayOutputStream();
 				byte[] buffer = new byte[1024];
 				 for (int length; (length = conn.getInputStream().read(buffer)) != -1; ) {
@@ -452,17 +445,16 @@ public class JobsApiController implements JobsApi {
 					logEntries.addLogsItem(logEntry);
 				});
 			}
-		}catch(Exception e) {
+		} catch(Exception e) {
 			log.error("An error when accessing logs from elastic stac: " + e.getMessage());
 			StringBuilder builder = new StringBuilder(e.getMessage());
 			for (StackTraceElement element : e.getStackTrace()) {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage("An error when accessing logs from elastic stac: " + builder.toString());
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+			        builder.toString());
+			return response;
 		}
 		//TODO implement logEntry and add to logEntries list and return result with pagination links
 		return new ResponseEntity<LogEntries>(logEntries, HttpStatus.OK);
@@ -509,33 +501,31 @@ public class JobsApiController implements JobsApi {
 		if (job != null) {
 			BatchJobResult jobResult = resultDAO.findOne(UUID.fromString(jobId));
 			if(jobResult != null) {
-				log.debug("The job result " + jobId + " was detected.");
+				log.debug("The job result {} was detected.", jobId);
 				File jobResults = new File(tmpDir + jobId);
 				if(jobResults.exists()) {
-					log.debug("Directory of job results has been found: " + jobResults.getAbsolutePath());
+					log.debug("Directory of job results has been found: {}", jobResults.getAbsolutePath());
 					for(File file: jobResults.listFiles()) {
-						log.debug("The following result will be deleted: " + file.getName());
+						log.debug("The following result will be deleted: {}", file.getName());
 						file.delete();
 					}
 					jobResults.delete();
 					log.debug("All persistent files have been successfully deleted for job with id: " + jobId);
 				}
 				resultDAO.delete(jobResult);
-				log.debug("The job result " + jobId + " was successfully deleted.");
+				log.debug("The job result {} was successfully deleted.", jobId);
 			}
 			jobDAO.delete(job);
-			log.debug("The job " + jobId + " was successfully deleted.");
+			log.debug("The job {} was successfully deleted.", jobId);
 			authzService.deleteProtectedResource(job);
-			log.debug("The job " + jobId + " was successfully deleted from Keycloak.");
+			log.debug("The job {} was successfully deleted from Keycloak.", jobId);
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
-			Error error = new Error();
-			error.setCode("400");
-			error.setMessage("The requested job " + jobId + " could not be found.");
-			log.error("The requested job " + jobId + " could not be found.");
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+		            String.format("The requested job %s could not be found.", jobId));
+			log.error(response.getBody());
+			return response;
 		}
-
 	}
 
 	/**
@@ -581,11 +571,11 @@ public class JobsApiController implements JobsApi {
 			ThreadContext.clearMap();
 			return new ResponseEntity<Job>(job, HttpStatus.OK);
 		} else {
-			Error error = new Error();
-			error.setCode("400");
-			error.setMessage("The requested job " + jobId + " could not be found.");
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+		            String.format("The requested job %s could not be found.", jobId));
+		    log.error(response.getBody());
 			ThreadContext.clearMap();
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			return response;
 		}
 	}
 
@@ -791,12 +781,10 @@ public class JobsApiController implements JobsApi {
 			log.trace(result.toString());
 			return new ResponseEntity<BatchJobResult>(result, HttpStatus.OK);
 		} else {
-			Error error = new Error();
-			error.setCode("400");
-			error.setMessage("The requested job " + jobId + " could not be found.");
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+		            String.format("The requested job %s could not be found.", jobId));
+			return response;
 		}
-
 	}
 
 	@Operation(summary = "Download data for given file", operationId = "downloadAsset", description = "Download asset as a result from a successfully executed process graph.", tags = {
@@ -831,11 +819,10 @@ public class JobsApiController implements JobsApi {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
-			Error error = new Error();
-			error.setCode("400");
-			error.setMessage("The requested file " + fileName + " could not be found.");
+			ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+			        String.format("The requested file %s could not be found.", fileName));
 			ThreadContext.clearMap();
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			return response;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			log.error("IOEXception error");
@@ -844,11 +831,10 @@ public class JobsApiController implements JobsApi {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage("IOEXception error " + builder.toString());
+			ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+			        String.format("IOException error %s", builder));
 			ThreadContext.clearMap();
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			return response;
 		}
 	}
 
@@ -901,28 +887,25 @@ public class JobsApiController implements JobsApi {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			if (job.getStatus() == JobStates.FINISHED) {
-				Error error = new Error();
-				error.setCode("400");
-				error.setMessage("The requested job " + jobId + " has been finished and can't be restarted. Please create a new job.");
-				log.error(error.getMessage());
+			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+			            String.format("The requested job %s has been finished and cannot be restarted. Please create a new job.", jobId));
+				log.error(response.getBody());
 				ThreadContext.clearMap();
-				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+				return response;
 			}
 			if (job.getStatus() == JobStates.QUEUED)  {
-				Error error = new Error();
-				error.setCode("400");
-				error.setMessage("The requested job " + jobId + " is queued and can't be restarted before finishing.");
-				log.error(error.getMessage());
-				ThreadContext.clearMap();
-				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+                        String.format("The requested job %s is queued and cannot be restarted before finishing.", jobId));
+                log.error(response.getBody());
+                ThreadContext.clearMap();
+                return response;
 			}
 			if (job.getStatus() == JobStates.RUNNING)  {
-				Error error = new Error();
-				error.setCode("400");
-				error.setMessage("The requested job " + jobId + " is running and can't be restarted before finishing.");
-				log.error(error.getMessage());
-				ThreadContext.clearMap();
-				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+                        String.format("The requested job %s is running and cannot be restarted before finishing.", jobId));
+                log.error(response.getBody());
+                ThreadContext.clearMap();
+                return response;
 			}
 			job.setStatus(JobStates.QUEUED);
 			job.setUpdated(OffsetDateTime.now());
@@ -931,14 +914,12 @@ public class JobsApiController implements JobsApi {
 			ThreadContext.clearMap();
 			return new ResponseEntity<Job>(HttpStatus.ACCEPTED);
 		} else {
-			Error error = new Error();
-			error.setCode("400");
-			error.setMessage("The requested job " + jobId + " could not be found.");
-			log.error("The requested job " + jobId + " could not be found.");
-			ThreadContext.clearMap();
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+                    String.format("The requested job %s could not be found.", jobId));
+            log.error(response.getBody());
+            ThreadContext.clearMap();
+            return response;
 		}
-
 	}
 
 	/**
@@ -989,10 +970,10 @@ public class JobsApiController implements JobsApi {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			if(job.getEngine()==EngineTypes.WCPS){
-				Error error = new Error();
-				error.setMessage("The requested WCPS job " + jobId + " cannot be stopped, not implemented.");
+			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.NOT_IMPLEMENTED,
+			            String.format("The requested WCPS job %s cannot be stopped, not implemented.", jobId));
 				ThreadContext.clearMap();
-				return new ResponseEntity<Error>(error, HttpStatus.NOT_IMPLEMENTED);
+				return response;
 			}
 			else if(job.getEngine()==EngineTypes.ODC_DASK) {
 				if (job.getStatus()==JobStates.RUNNING) {
@@ -1066,11 +1047,10 @@ public class JobsApiController implements JobsApi {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			if (job.getStatus()==JobStates.QUEUED || job.getStatus()==JobStates.RUNNING) {
-					Error error = new Error();
-					error.setCode("400");
-					error.setMessage("JobLocked: The requested job " + jobId + " is queued or running, not possible to update it now.");
+			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.FORBIDDEN,
+			            String.format("JobLocked: The requested job %s is queued or running, not possible to update it now.", jobId));
 					ThreadContext.clearMap();
-					return new ResponseEntity<Error>(error, HttpStatus.FORBIDDEN);
+					return response;
 				}
 			if(updateBatchJobRequest.getEngine() != null) {
 				job.setEngine(updateBatchJobRequest.getEngine());

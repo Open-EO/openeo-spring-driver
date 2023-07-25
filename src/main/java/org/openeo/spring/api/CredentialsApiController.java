@@ -66,10 +66,8 @@ public class CredentialsApiController implements CredentialsApi {
 		        resp = ResponseEntity.ok(providers);
 		    } else {
 		        log.debug("OIDC authentication is disabled.");
-		        Error error = new Error();
-	            error.setCode("501");
-	            error.setMessage("OIDC authentication is not enabled.");
-		        resp = ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(error);
+		        resp = ApiUtil.errorResponse(HttpStatus.NOT_IMPLEMENTED,
+		                "OIDC authentication is not enabled.");
 		    }
 		} catch (IOException e) {
 			log.error("The list of oidc providers is currently not available! " + e.getMessage());
@@ -78,10 +76,8 @@ public class CredentialsApiController implements CredentialsApi {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage("The list of oidc providers is currently not available!");
-			resp = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+			resp = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+			        "The list of oidc providers is currently not available.");
 		}
    
     	return resp;
@@ -105,20 +101,12 @@ public class CredentialsApiController implements CredentialsApi {
                         .accessToken(token));
                 
             } else {
-                Error error = new Error();
-                error.setCode("401");
-                error.setMessage("Basic Authentication header required.");
-                resp = ResponseEntity
-                        .status(HttpStatus.UNAUTHORIZED)
-                        .body(error);
+                resp = ApiUtil.errorResponse(HttpStatus.UNAUTHORIZED,
+                        "Basic Authentication header required.");
             }
         } else {
-            Error error = new Error();
-            error.setCode("501");
-            error.setMessage("Basic authentication mechanism not supported by the server.");
-            resp = ResponseEntity
-                    .status(HttpStatus.NOT_IMPLEMENTED)
-                    .body(error);
+            resp = ApiUtil.errorResponse(HttpStatus.NOT_IMPLEMENTED,
+                    "Basic authentication mechanism not supported by the server.");
         }
         
         return resp;

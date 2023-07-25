@@ -164,11 +164,10 @@ public class ResultApiController implements ResultApi {
 			resultEngine = checkGraphValidityAndEngine(processGraphJSON);
 			job.setEngine(resultEngine); // it might not have been defined at creation time
 		} catch (Exception e) {
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage(e.getMessage());
-			log.error(error.getMessage());
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+		            e.getMessage());
+			log.error(response.getBody());
+			return response;
 		}
 		if (resultEngine == EngineTypes.ODC_DASK) {
 			JSONObject process = new JSONObject();

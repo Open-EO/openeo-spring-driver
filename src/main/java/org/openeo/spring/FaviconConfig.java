@@ -16,7 +16,7 @@ import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
  * classpath, but without this explicit handler nothing happens on {@code GET /favicon.ico}.
  */
 @Configuration
-public class FaviconConfiguration {
+public class FaviconConfig {
  
     @Bean
     public SimpleUrlHandlerMapping customFaviconHandlerMapping() {

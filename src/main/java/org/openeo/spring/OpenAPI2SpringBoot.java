@@ -1,6 +1,7 @@
 package org.openeo.spring;
 
 import org.openapitools.jackson.nullable.JsonNullableModule;
+import org.openeo.spring.security.CorsConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.ExitCodeGenerator;
@@ -10,6 +11,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -51,7 +53,7 @@ public class OpenAPI2SpringBoot implements CommandLineRunner {
     }
     
     @Bean
-    public FilterRegistrationBean<ApiFilter> apifilter()
+    public FilterRegistrationBean<ApiFilter> apiFilter()
     {
        FilterRegistrationBean<ApiFilter> registrationBean = new FilterRegistrationBean<>();
        registrationBean.setFilter(new ApiFilter());
@@ -59,7 +61,16 @@ public class OpenAPI2SpringBoot implements CommandLineRunner {
        registrationBean.setOrder(1);
        return registrationBean;
     }
-
+    
+    @Bean
+    public FilterRegistrationBean<CorsFilter> corsFilterRegistration()
+    {
+       FilterRegistrationBean<CorsFilter> registrationBean = new FilterRegistrationBean<>();
+       registrationBean.setFilter(CorsConfig.corsFilter());
+       registrationBean.addUrlPatterns("/*");
+       registrationBean.setOrder(2);
+       return registrationBean;
+    }
 
     @Bean
     public WebMvcConfigurer webConfigurer() {
