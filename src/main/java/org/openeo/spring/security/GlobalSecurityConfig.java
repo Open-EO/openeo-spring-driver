@@ -1,5 +1,6 @@
 package org.openeo.spring.security;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
@@ -66,25 +67,28 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
         if (enableKeycloakAuth) {
             env.addActiveProfile(KeycloakSecurityConfig.PROFILE_ID);
         }
+        
+        if (!enableBasicAuth && !enableKeycloakAuth) {
+            throw new InternalError("Enable at least one security provider.");
+        }
+        
+        // TODO make both providers working together fine
+        // @see TestBasicAuthentication_OIDCEnabled class
+        if (enableBasicAuth && enableKeycloakAuth) {
+            throw new NotImplementedException("Maximum 1 security agent is provider.");
+        }
     }
-    
-    
-    /**
-     * Global CORS configuration.
-     */
-    @Order(1)
-    public static class GlobalCorsConfig extends CorsConfig {}
     
     /**
      * Recommended authentication mechanism: OIDC/OAuth2 via Keycloak.
      */
-    @Order(2)
+    @Order(1)
     public static class RecommendedSecurityConfig extends KeycloakSecurityConfig {}
 
     /**
      * Optional "basic" (user/password) authentication mechanism.
      */
-    @Order(3)
+    @Order(2)
     public static class OptionalSecurityConfig extends BasicSecurityConfig {}
  
 }

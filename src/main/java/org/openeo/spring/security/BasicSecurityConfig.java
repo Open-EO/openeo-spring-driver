@@ -7,8 +7,11 @@ import static org.openeo.spring.security.GlobalSecurityConfig.OIDC_AUTH_API_RESO
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.openeo.spring.bearer.JWTAuthenticationFilter;
 import org.openeo.spring.bearer.JWTAuthorizationFilter;
+import org.openeo.spring.components.BAuthEntrypoint;
 import org.openeo.spring.components.FilterChainExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -49,26 +52,28 @@ public class BasicSecurityConfig {
     @Autowired
     FilterChainExceptionHandler filterChainExHandler;
     
+    @Autowired
+    BAuthEntrypoint authEntrypoint;
+    
     /** Used to define a {@link Profile}. */
     public static final String PROFILE_ID = "BASIC_AUTH";
     
-    /** Label for the "realm" set in {@code WWW-Authenticate} response header. */
-    public static final String REALM_LABEL = "openEO";
-    
     /** Override default session repository. */
     public static SecurityContextRepository REPO;
+    
+    private static final Logger LOGGER = LogManager.getLogger(BasicSecurityConfig.class);
     
     /**
      * Requires login input on the basic-auth endpoint. 
      */
     @Bean
-    public SecurityFilterChain loginFilterChain(HttpSecurity http) throws Exception {       
+    public SecurityFilterChain baLoginFilterChain(HttpSecurity http) throws Exception {       
         http
         .antMatcher(BASIC_AUTH_API_RESOURCE)
         .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().authenticated())
         .httpBasic()
-        .realmName(REALM_LABEL) // [Authenticate: Basic realm="REALM"]
+        .authenticationEntryPoint(authEntrypoint)
         .and()
         // disable session management (JSESSIONID cookies -> security risks)
         .sessionManagement()
@@ -77,7 +82,10 @@ public class BasicSecurityConfig {
         .and()
         .addFilterBefore(filterChainExHandler, LogoutFilter.class)
         .addFilterAfter(jwtAuthenticationFilter, BasicAuthenticationFilter.class);
+//      - filters non ci sono se KEYCLOAK abilitato? solo quelli REGISTRATI. FIXME
         //      .rememberMe(Customizer.withDefaults()); TODO
+        
+        LOGGER.info("Basic authentication security chain set.");
 
         return http.build();
     }
@@ -89,7 +97,7 @@ public class BasicSecurityConfig {
      * configured in {@link #webSecurityCustomizer()}.
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {     
+    public SecurityFilterChain baSecurityFilterChain(HttpSecurity http) throws Exception {     
         http
         .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().authenticated()
@@ -101,6 +109,8 @@ public class BasicSecurityConfig {
         .addFilterBefore(filterChainExHandler, LogoutFilter.class)
         .addFilterBefore(jwtAuthorizationFilter, BasicAuthenticationFilter.class);
         
+        LOGGER.info("Basic authorization security chain set.");
+        
         return http.build();
     }
     
@@ -108,7 +118,7 @@ public class BasicSecurityConfig {
      * Sets the resources that do not required security rules.
      */
     @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
+    public WebSecurityCustomizer baWebSecurityCustomizer() {
         return (web) -> web
                 .ignoring()
                 .antMatchers(NOAUTH_API_RESOURCES)

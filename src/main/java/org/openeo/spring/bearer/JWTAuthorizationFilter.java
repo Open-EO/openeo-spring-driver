@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -34,7 +36,7 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
     
     @Autowired
     ITokenService tokenService;
-    
+
     /** HTTP Bearer scheme id. */
     private static String BEARER_HEADER_PRE = "Bearer "; 
     
@@ -42,6 +44,16 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
     private static String TOKEN_PREFIX = "basic//";
     
     private static final Logger LOGGER = LogManager.getLogger(JWTAuthorizationFilter.class);
+    
+    /**
+     * Control the filter registration that Spring would otherwise automatically do.
+     */
+    @Bean
+    public FilterRegistrationBean<JWTAuthorizationFilter> jwtAuthorizationRegistration(JWTAuthorizationFilter filter) {
+        FilterRegistrationBean<JWTAuthorizationFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

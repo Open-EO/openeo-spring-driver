@@ -20,7 +20,7 @@ public class ApiUtil {
         try {
             HttpServletResponse res = req.getNativeResponse(HttpServletResponse.class);
             res.setCharacterEncoding("UTF-8");
-            res.addHeader("Content-Type", contentType);
+            res.addHeader(HttpHeaders.CONTENT_TYPE, contentType);
             res.getWriter().print(example);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -44,8 +44,16 @@ public class ApiUtil {
         error.setMessage(message);
         
         return ResponseEntity
-                .status(HttpStatus.NOT_IMPLEMENTED)
+                .status(code)
                 .header(HttpHeaders.CONTENT_TYPE, "application/json")
                 .body(error);
+    }
+    
+    /**
+     * Overload with default message.
+     * @see HttpStatus#getReasonPhrase()
+     */
+    public static ResponseEntity<Error> errorResponse(HttpStatus code) {
+        return errorResponse(code, code.getReasonPhrase());
     }
 }

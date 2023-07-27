@@ -4,6 +4,8 @@ import static org.openeo.spring.security.GlobalSecurityConfig.BASIC_AUTH_API_RES
 import static org.openeo.spring.security.GlobalSecurityConfig.NOAUTH_API_RESOURCES;
 import static org.openeo.spring.security.GlobalSecurityConfig.OIDC_AUTH_API_RESOURCE;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.openeo.spring.keycloak.KeycloakLogoutHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -18,20 +20,18 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 
+@Configuration
 //@Profile(KeycloakSecurityConfig.PROFILE_ID) -> better use:
 @ConditionalOnProperty(prefix="spring.security", value="enable-keycloak")
-@Configuration
 public class KeycloakSecurityConfig {
 
     /** Used to define a {@link Profile}. */
     public static final String PROFILE_ID = "KEYCLOAK_AUTH";
+    
+    private static final Logger LOGGER = LogManager.getLogger(KeycloakSecurityConfig.class);
 
     @Autowired
     private KeycloakLogoutHandler keycloakLogoutHandler;
-
-//    KeycloakSecurityConfig(KeycloakLogoutHandler keycloakLogoutHandler) {
-//        this.keycloakLogoutHandler = keycloakLogoutHandler;
-//    }    
     
     @Bean
     protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {
@@ -45,7 +45,7 @@ public class KeycloakSecurityConfig {
      * @throws Exception
      */
     @Bean
-    public SecurityFilterChain loginFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain kcLoginFilterChain(HttpSecurity http) throws Exception {
         http
         .antMatcher(OIDC_AUTH_API_RESOURCE)
         .oauth2Login()
@@ -55,6 +55,8 @@ public class KeycloakSecurityConfig {
         .logoutSuccessUrl("/");
 
         http.oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
+        
+        LOGGER.info("Keycloak authentication security chain set.");
 
         return http.build();
     }
@@ -70,11 +72,13 @@ public class KeycloakSecurityConfig {
      * @throws Exception
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain kcSecurityFilterChain(HttpSecurity http) throws Exception {
         http
         .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().authenticated()
                 );
+        
+        LOGGER.info("Keycloak authorization security chain set.");
             
         return http.build();
     }
@@ -83,7 +87,7 @@ public class KeycloakSecurityConfig {
      * Sets the resources that do not required security rules.
      */
     @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
+    public WebSecurityCustomizer kcWebSecurityCustomizer() {
         return (web) -> web
                 .ignoring()
                 .antMatchers(NOAUTH_API_RESOURCES)

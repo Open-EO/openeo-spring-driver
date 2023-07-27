@@ -3,12 +3,10 @@ package org.openeo.spring.api;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.IOException;
-import java.security.Principal;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.openeo.spring.model.Error;
 import org.openeo.spring.model.HTTPBasicAccessToken;
 import org.openeo.spring.model.OpenIDConnectProviders;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +14,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.oauth2.server.resource.BearerTokenAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,10 +29,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Controller
 @RequestMapping("${openapi.openEO.base-path:}")
 public class CredentialsApiController implements CredentialsApi {
-
-    private final NativeWebRequest request;
-    
-    private final Logger log = LogManager.getLogger(CredentialsApiController.class);
    
     @Value("${org.openeo.oidc.providers.list}")
 	private Resource oidcProvidersFile;
@@ -40,6 +38,10 @@ public class CredentialsApiController implements CredentialsApi {
     
     @Value("${spring.security.enable-keycloak}")
     boolean enableKeycloakAuth;
+    
+    private final NativeWebRequest request;
+    
+    private static final Logger log = LogManager.getLogger(CredentialsApiController.class);
 
     @Autowired
     public CredentialsApiController(NativeWebRequest request) {
@@ -90,16 +92,22 @@ public class CredentialsApiController implements CredentialsApi {
         ResponseEntity<?> resp;
         
         if (enableBasicAuth) {
-            Principal principal = request.getUserPrincipal();
-            
-            if (null != principal) {
-                String username = principal.getName();
-                String token = TokenUtil.getCurrentBAAccessToken(request.getUserPrincipal());
-                log.debug("Access token for user {}: {}", username, token);
-                resp = ResponseEntity
-                        .ok(new HTTPBasicAccessToken()
-                        .accessToken(token));
-                
+//            Principal principal = request.getUserPrincipal(); sometimes null even when auth FIXME
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (null != auth) {
+                if (auth instanceof BearerTokenAuthenticationToken) {
+                    BearerTokenAuthenticationToken tokenAuth = (BearerTokenAuthenticationToken) auth;
+                    User authUser = (User) auth.getDetails();
+                    String username = authUser.getUsername();
+                    String token = tokenAuth.getToken();
+                    log.debug("Access token for user {}: {}", username, token);
+                    resp = ResponseEntity
+                            .ok(new HTTPBasicAccessToken()
+                                    .accessToken(token));
+                } else {
+                    resp = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Invalid authentication object.");
+                }                
             } else {
                 resp = ApiUtil.errorResponse(HttpStatus.UNAUTHORIZED,
                         "Basic Authentication header required.");

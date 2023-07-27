@@ -53,8 +53,7 @@ public class OpenAPI2SpringBoot implements CommandLineRunner {
     }
     
     @Bean
-    public FilterRegistrationBean<ApiFilter> apiFilter()
-    {
+    public FilterRegistrationBean<ApiFilter> openeoApiFilter() {
        FilterRegistrationBean<ApiFilter> registrationBean = new FilterRegistrationBean<>();
        registrationBean.setFilter(new ApiFilter());
        registrationBean.addUrlPatterns("/*");
@@ -63,15 +62,14 @@ public class OpenAPI2SpringBoot implements CommandLineRunner {
     }
     
     @Bean
-    public FilterRegistrationBean<CorsFilter> corsFilterRegistration()
-    {
+    public FilterRegistrationBean<CorsFilter> corsFilterRegistration() {
        FilterRegistrationBean<CorsFilter> registrationBean = new FilterRegistrationBean<>();
        registrationBean.setFilter(CorsConfig.corsFilter());
        registrationBean.addUrlPatterns("/*");
        registrationBean.setOrder(2);
        return registrationBean;
     }
-
+    
     @Bean
     public WebMvcConfigurer webConfigurer() {
         return new WebMvcConfigurer() {};

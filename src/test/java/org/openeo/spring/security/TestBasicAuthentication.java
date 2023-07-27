@@ -42,22 +42,22 @@ import com.jayway.jsonpath.JsonPath;
  * @see ActiveProfiles
  */
 @RunWith(SpringRunner.class)
-@WebMvcTest(CredentialsApiController.class)
+@WebMvcTest
 //@ActiveProfiles("test") // -> src/test/resources/application-$PROFILE.properties
 public abstract class TestBasicAuthentication {
 
-    @Autowired
+    @Autowired    
     MockMvc mvc;
     
     @Autowired
-    JWTTokenService tokenService;
-    
+    WebApplicationContext context;
+
     @Autowired
-    WebApplicationContext applicationContext;
+    JWTTokenService tokenService;
     
     @Test
     @WithMockUser(username = "satan", password = "petrodragonic")
-    public void get_okBasic_shouldSucceedWith200() throws Exception {
+    public void get_okBasic_shouldSucceedWith200() throws Exception {        
         MvcResult mvcResult = mvc.perform(get("/credentials/basic")
                 .header(HttpHeaders.AUTHORIZATION, "Basic c2F0YW46cGV0cm9kcmFnb25pYw==")
         ).andExpectAll(
@@ -68,7 +68,7 @@ public abstract class TestBasicAuthentication {
                 // token is in body                
                 jsonPath("$.access_token").exists()
         ).andReturn();
-        
+
         // body token equals header token
         String response = mvcResult.getResponse().getContentAsString();
         String authHeader = mvcResult.getResponse().getHeader(HttpHeaders.AUTHORIZATION);
@@ -98,16 +98,26 @@ public abstract class TestBasicAuthentication {
     public void get_protectedResourcewWithWrongToken_shouldReturn403() throws Exception {
         mvc.perform(get("/collections")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer basic//00000000000FAKE00000000000")
-        ).andExpect(
-                status().is(403));
+        ).andExpectAll(
+                status().is(403)
+//                header().exists("id"), FIXME ErrorAttributes not picked in tests
+//                header().exists("code"),
+//                header().exists("message"),
+//                header().exists("links")
+                );
     }
     
     @Test
     public void get_wrongTokenPrefix_shouldReturn403() throws Exception {
         mvc.perform(get("/collections")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer wysiwyg//00000000000FAKE00000000000")
-        ).andExpect(
-                status().is(403));
+        ).andExpectAll(
+                status().is(403)
+//                header().exists("id"), FIXME ErrorAttributes not picked in tests
+//                header().exists("code"),
+//                header().exists("message"),
+//                header().exists("links")
+                );
     }
     
     @Test
@@ -121,8 +131,13 @@ public abstract class TestBasicAuthentication {
         mvc.perform(get("/collections")
                 .header(HttpHeaders.AUTHORIZATION,
                         String.format("Bearer basic//%s", token))
-        ).andExpect(
-                status().is(403));
+        ).andExpectAll(
+                status().is(403)
+//                header().exists("id"), FIXME ErrorAttributes not picked in tests
+//                header().exists("code"),
+//                header().exists("message"),
+//                header().exists("links")
+                );
     }
     
     @Test
@@ -130,7 +145,12 @@ public abstract class TestBasicAuthentication {
         mvc.perform(get("/credentials/basic")
         ).andExpectAll(
                 status().is(401),
-                header().exists(HttpHeaders.WWW_AUTHENTICATE));
+                header().exists(HttpHeaders.WWW_AUTHENTICATE)
+//                header().exists("id"), FIXME ErrorAttributes not picked in tests
+//                header().exists("code"),
+//                header().exists("message"),
+//                header().exists("links")
+                );
     }
     
     /** @see BasicAuthenticationFilter */ 
@@ -139,8 +159,13 @@ public abstract class TestBasicAuthentication {
     public void get_wrongAuth_shouldReturn401() throws Exception {
         mvc.perform(get("/credentials/basic")
                 .header(HttpHeaders.AUTHORIZATION, "Basic _InfestTheRatsNest_=")
-        ).andExpect(
-                status().is(401));
+        ).andExpectAll(
+                status().is(401)
+//                header().exists("id"), FIXME ErrorAttributes not picked in tests
+//                header().exists("code"),
+//                header().exists("message"),
+//                header().exists("links")
+                );
     }
     
     /**
@@ -153,11 +178,16 @@ public abstract class TestBasicAuthentication {
     @Test
     @WithMockUser(username = "charlie")
     public void disabledBasicAuth_shouldReturn501() throws Exception {
-        CredentialsApiController controller = applicationContext.getBean(CredentialsApiController.class);
+        CredentialsApiController controller = context.getBean(CredentialsApiController.class);
         ReflectionTestUtils.setField(controller, "enableBasicAuth", false);
         
         mvc.perform(get("/credentials/basic")
-        ).andExpect(
-                status().is(501));
+        ).andExpectAll(
+                status().is(501)
+//                header().exists("id"), FIXME ErrorAttributes not picked in tests
+//                header().exists("code"),
+//                header().exists("message"),
+//                header().exists("links")
+                );
     }
 }

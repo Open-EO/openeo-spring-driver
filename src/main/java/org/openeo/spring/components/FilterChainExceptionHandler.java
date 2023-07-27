@@ -11,6 +11,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -20,7 +22,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
  * 
  * This filter should be placed before other custom security,
  * authentication or authorization filters so that the new logic
- * is safely placed inside a trz-catch block.
+ * is safely placed inside a try-catch block.
  */
 @Component
 public class FilterChainExceptionHandler extends OncePerRequestFilter {
@@ -30,6 +32,16 @@ public class FilterChainExceptionHandler extends OncePerRequestFilter {
     @Autowired
     @Qualifier("handlerExceptionResolver")
     private HandlerExceptionResolver resolver;
+    
+    /**
+     * Control the filter registration that Spring would otherwise automatically do.
+     */
+    @Bean
+    public FilterRegistrationBean<FilterChainExceptionHandler> exceptionFilterRegistration(FilterChainExceptionHandler filter) {
+        FilterRegistrationBean<FilterChainExceptionHandler> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

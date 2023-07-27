@@ -46,7 +46,7 @@ public class TestCorsConf {
     @ParameterizedTest
     @MethodSource("testAPIResources")
     @WithMockUser(value = "robin")
-    public void request_shouldReturnCorsHeader(String resource) throws Exception {      
+    public void request_shouldReturnCorsHeaders(String resource) throws Exception {      
         mvc.perform(get(resource)
                 .header(HttpHeaders.ORIGIN, "https://deadjoe.org")
         ).andExpectAll(

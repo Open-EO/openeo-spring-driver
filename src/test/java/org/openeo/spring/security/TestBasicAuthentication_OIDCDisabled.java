@@ -15,7 +15,12 @@ public class TestBasicAuthentication_OIDCDisabled extends TestBasicAuthenticatio
     @Test
     public void disabledOIDCAuth_shouldReturn501() throws Exception {      
         mvc.perform(get("/credentials/oidc")
-        ).andExpect(
-                status().is(501));
+        ).andExpectAll(
+                status().is(501)
+//                header().exists("id"), FIXME ErrorAttributes not picked in tests
+//                header().exists("code"),
+//                header().exists("message"),
+//                header().exists("links")
+                );
     }
 }

@@ -1185,7 +1185,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
 
         // FIXME optimize cloud-cover min/max extraction:
 
-        if (!cloudCovArray.isEmpty()) {
+        if (cloudCovArray.length() > 0) {
             try {
                 maxCCValue = cloudCovArray.getDouble(0);
                 minCCValue = cloudCovArray.getDouble(0);

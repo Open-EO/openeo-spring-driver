@@ -11,6 +11,8 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,7 +41,17 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private static String BA_HEADER_PRE = "Basic ";
     
     private static final Logger LOGGER = LogManager.getLogger(JWTAuthenticationFilter.class);
- 
+    
+    /**
+     * Control the filter registration that Spring would otherwise automatically do.
+     */
+    @Bean
+    public FilterRegistrationBean<JWTAuthenticationFilter> jwtAuthenticationRegistration(JWTAuthenticationFilter filter) {
+        FilterRegistrationBean<JWTAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+    
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -47,7 +59,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         
-        if (authorizationHeaderIsValid(authorizationHeader)) {            
+        if (authorizationHeaderIsValid(authorizationHeader)) {
             Authentication authResult = SecurityContextHolder.getContext().getAuthentication(); 
             if (null != authResult) {
                 onSuccessfulAuthentication(request, response, authResult);
@@ -55,7 +67,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 LOGGER.debug("Unauthenticated user: NOOP.");
             }
         } else {
-            LOGGER.debug("No \"Authorization\" header found.");
+            LOGGER.debug("No valid \"Authorization\" header found.");
         }
         
         // do not break the chain!
