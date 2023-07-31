@@ -15,10 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.server.resource.BearerTokenAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -69,7 +68,7 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
                             BEARER_HEADER_PRE, TOKEN_PREFIX));
                 } else {
                     try {
-                        UsernamePasswordAuthenticationToken auth = parseToken(authorizationHeader);
+                        BearerTokenAuthenticationToken auth = parseToken(authorizationHeader);
                         if (null != auth) {
                             SecurityContextHolder.getContext().setAuthentication(auth);
                         } else {
@@ -82,6 +81,7 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
             }
         } else {
             LOGGER.debug("No \"Bearer\" token found in the request.");
+            should we request a 401/WWWW-Authorize here? How to recognize is protected or public resource?
         }
         
         // do not break the chain!
@@ -102,20 +102,20 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
     }
     
     /** Deciphers a JWT bearer token attached to a given request header. */ 
-    private UsernamePasswordAuthenticationToken parseToken(String authorizationHeader)
+    private BearerTokenAuthenticationToken parseToken(String authorizationHeader)
     throws ClaimJwtException {
         String prefixedToken = authorizationHeader.replace(BEARER_HEADER_PRE, "");
         String jwtToken = prefixedToken.replaceAll(TOKEN_PREFIX, "");
         
-        UserDetails userPrincipal = tokenService.parseToken(jwtToken);
-        UsernamePasswordAuthenticationToken auth = null;
+        BearerTokenAuthenticationToken auth = tokenService.parseToken(jwtToken);
 
-        if (null != userPrincipal) {
+        if (null != auth) {
             List<GrantedAuthority> authorities = new ArrayList<>();
             //        if (userPrincipal.isAdmin()) {
             //            authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN")); // FIXME String
             //        }
-            auth = new UsernamePasswordAuthenticationToken(userPrincipal, null, authorities);
+            // TODO
+//            auth = new UsernamePasswordAuthenticationToken(userPrincipal, null, authorities);
         }
 
         return auth;

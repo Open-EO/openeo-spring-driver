@@ -9,16 +9,20 @@ import javax.crypto.SecretKey;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.keycloak.representations.AccessToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.server.resource.BearerTokenAuthenticationToken;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
@@ -68,6 +72,7 @@ public class JWTTokenService implements ITokenService {
         String compactTokenString = Jwts.builder()
 //                .claim(ID_CLAIM, user.getId())
 //                .claim(IS_ADMIN_CLAIM, user.isAdmin())
+                .setIssuedAt(Date.from(Instant.now()))
                 .setExpiration(expirationDate)
                 .setSubject(user.getUsername())
                 .signWith(key, SA)
@@ -80,10 +85,10 @@ public class JWTTokenService implements ITokenService {
     }
 
     @Override
-    public UserDetails parseToken(String token) throws JwtException {
+    public BearerTokenAuthenticationToken parseToken(String token) throws JwtException {
         
         byte[] secretBytes = jwtSecret.getBytes();
-        UserDetails user = null;
+        BearerTokenAuthenticationToken auth = null;
 
         try {
             Jws<Claims> jwsClaims = Jwts.parserBuilder()
@@ -98,16 +103,60 @@ public class JWTTokenService implements ITokenService {
             //        Integer userId = jwsClaims.getBody().get(ID_CLAIM, Integer.class);
             //        boolean isAdmin = jwsClaims.getBody().get(IS_ADMIN_CLAIM, Boolean.class);
             if (null != username) {
-                user = udService.loadUserByUsername(username);
+                try {
+                    UserDetails user = udService.loadUserByUsername(username);
+                    auth = new BearerTokenAuthenticationToken(token);
+                    auth.setDetails(user);
+                    auth.setAuthenticated(true);
+                } catch (UsernameNotFoundException e) {
+                    throw new JwtException("No user found for " + username);
+                }
+            } else {
+                throw new MalformedJwtException("No username in token subject.");
             }
         } catch (JwtException ex) { // TODO handle via registered runtime exceptions handler:
-//                ExpiredJwtException | UnsupportedJwtException |
-//                MalformedJwtException | SignatureException | IllegalArgumentException ex) {
+            //                ExpiredJwtException | UnsupportedJwtException |
+            //                MalformedJwtException | SignatureException | IllegalArgumentException ex) {
             LOGGER.error("Illegal or expired token received.", ex);
             throw ex;
         }
 
-        return user;
+        return auth;
+    }
+    
+    @Override
+    public AccessToken decodeToken(String tokenHash) throws JwtException {
+        
+        byte[] secretBytes = jwtSecret.getBytes();      
+        AccessToken token = new AccessToken();
+
+        try {
+            Jws<Claims> jwsClaims = Jwts.parserBuilder()
+                    .setSigningKey(secretBytes)
+                    .requireIssuer(jwtIssuer)
+                    .requireAudience(jwtAudience)
+                    .setAllowedClockSkewSeconds(0)
+                    .build()
+                    .parseClaimsJws(tokenHash);
+            
+            Date issued = jwsClaims.getBody().getIssuedAt();
+            Date expires = jwsClaims.getBody().getExpiration();
+            long expSeconds = (expires.getTime() - issued.getTime()) / 1000;
+            
+            token.exp(expSeconds)
+                 .addAudience(jwsClaims.getBody().getAudience())
+                 .issuer(jwsClaims.getBody().getIssuer())
+                 .id(tokenHash);
+            
+            token.setName(jwsClaims.getBody().getSubject());
+            token.setPreferredUsername(token.getName());
+            
+        } catch (JwtException ex) {
+            LOGGER.error("Illegal or expired token received.", ex);
+            throw ex;
+        }
+        
+        return token;
     }
     
     // JWT labels

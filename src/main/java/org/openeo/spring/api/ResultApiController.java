@@ -33,6 +33,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
+import org.openeo.spring.bearer.ITokenService;
 import org.openeo.spring.components.CollectionMap;
 import org.openeo.spring.components.CollectionsMap;
 import org.openeo.spring.components.JobScheduler;
@@ -79,6 +80,9 @@ public class ResultApiController implements ResultApi {
 
 	@Autowired
 	private CollectionMap  collectionMap;
+	
+	@Autowired
+	private ITokenService tokenService;
 
 	private final NativeWebRequest request;
 
@@ -98,15 +102,17 @@ public class ResultApiController implements ResultApi {
 
 	@Value("${org.openeo.wcps.collections.list}")
 	Resource collectionsFileWCPS;
+
 	@Value("${org.openeo.odc.collections.list}")
 	Resource collectionsFileODC;
 
 	@Value("${org.openeo.wcps.processes.list}")
 	Resource processesFileWCPS;
+
 	@Value("${org.openeo.odc.processes.list}")
 	Resource processesFileODC;
 
-	@org.springframework.beans.factory.annotation.Autowired
+	@Autowired
 	public ResultApiController(NativeWebRequest request) {
 		this.request = request;
 	}
@@ -125,12 +131,12 @@ public class ResultApiController implements ResultApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/result", produces = { "*" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
-	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job,Principal principal) {
+	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
 
 		AccessToken token = null;
 		if(principal != null) {
-			token = TokenUtil.getKCAccessToken(principal);
+			token = TokenUtil.getAccessToken(principal, tokenService);
 		}
 
 		Set<String> roles = new HashSet<>();
@@ -143,7 +149,6 @@ public class ResultApiController implements ResultApi {
 			}
 		}
 
-
 		boolean isEuracUser = roles.contains(EURAC_ROLE);
 
 		Iterator<String> keys = processGraphJSON.keys();
@@ -152,7 +157,7 @@ public class ResultApiController implements ResultApi {
 			String key = keys.next();
 			JSONObject processNode = (JSONObject) processGraphJSON.get(key);
 			String process_id = processNode.get("process_id").toString();
-			if (process_id.equals("run_udf") && !isEuracUser) {
+			if (process_id.equals("run_udf") && !isEuracUser) { // FIXME ?
 				isRunProcessAllow =false;
 			}
 		}

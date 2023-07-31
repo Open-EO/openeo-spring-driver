@@ -65,7 +65,7 @@ public abstract class TestBasicAuthentication {
                 content().contentType(MediaType.APPLICATION_JSON),
                 // token is in header
                 header().string(HttpHeaders.AUTHORIZATION, startsWith("Bearer ")),
-                // token is in body                
+                // token is in body
                 jsonPath("$.access_token").exists()
         ).andReturn();
 
@@ -99,7 +99,8 @@ public abstract class TestBasicAuthentication {
         mvc.perform(get("/collections")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer basic//00000000000FAKE00000000000")
         ).andExpectAll(
-                status().is(403)
+                status().is(403),
+                content().contentType(MediaType.APPLICATION_JSON)
 //                header().exists("id"), FIXME ErrorAttributes not picked in tests
 //                header().exists("code"),
 //                header().exists("message"),
@@ -112,7 +113,8 @@ public abstract class TestBasicAuthentication {
         mvc.perform(get("/collections")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer wysiwyg//00000000000FAKE00000000000")
         ).andExpectAll(
-                status().is(403)
+                status().is(403),
+                content().contentType(MediaType.APPLICATION_JSON)
 //                header().exists("id"), FIXME ErrorAttributes not picked in tests
 //                header().exists("code"),
 //                header().exists("message"),
@@ -132,7 +134,8 @@ public abstract class TestBasicAuthentication {
                 .header(HttpHeaders.AUTHORIZATION,
                         String.format("Bearer basic//%s", token))
         ).andExpectAll(
-                status().is(403)
+                status().is(403),
+                content().contentType(MediaType.APPLICATION_JSON)
 //                header().exists("id"), FIXME ErrorAttributes not picked in tests
 //                header().exists("code"),
 //                header().exists("message"),

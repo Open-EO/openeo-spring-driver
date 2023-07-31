@@ -36,6 +36,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
+import org.openeo.spring.bearer.ITokenService;
 import org.openeo.spring.components.JobScheduler;
 import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
@@ -117,6 +118,9 @@ public class JobsApiController implements JobsApi {
 
 	@Autowired
 	private AuthzService authzService;
+	
+	@Autowired
+	private ITokenService tokenService;
 
 	@Autowired
 	private ResultApiController resultApiController;
@@ -192,7 +196,7 @@ public class JobsApiController implements JobsApi {
 		AccessToken token = null;
 
 		if(principal != null) {
-			token = TokenUtil.getKCAccessToken(principal);
+			token = TokenUtil.getAccessToken(principal, tokenService);
 			job.setOwnerPrincipal(token.getPreferredUsername());
 			ThreadContext.put("userid", token.getPreferredUsername());
 		}
@@ -693,7 +697,11 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> listJobs(
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit, Principal principal) {
 
-	    AccessToken token = TokenUtil.getKCAccessToken(principal);
+	    AccessToken token = TokenUtil.getAccessToken(principal, tokenService);
+	    if (null == token) {
+	        throw new InternalError("Could not fetch token of user " + principal);
+	    }
+	    
 	    String username =  token.getPreferredUsername();
 	    BatchJobs batchJobs = new BatchJobs();
 

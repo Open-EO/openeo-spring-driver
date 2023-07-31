@@ -2,9 +2,13 @@ package org.openeo.spring.bearer;
 
 import java.time.temporal.TemporalUnit;
 
+import org.keycloak.representations.AccessToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.server.resource.BearerTokenAuthenticationToken;
 
 import io.jsonwebtoken.ClaimJwtException;
+import io.jsonwebtoken.JwtException;
 
 /**
  * Interface for a (bearer) token service.
@@ -32,10 +36,21 @@ public interface ITokenService {
     String generateToken(UserDetails user, int expUnits, TemporalUnit uom);
 
     /**
-     * Parses a token and its claims.
+     * Parses a token and its claims, and integrates the user details.
      * 
      * @param token the received token.
+     * @return the authentication object this token refers to
      * @throws ClaimJwtException
+     * @see {@link SecurityContextHolder#setContext(org.springframework.security.core.context.SecurityContext)}
      */
-    UserDetails parseToken(String token) throws ClaimJwtException;
+    BearerTokenAuthenticationToken parseToken(String token) throws ClaimJwtException;
+
+    /**
+     * Decode a token hash to a Java object, assuming we are the issuers.
+     * 
+     * @param tokenHash
+     * @return the decoded token.
+     * @throws JwtException
+     */
+    AccessToken decodeToken(String tokenHash) throws JwtException;
 }
