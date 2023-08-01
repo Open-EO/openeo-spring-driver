@@ -11,7 +11,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.temporal.ChronoUnit;
 
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import org.openeo.spring.api.CredentialsApiController;
 import org.openeo.spring.bearer.JWTTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +23,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -41,7 +39,6 @@ import com.jayway.jsonpath.JsonPath;
  * 
  * @see ActiveProfiles
  */
-@RunWith(SpringRunner.class)
 @WebMvcTest
 //@ActiveProfiles("test") // -> src/test/resources/application-$PROFILE.properties
 public abstract class TestBasicAuthentication {

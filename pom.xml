@@ -129,16 +129,27 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 			<exclusions>
+				<!-- JsonObject implementation selection --> 
 				<exclusion>
 					<groupId>com.vaadin.external.google</groupId>
 					<artifactId>android-json</artifactId>
 			    </exclusion>
+			    <!-- Force Junit 5 -->
+			    <exclusion>
+					<groupId>junit</groupId>
+					<artifactId>junit</artifactId>
+		        </exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+		    <scope>test</scope>
 		</dependency>
 		
         <!-- deprecated Keycloak adapters --> 
