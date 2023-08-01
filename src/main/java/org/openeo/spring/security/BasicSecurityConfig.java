@@ -104,6 +104,8 @@ public class BasicSecurityConfig {
                 )
         .exceptionHandling().authenticationEntryPoint(authEntrypoint)
         .and()
+        // POST /jobs -> CsrfFilter Invalid CSRF token found for https://10.8.244.94:8444/jobs
+        .csrf().disable()
         // disable session management (JSESSIONID cookies -> security risks)
         .sessionManagement()
         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

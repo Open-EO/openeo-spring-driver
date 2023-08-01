@@ -135,18 +135,21 @@ public class ResultApiController implements ResultApi {
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
 
 		AccessToken token = null;
+		
 		if(principal != null) {
 			token = TokenUtil.getAccessToken(principal, tokenService);
 		}
 
 		Set<String> roles = new HashSet<>();
-		Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
-		for (Map.Entry<String, AccessToken.Access> e : resourceAccess.entrySet()) {
-			if (e.getValue().getRoles() != null){
-				for(String r: e.getValue().getRoles()) {
-					roles.add(r);
-				}
-			}
+		if (null != token) {
+		    Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
+		    for (Map.Entry<String, AccessToken.Access> e : resourceAccess.entrySet()) {
+		        if (e.getValue().getRoles() != null){
+		            for(String r: e.getValue().getRoles()) {
+		                roles.add(r);
+		            }
+		        }
+		    }
 		}
 
 		boolean isEuracUser = roles.contains(EURAC_ROLE);

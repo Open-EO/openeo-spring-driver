@@ -193,13 +193,15 @@ public class JobsApiController implements JobsApi {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
 
-		AccessToken token = null;
-
-		if(principal != null) {
-			token = TokenUtil.getAccessToken(principal, tokenService);
-			job.setOwnerPrincipal(token.getPreferredUsername());
-			ThreadContext.put("userid", token.getPreferredUsername());
+		String username = principal.getName();
+		AccessToken token = TokenUtil.getAccessToken(principal, tokenService);
+		if (null != token) {
+		    username =  token.getName();
 		}
+
+		job.setOwnerPrincipal(username);
+		ThreadContext.put("userid", username);
+			
 		//TODO add validity check of the job using ValidationApiController
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
@@ -697,12 +699,10 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> listJobs(
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit, Principal principal) {
 
-	    // tentative
 	    String username = principal.getName();
-	    
 	    AccessToken token = TokenUtil.getAccessToken(principal, tokenService);
 	    if (null != token) {
-	        username =  token.getPreferredUsername();
+	        username =  token.getName();
 	    }
 	    
 	    BatchJobs batchJobs = new BatchJobs();

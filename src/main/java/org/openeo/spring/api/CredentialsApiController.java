@@ -1,7 +1,5 @@
 package org.openeo.spring.api;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 import java.io.IOException;
 import java.util.Optional;
 
@@ -64,7 +62,9 @@ public class CredentialsApiController implements CredentialsApi {
 		        log.debug(oidcProvidersFile.getFilename());
 		        ObjectMapper mapper = new ObjectMapper();
 		        providers = mapper.readValue(oidcProvidersFile.getInputStream(), OpenIDConnectProviders.class);
-		        assertFalse(providers.getProviders().isEmpty());
+		        if (providers.getProviders().isEmpty()) {
+		            throw new InternalError("Providers list should not me empty.");
+		        }
 		        resp = ResponseEntity.ok(providers);
 		    } else {
 		        log.debug("OIDC authentication is disabled.");
