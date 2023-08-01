@@ -81,7 +81,7 @@ public class ResultApiController implements ResultApi {
 	@Autowired
 	private CollectionMap  collectionMap;
 	
-	@Autowired
+	@Autowired(required = false)
 	private ITokenService tokenService;
 
 	private final NativeWebRequest request;

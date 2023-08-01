@@ -11,6 +11,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
@@ -29,6 +30,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * @see BearerTokenAuthenticationFilter
  */
 @Component
+@ConditionalOnProperty(prefix="spring.security", value="enable-basic")
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
     
     @Autowired

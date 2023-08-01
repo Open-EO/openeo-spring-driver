@@ -119,7 +119,7 @@ public class JobsApiController implements JobsApi {
 	@Autowired
 	private AuthzService authzService;
 	
-	@Autowired
+	@Autowired(required = false)
 	private ITokenService tokenService;
 
 	@Autowired

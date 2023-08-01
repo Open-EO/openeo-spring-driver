@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import org.keycloak.representations.AccessToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -31,6 +32,7 @@ import io.jsonwebtoken.security.Keys;
  */
 //FIXME use org.springframework.security.core.token.TokenService ?
 @Component
+@ConditionalOnProperty(prefix="spring.security", value="enable-basic")
 public class JWTTokenService implements ITokenService {
     
     @Value("${jwt.secret}")

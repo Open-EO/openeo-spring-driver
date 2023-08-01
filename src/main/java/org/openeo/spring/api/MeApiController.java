@@ -30,10 +30,10 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 @RequestMapping("${openapi.openEO.base-path:}")
 public class MeApiController implements MeApi {
     
-    @Autowired
+    @Autowired(required = false)
     UserDetailsService udService;
     
-    @Autowired
+    @Autowired(required = false)
     ITokenService tokenService;
 
     private final NativeWebRequest request;
@@ -106,15 +106,17 @@ public class MeApiController implements MeApi {
 	        userData.setName(username);
 	        userData.setUserId(username);
 	        
-	        try {
-	            UserDetails userDetails = udService.loadUserByUsername(username);
-	            userData.setUserId("" + userDetails.hashCode()); // FIXME what to put here
-	        } catch (UsernameNotFoundException ex) {
-//	            ResponseEntity<Error> response = ApiUtil.errorResponse(
-//	                    HttpStatus.INTERNAL_SERVER_ERROR,
-//	                    "No user found by name: " + username);
-//	            return response;
-	            // NOP for now: what is the User Id?
+	        if (null != udService) {
+	            try {
+	                UserDetails userDetails = udService.loadUserByUsername(username);
+	                userData.setUserId("" + userDetails.hashCode()); // FIXME what to put here
+	            } catch (UsernameNotFoundException ex) {
+	                //	            ResponseEntity<Error> response = ApiUtil.errorResponse(
+	                //	                    HttpStatus.INTERNAL_SERVER_ERROR,
+	                //	                    "No user found by name: " + username);
+	                //	            return response;
+	                // NOP for now: what is the User Id?
+	            }
 	        }
 	        
 			ThreadContext.put("userid", username); // ?

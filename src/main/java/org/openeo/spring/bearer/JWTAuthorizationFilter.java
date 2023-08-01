@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
@@ -31,6 +32,7 @@ import io.jsonwebtoken.JwtException;
  * Basic HTTP authentication is assumed (basic// prefix is expected on the token).
  */
 @Component
+@ConditionalOnProperty(prefix="spring.security", value="enable-basic")
 public class JWTAuthorizationFilter extends OncePerRequestFilter {
     
     @Autowired
