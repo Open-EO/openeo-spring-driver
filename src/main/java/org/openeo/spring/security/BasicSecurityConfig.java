@@ -102,6 +102,8 @@ public class BasicSecurityConfig {
         .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().authenticated()
                 )
+        .exceptionHandling().authenticationEntryPoint(authEntrypoint)
+        .and()
         // disable session management (JSESSIONID cookies -> security risks)
         .sessionManagement()
         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

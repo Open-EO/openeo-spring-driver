@@ -75,7 +75,7 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
         // TODO make both providers working together fine
         // @see TestBasicAuthentication_OIDCEnabled class
         if (enableBasicAuth && enableKeycloakAuth) {
-            throw new NotImplementedException("Maximum 1 security agent is provider.");
+            throw new NotImplementedException("Maximum 1 security agent is allowed.");
         }
     }
     

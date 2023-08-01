@@ -81,7 +81,7 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
             }
         } else {
             LOGGER.debug("No \"Bearer\" token found in the request.");
-            should we request a 401/WWWW-Authorize here? How to recognize is protected or public resource?
+//            should we request a 401/WWWW-Authorize here? How to recognize is protected or public resource?
         }
         
         // do not break the chain!

@@ -76,13 +76,16 @@ public class TokenUtil {
 	        throw new InternalError("ITokenService required to fetch Bearer token.");
 	    }    
 	    
-	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 	    AccessToken token = null;
-
-        if (auth instanceof BearerTokenAuthenticationToken) {
-            token = TokenUtil.getBearerAccessToken((BearerTokenAuthenticationToken) auth, tokenService);
-//	    } else {
-//	        throw new InternalError("Expected BearerTokenAuthenticationToken, got: " + auth.getClass()); 
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    
+	    if (null != auth) {
+	        if (auth instanceof BearerTokenAuthenticationToken) {
+	            token = TokenUtil.getBearerAccessToken((BearerTokenAuthenticationToken) auth, tokenService);
+	        } else if (!auth.isAuthenticated()) {
+	            // we reach this point e.g. with mock MVC users in tests
+	            throw new InternalError("Could not fetch token from " + auth.getClass()); 
+	        }
 	    }
 
 	    return token;
