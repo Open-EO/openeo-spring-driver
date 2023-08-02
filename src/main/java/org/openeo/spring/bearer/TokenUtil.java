@@ -1,15 +1,14 @@
-package org.openeo.spring.api;
+package org.openeo.spring.bearer;
 
 import java.security.Principal;
 
-import org.keycloak.adapters.OidcKeycloakAccount;
-import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.keycloak.representations.AccessToken;
-import org.openeo.spring.bearer.ITokenService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.BearerTokenAuthenticationToken;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 /**
  * Utilities for fetching user sessions' access tokens.
@@ -31,8 +30,8 @@ public class TokenUtil {
         
         AccessToken token = null;
         
-        if (principal instanceof KeycloakAuthenticationToken) {
-            token = TokenUtil.getKCAccessToken((KeycloakAuthenticationToken) principal);
+        if (principal instanceof JwtAuthenticationToken) {
+            token = TokenUtil.getKCAccessToken((JwtAuthenticationToken) principal);
         }
         
         else if (principal instanceof UsernamePasswordAuthenticationToken) {
@@ -51,12 +50,36 @@ public class TokenUtil {
      * @param principal the user asking for the token
      * @return the access token; {@code null} when not found (or with {@code null} input)  
      */
-	static AccessToken getKCAccessToken(KeycloakAuthenticationToken principal) {
+	static AccessToken getKCAccessToken(JwtAuthenticationToken principal) {
 	    if (null == principal) {
 	        return null;
 	    }
-	    OidcKeycloakAccount account = principal.getAccount(); 
-	    AccessToken token = account.getKeycloakSecurityContext().getToken();
+	    
+	    AccessToken token = new AccessToken();
+	    
+	    // TODO is it always a Jwt object?
+	    Jwt jwt = (Jwt) principal.getPrincipal();
+
+	    token.id(jwt.getId());
+//	    token.setName(jwt.getSubject()); -> gives the token hash
+	    token.setName(jwt.getClaimAsString("name"));
+	    token.setAccessTokenHash(jwt.getTokenValue());
+	    
+	    if (null != jwt.getAudience()) {
+	        jwt.getAudience().forEach(
+	                (x) -> token.addAudience(x));
+	    }
+	    
+	    if (null != jwt.getIssuedAt()) {
+	        token.iat(jwt.getIssuedAt().toEpochMilli());
+	    }
+	    token.exp(jwt.getExpiresAt().toEpochMilli());
+	    
+	    // other claims
+	    jwt.getClaims().forEach((
+	            k,v) -> token.setOtherClaims(k, v)
+	    );
+	    // more needed ? certficates etc. just a format conversion, we might abandon AccessToken class
 	    
 	    return token;
     }
@@ -92,7 +115,7 @@ public class TokenUtil {
 	}
 	
 	/**
-	 * FEtches and decodes a bearer token. 
+	 * Fetches and decodes a bearer token. 
 	 * @param principal
 	 * @param tokenService
 	 * @return

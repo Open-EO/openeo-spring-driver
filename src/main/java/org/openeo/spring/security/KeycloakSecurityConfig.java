@@ -6,32 +6,45 @@ import static org.openeo.spring.security.GlobalSecurityConfig.OIDC_AUTH_API_RESO
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.openeo.spring.bearer.PrefixedBearerTokenResolver;
+import org.openeo.spring.components.FilterChainExceptionHandler;
 import org.openeo.spring.keycloak.KeycloakLogoutHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 
 @Configuration
 //@Profile(KeycloakSecurityConfig.PROFILE_ID) -> better use:
 @ConditionalOnProperty(prefix="spring.security", value="enable-keycloak")
+@PropertySource("classpath:keycloak.properties")
 public class KeycloakSecurityConfig {
 
     /** Used to define a {@link Profile}. */
     public static final String PROFILE_ID = "KEYCLOAK_AUTH";
     
+    /** The beginning of an OIDC JWT token prefix (full prefix depends on provider) */
+    public static final String TOKEN_PREFIX_START = "oidc/"; // "oidc/ms/TOKEN"
+    
     private static final Logger LOGGER = LogManager.getLogger(KeycloakSecurityConfig.class);
 
     @Autowired
-    private KeycloakLogoutHandler keycloakLogoutHandler;
+    KeycloakLogoutHandler keycloakLogoutHandler;
+    
+    @Autowired
+    FilterChainExceptionHandler filterChainExHandler;
     
     @Bean
     protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {
@@ -48,38 +61,40 @@ public class KeycloakSecurityConfig {
     public SecurityFilterChain kcLoginFilterChain(HttpSecurity http) throws Exception {
         http
         .antMatcher(OIDC_AUTH_API_RESOURCE)
-        .oauth2Login()
+        .oauth2Login(/*withDefaults()*/)
         .and()
-        .logout()
-        .addLogoutHandler(keycloakLogoutHandler)
-        .logoutSuccessUrl("/");
-
-        http.oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
+        // disable session management (JSESSIONID cookies -> security risks)
+        .sessionManagement()
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        // logout
+        .and()
+        .logout(logout -> logout
+                .addLogoutHandler(keycloakLogoutHandler)
+                .logoutSuccessUrl("/")
+        );
         
         LOGGER.info("Keycloak authentication security chain set.");
 
         return http.build();
     }
 
-    /**
-     * Requires authenticated user on all resources.
-     * 
-     * NOTE: resources to be ignored by the authorization service are
-     * configured in {@link #webSecurityCustomizer()}.
-//     *  
-     * @param http
-     * @return
-     * @throws Exception
-     */
     @Bean
     public SecurityFilterChain kcSecurityFilterChain(HttpSecurity http) throws Exception {
         http
         .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().authenticated()
-                );
+         )
+        // disable session management (JSESSIONID cookies -> security risks)
+        .sessionManagement()
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        // JWT token
+        .and()
+        .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
+        // catch exceptions and resolve them to error for the client
+        .addFilterBefore(filterChainExHandler, LogoutFilter.class);
         
-        LOGGER.info("Keycloak authorization security chain set.");
-            
+        LOGGER.info("Keycloak authentication security chain set.");
+
         return http.build();
     }
 
@@ -92,6 +107,14 @@ public class KeycloakSecurityConfig {
                 .ignoring()
                 .antMatchers(NOAUTH_API_RESOURCES)
                 .antMatchers(BASIC_AUTH_API_RESOURCE);
+    }
+    
+    /**
+     * Need to strip away the {@code oidc/ms/} prefix from the token before decoding it. 
+     */
+    @Bean
+    BearerTokenResolver bearerTokenResolver() {
+        return new PrefixedBearerTokenResolver(TOKEN_PREFIX_START);
     }
     
     /**

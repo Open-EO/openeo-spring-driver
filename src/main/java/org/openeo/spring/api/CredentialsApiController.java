@@ -9,6 +9,7 @@ import org.openeo.spring.model.HTTPBasicAccessToken;
 import org.openeo.spring.model.OpenIDConnectProviders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +27,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Controller
 @RequestMapping("${openapi.openEO.base-path:}")
+@PropertySource("classpath:keycloak.properties")
 public class CredentialsApiController implements CredentialsApi {
    
+    // TODO do we need it still?
     @Value("${org.openeo.oidc.providers.list}")
 	private Resource oidcProvidersFile;
 

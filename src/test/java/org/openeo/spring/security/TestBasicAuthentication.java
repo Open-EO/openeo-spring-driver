@@ -9,8 +9,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.openeo.spring.api.CredentialsApiController;
 import org.openeo.spring.bearer.JWTTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,12 +47,12 @@ import com.jayway.jsonpath.JsonPath;
 //@ActiveProfiles("test") // -> src/test/resources/application-$PROFILE.properties
 public abstract class TestBasicAuthentication {
 
-    @Autowired    
+    @Autowired
     MockMvc mvc;
     
     @Autowired
     WebApplicationContext context;
-
+    
     @Autowired
     JWTTokenService tokenService;
     
@@ -76,6 +80,14 @@ public abstract class TestBasicAuthentication {
         assertEquals(bodyAccessToken, headerToken, "token in body and header should coincide");
     }
     
+    @ParameterizedTest
+    @MethodSource("providePublicAPIResources")
+    public void get_publicResourceNoAuth_shouldSucceedWith200(String resource) throws Exception {
+        mvc.perform(get(resource)
+        ).andExpect(
+                status().isOk());
+    }
+    
     @Test
     @WithMockUser(value = "satan")
     public void get_protectedResourcewWithToken_shouldSucceedWith200() throws Exception {
@@ -97,11 +109,11 @@ public abstract class TestBasicAuthentication {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer basic//00000000000FAKE00000000000")
         ).andExpectAll(
                 status().is(403),
-                content().contentType(MediaType.APPLICATION_JSON)
-//                header().exists("id"), FIXME ErrorAttributes not picked in tests
-//                header().exists("code"),
-//                header().exists("message"),
-//                header().exists("links")
+                content().contentType(MediaType.APPLICATION_JSON),
+                jsonPath("$.id").hasJsonPath(),
+                jsonPath("$.code").exists(),
+                jsonPath("$.message").exists(),
+                jsonPath("$.links").hasJsonPath()
                 );
     }
     
@@ -111,11 +123,11 @@ public abstract class TestBasicAuthentication {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer wysiwyg//00000000000FAKE00000000000")
         ).andExpectAll(
                 status().is(403),
-                content().contentType(MediaType.APPLICATION_JSON)
-//                header().exists("id"), FIXME ErrorAttributes not picked in tests
-//                header().exists("code"),
-//                header().exists("message"),
-//                header().exists("links")
+                content().contentType(MediaType.APPLICATION_JSON),
+                jsonPath("$.id").hasJsonPath(),
+                jsonPath("$.code").exists(),
+                jsonPath("$.message").exists(),
+                jsonPath("$.links").hasJsonPath()
                 );
     }
     
@@ -132,11 +144,11 @@ public abstract class TestBasicAuthentication {
                         String.format("Bearer basic//%s", token))
         ).andExpectAll(
                 status().is(403),
-                content().contentType(MediaType.APPLICATION_JSON)
-//                header().exists("id"), FIXME ErrorAttributes not picked in tests
-//                header().exists("code"),
-//                header().exists("message"),
-//                header().exists("links")
+                content().contentType(MediaType.APPLICATION_JSON),
+                jsonPath("$.id").hasJsonPath(),
+                jsonPath("$.code").exists(),
+                jsonPath("$.message").exists(),
+                jsonPath("$.links").hasJsonPath()
                 );
     }
     
@@ -146,10 +158,11 @@ public abstract class TestBasicAuthentication {
         ).andExpectAll(
                 status().is(401),
                 header().exists(HttpHeaders.WWW_AUTHENTICATE)
-//                header().exists("id"), FIXME ErrorAttributes not picked in tests
-//                header().exists("code"),
-//                header().exists("message"),
-//                header().exists("links")
+                // Hard to wire in custom ErrorAttributes in MockMvc TODO
+//                jsonPath("$.id").hasJsonPath(),
+//                jsonPath("$.code").exists(),
+//                jsonPath("$.message").exists(),
+//                jsonPath("$.links").hasJsonPath()
                 );
     }
     
@@ -161,10 +174,13 @@ public abstract class TestBasicAuthentication {
                 .header(HttpHeaders.AUTHORIZATION, "Basic _InfestTheRatsNest_=")
         ).andExpectAll(
                 status().is(401)
-//                header().exists("id"), FIXME ErrorAttributes not picked in tests
-//                header().exists("code"),
-//                header().exists("message"),
-//                header().exists("links")
+                // Hard to wire in custom ErrorAttributes in MockMvc TODO
+                // @see https://stackoverflow.com/questions/29120948/testing-a-spring-boot-application-with-custom-errorattributes
+                // @see https://stackoverflow.com/questions/43836231/re-use-spring-boot-errorattributes-when-using-mockmvc-and-spring-rest-docs
+//                jsonPath("$.id").hasJsonPath(),
+//                jsonPath("$.code").exists(),
+//                jsonPath("$.message").exists(),
+//                jsonPath("$.links").hasJsonPath()
                 );
     }
     
@@ -183,11 +199,15 @@ public abstract class TestBasicAuthentication {
         
         mvc.perform(get("/credentials/basic")
         ).andExpectAll(
-                status().is(501)
-//                header().exists("id"), FIXME ErrorAttributes not picked in tests
-//                header().exists("code"),
-//                header().exists("message"),
-//                header().exists("links")
+                status().is(501),
+                jsonPath("$.id").hasJsonPath(),
+                jsonPath("$.code").exists(),
+                jsonPath("$.message").exists(),
+                jsonPath("$.links").hasJsonPath()
                 );
     }
-}
+    
+    private static List<String> providePublicAPIResources() {
+        return Arrays.asList(GlobalSecurityConfig.NOAUTH_API_RESOURCES);
+    }
+ }

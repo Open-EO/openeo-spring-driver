@@ -44,7 +44,7 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
             "/favicon.ico",
             "/conformance",
             "/file_formats",
-            "/.well-known/**"};
+            "/.well-known/openeo"};
     
     public static final String BASIC_AUTH_API_RESOURCE = "/credentials/basic";
     public static final String OIDC_AUTH_API_RESOURCE = "/credentials/oidc";

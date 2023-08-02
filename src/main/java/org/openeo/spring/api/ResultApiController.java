@@ -34,6 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
 import org.openeo.spring.bearer.ITokenService;
+import org.openeo.spring.bearer.TokenUtil;
 import org.openeo.spring.components.CollectionMap;
 import org.openeo.spring.components.CollectionsMap;
 import org.openeo.spring.components.JobScheduler;

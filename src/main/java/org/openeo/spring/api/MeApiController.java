@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 import org.keycloak.representations.AccessToken;
 import org.openeo.spring.bearer.ITokenService;
+import org.openeo.spring.bearer.TokenUtil;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.UserData;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,6 +95,7 @@ public class MeApiController implements MeApi {
         
 	    if (principal != null) {
 	        String username = principal.getName();
+	        String userId = username;
 	        //		KeycloakAuthenticationToken keycloakAuthenticationToken = (KeycloakAuthenticationToken) principal;
 	        //        AccessToken accessToken = keycloakAuthenticationToken.getAccount().getKeycloakSecurityContext().getToken();
 	        
@@ -101,10 +103,11 @@ public class MeApiController implements MeApi {
 	        AccessToken accessToken = TokenUtil.getAccessToken(principal, tokenService);
 	        if (null != accessToken) {
 	            username = accessToken.getName();
+	            userId = accessToken.getId();
 	        }
 	        
 	        userData.setName(username);
-	        userData.setUserId(username);
+	        userData.setUserId(userId);
 	        
 	        if (null != udService) {
 	            try {

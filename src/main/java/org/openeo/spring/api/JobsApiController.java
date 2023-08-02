@@ -37,6 +37,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
 import org.openeo.spring.bearer.ITokenService;
+import org.openeo.spring.bearer.TokenUtil;
 import org.openeo.spring.components.JobScheduler;
 import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
