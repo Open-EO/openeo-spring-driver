@@ -96,7 +96,7 @@ public abstract class TestBasicAuthentication {
         UserDetails user = (UserDetails) auth.getPrincipal();
         String token = tokenService.generateToken(user);
         
-        mvc.perform(get("/collections")
+        mvc.perform(get("/jobs")
                 .header(HttpHeaders.AUTHORIZATION,
                         String.format("Bearer basic//%s", token))
         ).andExpect(
@@ -105,7 +105,7 @@ public abstract class TestBasicAuthentication {
     
     @Test
     public void get_protectedResourcewWithWrongToken_shouldReturn403() throws Exception {
-        mvc.perform(get("/collections")
+        mvc.perform(get("/jobs")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer basic//00000000000FAKE00000000000")
         ).andExpectAll(
                 status().is(403),
@@ -119,7 +119,7 @@ public abstract class TestBasicAuthentication {
     
     @Test
     public void get_wrongTokenPrefix_shouldReturn403() throws Exception {
-        mvc.perform(get("/collections")
+        mvc.perform(get("/jobs")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer wysiwyg//00000000000FAKE00000000000")
         ).andExpectAll(
                 status().is(403),
@@ -139,7 +139,7 @@ public abstract class TestBasicAuthentication {
         UserDetails user = (UserDetails) auth.getPrincipal();
         String token = tokenService.generateToken(user, -1, ChronoUnit.SECONDS);
         
-        mvc.perform(get("/collections")
+        mvc.perform(get("/jobs")
                 .header(HttpHeaders.AUTHORIZATION,
                         String.format("Bearer basic//%s", token))
         ).andExpectAll(

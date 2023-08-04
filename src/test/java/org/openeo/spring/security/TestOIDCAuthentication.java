@@ -49,7 +49,7 @@ public class TestOIDCAuthentication {
     @Test
     @WithMockUser(value = "brutus")
     public void get_protectedResourceAuth_shouldSucceedWith200() throws Exception {
-        mvc.perform(get("/collections")
+        mvc.perform(get("/jobs")
         ).andExpect(
                 status().isOk());
     }
@@ -64,7 +64,7 @@ public class TestOIDCAuthentication {
     
     @Test
     public void get_InvalidToken_shouldReturn401() throws Exception {
-        mvc.perform(get("/collections")
+        mvc.perform(get("/jobs")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer oidc/ACME/00000000000FAKE00000000000")
         ).andExpectAll(
                 status().is(401),
@@ -74,7 +74,7 @@ public class TestOIDCAuthentication {
     
     @Test
     public void get_InvalidTokenPrefix_shouldReturn403() throws Exception {
-        mvc.perform(get("/collections")
+        mvc.perform(get("/jobs")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer wysiwyg//00000000000FAKE00000000000")
         ).andExpectAll(
                 status().is(403),

@@ -41,8 +41,9 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
     /** API resources that do not require authentication. */
     public static final String[] NOAUTH_API_RESOURCES = new String[] {
             "/",
-            "/favicon.ico",
             "/conformance",
+            "/collections",
+            "/favicon.ico",
             "/file_formats",
             "/.well-known/openeo"};
     
