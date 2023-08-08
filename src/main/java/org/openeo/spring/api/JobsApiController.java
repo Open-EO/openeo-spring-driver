@@ -41,6 +41,7 @@ import org.openeo.spring.bearer.TokenUtil;
 import org.openeo.spring.components.JobScheduler;
 import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
+import org.openeo.spring.keycloak.legacy.AuthzService;
 import org.openeo.spring.model.BatchJobEstimate;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobs;
@@ -117,7 +118,7 @@ public class JobsApiController implements JobsApi {
 	@Autowired
 	private JobScheduler jobScheduler;
 
-	@Autowired
+	@Autowired(required = false)
 	private AuthzService authzService;
 	
 	@Autowired(required = false)
@@ -251,14 +252,10 @@ public class JobsApiController implements JobsApi {
 		        resultEngine = resultApiController.checkGraphValidityAndEngine(processGraph);
 		        job.setEngine(resultEngine);
 		    } catch (Exception e) {
-		        job.setEngine(null); // lenient: I can create an impossible graph
-//		        Error error = new Error();
-//		        error.setCode("500");
-//		        error.setMessage(e.getMessage());
-		        warningMessage = e.getMessage();
-		        log.warn("Creating an unfeasible process graph: {}", warningMessage);
-//		        ThreadContext.clearMap();
-//		        return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+//		        job.setEngine(null); // lenient: I can create an impossible "draft" graph ?
+		        ThreadContext.clearMap();
+		        return ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+		                "Creating an unfeasible process graph.");
 		    }
 
 		    jobDAO.save(job);
@@ -274,7 +271,7 @@ public class JobsApiController implements JobsApi {
 
 		    Job verifiedSave = jobDAO.findOne(job.getId());
 		    if (verifiedSave != null) {
-		        if(token != null) {
+		        if((null != token) && (null != authzService)) {
 		            authzService.createProtectedResource(job, token);
 		        }
 
@@ -524,8 +521,10 @@ public class JobsApiController implements JobsApi {
 			}
 			jobDAO.delete(job);
 			log.debug("The job {} was successfully deleted.", jobId);
-			authzService.deleteProtectedResource(job);
-			log.debug("The job {} was successfully deleted from Keycloak.", jobId);
+			if (null != authzService) {
+			    authzService.deleteProtectedResource(job);
+			    log.debug("The job {} was successfully deleted from Keycloak.", jobId);
+			}
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
 		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
@@ -1003,6 +1002,14 @@ public class JobsApiController implements JobsApi {
 					ThreadContext.clearMap();
 					return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 				}
+			} else  {
+			    log.warn("No engine attached to job {}.", job);
+			    if (JobStates.CREATED != job.getStatus()) {
+			        throw new InternalError("Job draft should not have status " + job.getStatus());
+			    } else {
+			        return ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+			                String.format("The requested job %s has no engine.", jobId));
+			    }
 			}
 		}
 		Error error = new Error();
