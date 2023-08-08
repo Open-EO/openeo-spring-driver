@@ -9,12 +9,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.openeo.spring.api.CredentialsApiController;
 import org.openeo.spring.bearer.JWTTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,15 +88,16 @@ public abstract class TestBasicAuthentication {
                 status().isOk());
     }
     
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"/jobs", "/me"})
     @WithMockUser(value = "satan")
-    public void get_protectedResourcewWithToken_shouldSucceedWith200() throws Exception {
+    public void get_protectedResourcewWithToken_shouldSucceedWith200(String res) throws Exception {
         // manually generate token
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserDetails user = (UserDetails) auth.getPrincipal();
         String token = tokenService.generateToken(user);
         
-        mvc.perform(get("/jobs")
+        mvc.perform(get(res)
                 .header(HttpHeaders.AUTHORIZATION,
                         String.format("Bearer basic//%s", token))
         ).andExpect(
@@ -207,7 +208,8 @@ public abstract class TestBasicAuthentication {
                 );
     }
     
-    private static List<String> providePublicAPIResources() {
-        return Arrays.asList(GlobalSecurityConfig.NOAUTH_API_RESOURCES);
+    private static Stream<String> providePublicAPIResources() {
+        return Stream.of(GlobalSecurityConfig.NOAUTH_API_RESOURCES)
+        .filter(res -> !res.contains("*"));        
     }
  }

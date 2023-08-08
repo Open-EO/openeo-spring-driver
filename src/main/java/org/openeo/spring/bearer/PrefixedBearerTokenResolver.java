@@ -58,7 +58,8 @@ public class PrefixedBearerTokenResolver implements BearerTokenResolver {
         if (null != prefixedToken) {
             if (!prefixedToken.startsWith(prefixStart)) {
                 throw new JwtException(String.format(
-                        "Invalid token prefix. Expected: {}*", prefixStart));
+                        "Invalid token prefix. Expected: '%s'. Token: %20s...",
+                        prefixStart, prefixedToken));
             }
             pureToken = prefixedToken.substring(prefixedToken.lastIndexOf('/') + 1);
         }

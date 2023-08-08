@@ -43,6 +43,8 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
             "/",
             "/conformance",
             "/collections",
+            "/collections/**",
+//            "/download/**", // what is this? Web Editor requests it without token. new openEO API version? 
             "/favicon.ico",
             "/file_formats",
             "/.well-known/openeo"};

@@ -314,22 +314,24 @@ public class ResultApiController implements ResultApi {
 				for (JSONObject loadCollectionNode: loadCollectionNodes) {
 					collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString(); // The collection id requested in the process graph
 
-					Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
-					Collection collection = null;
+					if (collectionsMap.containsKey(enType)) {
+					    Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
+					    Collection collection = null;
 
-					for (Collection coll: engineCollections.getCollections()) {
-						if (coll.getId().equals(collectionID)) {
-							collection = coll; // We found the requested collection in the current engine of the loop
-							break;
-						}
-					}
-					if (collection == null) {
-						containsSameEngineCollections = false;
-						break;
-					}
-					else {
-						selectedEngineType = enType;
-						containsSameEngineCollections = true;
+					    for (Collection coll: engineCollections.getCollections()) {
+					        if (coll.getId().equals(collectionID)) {
+					            collection = coll; // We found the requested collection in the current engine of the loop
+					            break;
+					        }
+					    }
+					    if (collection == null) {
+					        containsSameEngineCollections = false;
+					        break;
+					    }
+					    else {
+					        selectedEngineType = enType;
+					        containsSameEngineCollections = true;
+					    }
 					}
 				}
 				if (containsSameEngineCollections) {

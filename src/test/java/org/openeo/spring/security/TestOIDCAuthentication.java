@@ -6,8 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -97,7 +96,8 @@ public class TestOIDCAuthentication {
                 jsonPath("$.links").hasJsonPath());
     }
     
-    private static List<String> providePublicAPIResources() {
-        return Arrays.asList(GlobalSecurityConfig.NOAUTH_API_RESOURCES);
+    private static Stream<String> providePublicAPIResources() {
+        return Stream.of(GlobalSecurityConfig.NOAUTH_API_RESOURCES)
+        .filter(res -> !res.contains("*"));        
     }
 }

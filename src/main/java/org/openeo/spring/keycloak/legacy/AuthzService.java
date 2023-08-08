@@ -1,6 +1,7 @@
-package org.openeo.spring.api;
+package org.openeo.spring.keycloak.legacy;
 
 import java.util.HashSet;
+import java.util.List;
 
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.resource.ProtectedResource;
@@ -9,14 +10,13 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.openeo.spring.model.Job;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import java.util.List;
-
-
 
 @Component
+@ConditionalOnExpression(value = "false") // TODO what is this?
 public class AuthzService {
 	
     static final String SCOPE_VIEW = "urn:openEO:scopes:view";
