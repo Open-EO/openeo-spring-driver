@@ -21,10 +21,10 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(description = "An log message that communicates information about the processed data.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-public class LogEntry   {
+public class LogEntry {
   @JsonProperty("id")
   private String id;
-
+  
   @JsonProperty("code")
   private String code;
 
@@ -41,9 +41,8 @@ public class LogEntry   {
     TRACE("trace"),
     
     DEBUG("debug");
-	  
 	 
-
+	
     private String value;
 
     LevelEnum(String value) {
@@ -76,18 +75,27 @@ public class LogEntry   {
 
   @JsonProperty("message")
   private String message;
-
+  
+  @JsonProperty("time")
+  private String time;
+  
   @JsonProperty("data")
   private JsonNullable<Object> data = JsonNullable.undefined();
-
+  
   @JsonProperty("path")
   @Valid
   private List<LogEntryPath> path = new ArrayList<>();
-
+  
+  @JsonProperty("usage")
+  private JsonNullable<Object> usage = JsonNullable.undefined();
+  
   @JsonProperty("links")
   @Valid
   private List<Link> links = null;
 
+ 
+  
+  
   public LogEntry id(String id) {
     this.id = id;
     return this;
@@ -108,6 +116,14 @@ public class LogEntry   {
   public void setId(String id) {
     this.id = id;
   }
+  
+  /**
+   * TODO: define comment text about 'time'
+   * @return time
+  */
+  @ApiModelProperty(example = "2023-06-28 14:06:21,023", value = "define comment text about 'time'")
+
+  
 
   public LogEntry code(String code) {
     this.code = code;
@@ -171,6 +187,12 @@ public class LogEntry   {
     this.message = message;
   }
 
+  public void setTime(String time) {
+	    this.time = time;
+   }
+
+
+  
   public LogEntry data(Object data) {
     this.data = JsonNullable.of(data);
     return this;
@@ -191,6 +213,9 @@ public class LogEntry   {
     this.data = data;
   }
 
+  
+  
+  
   public LogEntry path(List<LogEntryPath> path) {
     this.path = path;
     return this;
@@ -218,6 +243,38 @@ public class LogEntry   {
     this.path = path;
   }
 
+  
+  
+
+
+//
+  
+  
+
+  public LogEntry usage(Object usage) {
+    this.usage = JsonNullable.of(usage);
+    return this;
+  }
+
+  /**
+   * TODO usage
+   * @return usage
+  */
+  @ApiModelProperty(value = "usage")
+
+
+  public JsonNullable<Object> getUsage() {
+    return usage;
+  }
+
+  public void setUsage(JsonNullable<Object> usage) {
+    this.usage = usage;
+  }
+  //
+  
+  
+  
+  
   public LogEntry links(List<Link> links) {
     this.links = links;
     return this;
@@ -248,6 +305,11 @@ public class LogEntry   {
   }
 
 
+  
+  ////////
+  
+  
+  
   @Override
   public boolean equals(java.lang.Object o) {
     if (this == o) {
@@ -261,27 +323,31 @@ public class LogEntry   {
         Objects.equals(this.code, logEntry.code) &&
         Objects.equals(this.level, logEntry.level) &&
         Objects.equals(this.message, logEntry.message) &&
+        Objects.equals(this.time, logEntry.time) &&
         Objects.equals(this.data, logEntry.data) &&
         Objects.equals(this.path, logEntry.path) &&
+        Objects.equals(this.usage, logEntry.usage) && 
         Objects.equals(this.links, logEntry.links);
+
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, code, level, message, data, path, links);
+    return Objects.hash(id, code, level, message, time, data, path, usage, links);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class LogEntry {\n");
-    
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    code: ").append(toIndentedString(code)).append("\n");
     sb.append("    level: ").append(toIndentedString(level)).append("\n");
     sb.append("    message: ").append(toIndentedString(message)).append("\n");
+    sb.append("    time: ").append(toIndentedString(time)).append("\n");
     sb.append("    data: ").append(toIndentedString(data)).append("\n");
     sb.append("    path: ").append(toIndentedString(path)).append("\n");
+    sb.append("    usage: ").append(toIndentedString(usage)).append("\n");
     sb.append("    links: ").append(toIndentedString(links)).append("\n");
     sb.append("}");
     return sb.toString();
