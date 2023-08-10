@@ -23,19 +23,36 @@ springfox.documentation.swagger.v2.path=/api-docs
 spring.jackson.date-format=org.openeo.spring.RFC3339DateFormat
 spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS=false
 spring.h2.console.enabled=true
+
+
+server.port=8443
+
 spring.datasource.username=my_username
 spring.datasource.initialization-mode
 
-server.port=8443
 server.ssl.key-store-type=PKCS12
 server.ssl.key-store=classpath:my_keystore.p12
 server.ssl.key-store-password=my_keystore_password
 server.ssl.key-alias=my_alias
+#server.ssl.trust-store=classpath:my_truststore.p12
+#server.ssl.trust-store-password=my_truststore_password
 
 security.require-ssl=true
+spring.security.filter.order=5
 
-org.openeo.endpoint=https://my_openeo.url
-org.openeo.public.endpoint=https://my_openeo_public.url
+spring.jackson.serialization.write-dates-as-timestamps=false
+
+co.elasticsearch.endpoint=https://my_elastic:9200
+co.elasticsearch.service.name=openeo
+co.elasticsearch.service.node.name=elk_node_hostname
+co.elasticsearch.service.index.name=es_index_name
+co.elasticsearch.service.truststore.password=my_password
+co.elasticsearch.service.truststore.path=/path/to/elastic-certificates.p12
+co.elasticsearch.service.keystore.password=my_password
+co.elasticsearch.service.keystore.path=/path/to/http.p12
+co.elasticsearch.service.username=elastic_uname
+co.elasticsearch.service.password=my_password
+	
 org.openeo.tmp.dir=tmp/
 org.openeo.tmp.file.expiry=60
 org.openeo.file.expiry=1
@@ -49,6 +66,7 @@ org.openeo.wcps.provider.name=My Company
 org.openeo.wcps.provider.url=http://www.my-company.url
 org.openeo.wcps.processes.list=classpath:processes_wcps.json
 org.openeo.wcps.collections.list=collections_wcps.json
+org.openeo.wcps.provider.type=host
 
 org.openeo.odc.endpoint=http://my_open_data_cube_endpoint
 org.openeo.odc.deleteResultEndpoint=http://my_open_data_cube_endpoint_for_stopping_a_job
@@ -57,8 +75,12 @@ org.openeo.odc.provider.name=open data cube provider name
 org.openeo.odc.provider.url=http://www.open_data_cube_provider.url
 org.openeo.odc.processes.list=classpath:processes_odc.json
 org.openeo.odc.collections.list=collections_odc.json
+org.openeo.odc.provider.type=host
 
+org.openeo.endpoint=https://my_openeo.url
+org.openeo.public.endpoint=https://my_openeo_public.url
 org.openeo.udf.python.endpoint=http://my_openeo_python_udf_service.url
+org.openeo.udf.candela.endpoint=http://my_openeo_candela_service.url
 org.openeo.udf.r.endpoint=http://my_openeo_R_udf_service.url
 org.openeo.udf.dir=/my/udf/working/directory/
 org.openeo.udf.importscript=/my/udf/import/script/import_udf.sh
