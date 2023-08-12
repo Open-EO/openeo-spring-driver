@@ -439,7 +439,7 @@ public class JobsApiController implements JobsApi {
 			int check_code = HttpURLConnection.HTTP_OK;
 			
 			//check if elasticSearchEndpoint is an HTTP or HTTPS URL
-			if (elasticSearchEndpoint.startsWith("https://"))
+			if (elasticSearchEndpoint.startsWith("https://")) // break point here (10 aug 23)
 			{
 				HostnameVerifier customHostnameVerifier = new HostnameVerifier() {
 				    @Override
@@ -503,22 +503,21 @@ public class JobsApiController implements JobsApi {
 		    conn.setRequestProperty("Authorization", authHeaderValue);
 			
 		    
-		    StringBuilder queryString = new StringBuilder();
-			//TODO insert elastic search parameters from application.properties through resource loader here
-			
-		    //TODO (Lorenzo): Rifare la query utilizzando degli oggetti JSON
-		    
-		    queryString.append("{");
-	        queryString.append("\"query\":{");
-	        queryString.append("\"match\":{");
-	        queryString.append("\"job_id\":\"").append(jobId).append("\"");
-	        queryString.append("}");
-	        queryString.append("},");
-	        queryString.append("\"_source\":true");
-	        queryString.append("}");
+
+		    // Build the query using a JSON object
+		    JSONObject termObject = new JSONObject();
+		    termObject.put("job_id.keyword", jobId);
+
+		    JSONObject queryObject = new JSONObject();
+		    queryObject.put("term", termObject);
+
+		    JSONObject requestObject = new JSONObject();
+		    requestObject.put("query", queryObject);
+		    requestObject.put("_source", true);
+
 		    
 			OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream());
-			out.write(queryString.toString());
+			out.write(requestObject.toString());
 			out.close();
 		    
 		    
@@ -551,6 +550,18 @@ public class JobsApiController implements JobsApi {
 					//automatic parsing as below is currently failing...
 					JSONObject logResult = new JSONObject(result.toString());
 					JSONArray results =  logResult.getJSONObject("hits").getJSONArray("hits");
+					
+					int esTotalHits =  logResult.getJSONObject("hits").getJSONObject("total").getInt("value");
+
+					if (esTotalHits == 0) {
+						log.error("Wrong Job ID or empty index: ES returned 0 hits");
+						Error error = new Error();
+						error.setCode("422"); // error 422
+						error.setMessage("Wrong Job ID or empty index: ES returned 0 hits");
+						return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+
+					}
+					
 					results.forEach(item -> {
 						JSONObject logEntryItem = (JSONObject) item;
 						JSONObject logInfoFields =  logEntryItem.getJSONObject("_source");  // "fields"
@@ -609,7 +620,19 @@ public class JobsApiController implements JobsApi {
 					});
 				}
 			} else if (responseCode > 399 && responseCode < 600) {
-				// TODO: Handle error
+				// TODO: rows below must become a new method/function
+				// TODO: evaluate if implement or not this 'else if'
+				/*log.error("An error when accessing logs from elastic stac: " + e.getMessage());
+				StringBuilder builder = new StringBuilder(e.getMessage());
+				for (StackTraceElement element : e.getStackTrace()) {
+					builder.append(element.toString() + "\n");
+				}
+				log.error(builder.toString());
+				Error error = new Error();
+				error.setCode("500");
+				error.setMessage("An error when accessing logs from elastic stac: " + builder.toString());
+				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+				*/
 			}
 			
 	
@@ -617,6 +640,8 @@ public class JobsApiController implements JobsApi {
 
 		
 		}catch(Exception e) {
+			
+			// TODO: rows below must become a new method/function
 			log.error("An error when accessing logs from elastic stac: " + e.getMessage());
 			StringBuilder builder = new StringBuilder(e.getMessage());
 			for (StackTraceElement element : e.getStackTrace()) {
