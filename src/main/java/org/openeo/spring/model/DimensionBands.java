@@ -39,13 +39,17 @@ public class DimensionBands extends Dimension  {
   @NotNull
 
   @Valid
-@Size(min=1) 
+@Size(min=1)
   public List<String> getValues() {
     return values;
   }
 
   public void setValues(List<String> values) {
     this.values = values;
+  }
+
+  public boolean containsValue(String value) {
+      return values.contains(value);
   }
 
 

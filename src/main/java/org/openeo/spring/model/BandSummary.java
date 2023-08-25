@@ -27,6 +27,9 @@ public class BandSummary   {
   @JsonProperty("common_name")
   private String commonname;
 
+  @JsonProperty("description")
+  private String description;
+
   @JsonProperty("center_wavelength")
   private double centerwavelength;
 
@@ -74,6 +77,14 @@ public class BandSummary   {
 
   public void setCommonname(String commonname) {
     this.commonname = commonname;
+  }
+
+  public String getDescription() {
+      return description;
+  }
+
+  public void setDescription(String description) {
+      this.description = description;
   }
 
   public BandSummary centerwavelength(double centerwavelength) {
@@ -128,22 +139,24 @@ public class BandSummary   {
     BandSummary bandsummary = (BandSummary) o;
     return Objects.equals(this.name, bandsummary.name) &&
         Objects.equals(this.commonname, bandsummary.commonname) &&
+        Objects.equals(this.description, bandsummary.description) &&
         Objects.equals(this.centerwavelength, bandsummary.centerwavelength) &&
         Objects.equals(this.gsd, bandsummary.gsd);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, commonname, centerwavelength, gsd);
+    return Objects.hash(name, commonname, description, centerwavelength, gsd);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class Link {\n");
-    
+
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    common_name: ").append(toIndentedString(commonname)).append("\n");
+    sb.append("    description: ").append(toIndentedString(description)).append("\n");
     sb.append("    center_wavelength: ").append(toIndentedString(centerwavelength)).append("\n");
     sb.append("    gsd: ").append(toIndentedString(gsd)).append("\n");
     sb.append("}");

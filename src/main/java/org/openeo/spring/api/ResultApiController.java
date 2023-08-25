@@ -13,7 +13,6 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.Principal;
@@ -30,21 +29,18 @@ import javax.validation.Valid;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
-import org.openeo.spring.model.Error;
-import org.openeo.spring.model.Job;
-import org.openeo.spring.model.Processes;
-import org.openeo.spring.model.Process;
-import org.openeo.spring.model.Collection;
-import org.openeo.spring.model.Collections;
-import org.openeo.spring.model.EngineTypes;
-import org.openeo.spring.api.CollectionsApiController;
 import org.openeo.spring.components.CollectionMap;
 import org.openeo.spring.components.CollectionsMap;
 import org.openeo.spring.components.JobScheduler;
+import org.openeo.spring.model.Collection;
+import org.openeo.spring.model.Collections;
+import org.openeo.spring.model.EngineTypes;
+import org.openeo.spring.model.Error;
+import org.openeo.spring.model.Job;
+import org.openeo.spring.model.Process;
+import org.openeo.spring.model.Processes;
 import org.openeo.wcps.ConvenienceHelper;
 import org.openeo.wcps.WCPSQueryFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,13 +57,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import static org.openeo.spring.SecurityConfig.EURAC_ROLE;
 
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Component
@@ -77,13 +73,13 @@ public class ResultApiController implements ResultApi {
 
 	@Autowired
 	private JobScheduler jobScheduler;
-	
+
 	@Autowired
 	private CollectionsMap collectionsMap;
-	
+
 	@Autowired
 	private CollectionMap  collectionMap;
-	
+
 	private final NativeWebRequest request;
 
 	private final Logger log = LogManager.getLogger(ResultApiController.class);
@@ -99,17 +95,17 @@ public class ResultApiController implements ResultApi {
 
 	@Value("${org.openeo.tmp.dir}")
 	private String tmpDir;
-	
+
 	@Value("${org.openeo.wcps.collections.list}")
 	Resource collectionsFileWCPS;
 	@Value("${org.openeo.odc.collections.list}")
 	Resource collectionsFileODC;
-	
+
 	@Value("${org.openeo.wcps.processes.list}")
 	Resource processesFileWCPS;
 	@Value("${org.openeo.odc.processes.list}")
 	Resource processesFileODC;
-	
+
 	@org.springframework.beans.factory.annotation.Autowired
 	public ResultApiController(NativeWebRequest request) {
 		this.request = request;
@@ -130,25 +126,25 @@ public class ResultApiController implements ResultApi {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job,Principal principal) {
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
-				
+
 		AccessToken token = null;
 		if(principal != null) {
 			token = TokenUtil.getAccessToken(principal);
 		}
-		
+
 		Set<String> roles = new HashSet<>();
 		Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
 		for (Map.Entry<String, AccessToken.Access> e : resourceAccess.entrySet()) {
 			if (e.getValue().getRoles() != null){
 				for(String r: e.getValue().getRoles()) {
-					roles.add(r);					
-				}			
-			}		
+					roles.add(r);
+				}
+			}
 		}
-		
 
-		boolean isEuracUser = roles.contains("eurac");
-	
+
+		boolean isEuracUser = roles.contains(EURAC_ROLE);
+
 		Iterator<String> keys = processGraphJSON.keys();
 		boolean isRunProcessAllow= true;
 		while(keys.hasNext()) {
@@ -156,15 +152,16 @@ public class ResultApiController implements ResultApi {
 			JSONObject processNode = (JSONObject) processGraphJSON.get(key);
 			String process_id = processNode.get("process_id").toString();
 			if (process_id.equals("run_udf") && !isEuracUser) {
-				isRunProcessAllow =false;				    
+				isRunProcessAllow =false;
 			}
 		}
-		
+
 		if (isRunProcessAllow) {
-		
+
 		EngineTypes resultEngine = null;
 		try {
 			resultEngine = checkGraphValidityAndEngine(processGraphJSON);
+			job.setEngine(resultEngine); // it might not have been defined at creation time
 		} catch (Exception e) {
 			Error error = new Error();
 			error.setCode("500");
@@ -202,7 +199,7 @@ public class ResultApiController implements ResultApi {
 
 				byte[] response = IOUtils.toByteArray(is);
 				log.debug("Job successfully executed: " + job.toString());
-				String responseString = new String(response);				
+				String responseString = new String(response);
 				JSONObject responseJson = new JSONObject(responseString.toString());
 				String outputFilePath = tmpDir + responseJson.getString("output");
 				log.debug("Result path "+outputFilePath);
@@ -217,8 +214,9 @@ public class ResultApiController implements ResultApi {
 					}
 				}
 			    log.debug("Guessed mime type: "+mime);
+
 			    byte[] outputFileBytes = Files.readAllBytes(Paths.get(outputFilePath));
-			    
+
 				if (mime == null) {
 					return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/octet-stream")).body(outputFileBytes);
 				}
@@ -286,30 +284,30 @@ public class ResultApiController implements ResultApi {
 			error.setCode("401");
 			error.setMessage("You are not authorized to execute this process graph containing Run_UDF" );
 			log.error("You are not authorized to execute this process graph containing Run_UDF" );
-			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED); 
+			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED);
 		}
 
 	}
-	
+
 	public EngineTypes checkGraphValidityAndEngine(JSONObject processGraphJSON) throws Exception {
 		//TODO Check to which engine we need to send the job
 		String collectionID = new String();
-	
+
 		List<JSONObject> loadCollectionNodes = jobScheduler.getProcessNode("load_collection",processGraphJSON);
 		List<JSONObject> loadResultNodes = jobScheduler.getProcessNode("load_result",processGraphJSON);
-		
+
 		boolean containsSameEngineCollections = false;
 		EngineTypes selectedEngineType = null;
-		
+
 		if(!loadCollectionNodes.isEmpty()){
 			// The following loop checks if the collections requested in the load_collection calls are provided by the same engine and tells us which to use
 			for (EngineTypes enType: EngineTypes.values()) {
 				for (JSONObject loadCollectionNode: loadCollectionNodes) {
 					collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString(); // The collection id requested in the process graph
-		
+
 					Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
 					Collection collection = null;
-					
+
 					for (Collection coll: engineCollections.getCollections()) {
 						if (coll.getId().equals(collectionID)) {
 							collection = coll; // We found the requested collection in the current engine of the loop
@@ -344,7 +342,7 @@ public class ResultApiController implements ResultApi {
 		}
 		return selectedEngineType;
 	}
-	
+
 	boolean checkProcessesAvailability(JSONObject processGraphJSON, EngineTypes engine) throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		Processes processesAvailableList = new Processes();
@@ -392,7 +390,7 @@ public class ResultApiController implements ResultApi {
 			}
 		return true;
 	}
-		
+
 	private void addStackTraceAndErrorToLog(Exception e) {
 		log.error(e.getMessage());
 		StringBuilder builder = new StringBuilder();

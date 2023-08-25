@@ -46,16 +46,16 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 
-
-
 @Configuration
 @EnableWebSecurity(debug = false)
 @ComponentScan(basePackageClasses = KeycloakSecurityComponents.class)
 @KeycloakConfiguration
 public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
-	
+
+    public static final String EURAC_ROLE = "eurac";
+
 	private final KeycloakClientRequestFactory keycloakClientRequestFactory;
-	
+
 
 	 public SecurityConfig(KeycloakClientRequestFactory keycloakClientRequestFactory) {
 	        this.keycloakClientRequestFactory =  keycloakClientRequestFactory;
@@ -63,15 +63,15 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 	        //to use principal and authentication together with @async
 	        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
 	    }
-	 
+
 	 @Bean
 	    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 	    public KeycloakRestTemplate keycloakRestTemplate() {
 	        return new KeycloakRestTemplate(keycloakClientRequestFactory);
 	    }
-	 
-	 
-		
+
+
+
 	 /**
 	     * registers the Keycloakauthenticationprovider in spring context
 	     * and sets its mapping strategy for roles/authorities (mapping to spring seccurities' default ROLE_... for authorities ).
@@ -84,9 +84,9 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 	        keyCloakAuthProvider.setGrantedAuthoritiesMapper(new SimpleAuthorityMapper());
 	        auth.authenticationProvider(keyCloakAuthProvider);
 	    }
-	 
-	 	 	    
-	    
+
+
+
 //	    /**
 //	     * Sets keycloaks config resolver to use springs application.properties instead of keycloak.json (which is standard)
 //	     * @return
@@ -95,7 +95,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 //	public KeycloakConfigResolver KeycloakConfigResolver() {
 //	    return new KeycloakSpringBootConfigResolver();
 //	}
-//	 
+//
     @Bean
     public KeycloakConfigResolver keycloakConfigResolver() {
         return new KeycloakConfigResolver() {
@@ -121,25 +121,25 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
             }
         };
     }
-	    
+
 	    /**
 	     * define the session auth strategy so that no session is created
 	     * @return concrete implementation of session authentication strategy
-	     */	    
+	     */
 	    @Bean
 		@Override
 		protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {
 			return new RegisterSessionAuthenticationStrategy(new SessionRegistryImpl());
 		}
-	    
-	    
+
+
 	    /**
 	     * define the actual constraints of the app.
 	     * @param http
 	     * @throws Exception
 	     */
-	    
-		
+
+
 		@Bean
 	    @Primary
 	    @Override
@@ -148,8 +148,8 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 	        filter.setSessionAuthenticationStrategy(sessionAuthenticationStrategy());
 	        return filter;
 	        }
-		
-  
+
+
 		/**
 	     * Avoid Bean redefinition
 	     */
@@ -160,7 +160,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 //	        registrationBean.setEnabled(false);
 //	        return registrationBean;
 //	    }
-	   
+
 
 	    @Bean
 	    public FilterRegistrationBean keycloakPreAuthActionsFilterRegistrationBean(
@@ -169,7 +169,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 	        registrationBean.setEnabled(false);
 	        return registrationBean;
 	    }
-	       
+
 
 	    @Bean
 	    public FilterRegistrationBean keycloakAuthenticatedActionsFilterBean(
@@ -193,9 +193,9 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 	    protected HttpSessionManager httpSessionManager() {
 	        return new HttpSessionManager();
 	    }
-	    
 
-	    
+
+
 	    @Override
 		protected void configure(HttpSecurity http) throws Exception {
 			super.configure(http);
@@ -205,29 +205,29 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 			authorizeRequests().
 //			antMatchers("/**").
 //			permitAll();
-			
-//			antMatchers("/collections").hasAnyRole("eurac", "public").
-//			antMatchers("/collections/{collection_id}").hasAnyRole("eurac", "public").	
-//			antMatchers("/jobs/*").hasAnyRole("eurac", "public").
-//			antMatchers("/services/*").hasAnyRole("eurac", "public").
-//			antMatchers("/files/*").hasAnyRole("eurac", "public").
-//			antMatchers("/me").hasAnyRole("eurac", "public").
-//			antMatchers("/process_graphs/*").hasAnyRole("eurac", "public").
-//			antMatchers("/result").hasAnyRole("eurac", "public").
-			
+
+//			antMatchers("/collections").hasAnyRole(EURAC_ROLE, "public").
+//			antMatchers("/collections/{collection_id}").hasAnyRole(EURAC_ROLE, "public").
+//			antMatchers("/jobs/*").hasAnyRole(EURAC_ROLE, "public").
+//			antMatchers("/services/*").hasAnyRole(EURAC_ROLE, "public").
+//			antMatchers("/files/*").hasAnyRole(EURAC_ROLE, "public").
+//			antMatchers("/me").hasAnyRole(EURAC_ROLE, "public").
+//			antMatchers("/process_graphs/*").hasAnyRole(EURAC_ROLE, "public").
+//			antMatchers("/result").hasAnyRole(EURAC_ROLE, "public").
+
 			//***we haven't decided about their authentication**//
-			
-			//antMatchers("//service_types").hasAnyRole("eurac", "public").
-			//antMatchers("/file_formats").hasAnyRole("eurac", "public").
-			//antMatchers("/udf_runtimes").hasAnyRole("eurac", "public").
-			//antMatchers("/processes").hasAnyRole("eurac", "public").
-			//antMatchers("/validation").hasAnyRole("eurac", "public").
+
+			//antMatchers("//service_types").hasAnyRole(EURAC_ROLE, "public").
+			//antMatchers("/file_formats").hasAnyRole(EURAC_ROLE, "public").
+			//antMatchers("/udf_runtimes").hasAnyRole(EURAC_ROLE, "public").
+			//antMatchers("/processes").hasAnyRole(EURAC_ROLE, "public").
+			//antMatchers("/validation").hasAnyRole(EURAC_ROLE, "public").
 			anyRequest().
 			permitAll();
 			http.headers().frameOptions().disable();
 
 		}
-	    
+
 }
 
 
@@ -236,5 +236,5 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 
 
 
-	
+
 

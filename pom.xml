@@ -23,6 +23,8 @@
 		<tomcat.dbcp.version>9.0.37</tomcat.dbcp.version>
 		<jackson.nullable.version>0.2.1</jackson.nullable.version>
 		<spring.security.version>5.5.1</spring.security.version>
+		<spring.test.version>2.7.4</spring.test.version>
+		<maven.test.skip>false</maven.test.skip>
 	</properties>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -73,6 +75,17 @@
 					<outputDir>${project.build.directory}</outputDir>
 				</configuration>
 			</plugin>
+			<!--plugin>
+			    <artifactId>maven-surefire-plugin</artifactId>
+			    <executions>
+					<execution>
+						<phase>test</phase>
+						<goals>
+							<goal>test</goal>
+						</goals>
+					</execution>
+				</executions>
+            </plugin-->
 		</plugins>
 	</build>
 	<dependencies>
@@ -206,6 +219,17 @@
 			<artifactId>log4j2-ecs-layout</artifactId>
 			<version>1.2.0</version>
 		</dependency>
+	    <dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<version>${spring.test.version}</version>  
+			<scope>test</scope>
+		</dependency>
+		<!--dependency>
+		    <groupId>org.junit.jupiter</groupId>
+		    <artifactId>junit-jupiter-engine</artifactId>
+		    <scope>test</scope>
+        </dependency-->			
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

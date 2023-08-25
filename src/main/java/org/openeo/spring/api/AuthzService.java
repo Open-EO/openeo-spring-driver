@@ -22,10 +22,8 @@ public class AuthzService {
     static final String SCOPE_VIEW = "urn:openEO:scopes:view";
     static final String SCOPE_VIEW_DETAIL = "urn:openEO:scopes:view-detail";
     static final String SCOPE_DELETE = "urn:openEO:scopes:delete";
-    
-    
+
     public ResponseEntity<?> createProtectedResource(Job job, AccessToken token) {
-    	
     	try {
     		//create a list and add defined keycloak's scopes in it
             HashSet<ScopeRepresentation> scopes = new HashSet<>();
@@ -33,25 +31,21 @@ public class AuthzService {
             scopes.add(new ScopeRepresentation(SCOPE_VIEW));
             scopes.add(new ScopeRepresentation(SCOPE_VIEW_DETAIL));
             scopes.add(new ScopeRepresentation(SCOPE_DELETE));
-            
           //consider each job as a resource and create it in the keycloak
-            ResourceRepresentation resourceRepresentation = new ResourceRepresentation(job.getTitle(), scopes,
+            ResourceRepresentation resourceRepresentation = new ResourceRepresentation(job.getId().toString(), scopes,
                     "/jobs/" + job.getId(), "urn:openEO:resources:jobs");
-            
             
           //set resource Owner
             ResourceOwnerRepresentation resourceOwner = new ResourceOwnerRepresentation();
             resourceOwner.setId(token.getSubject());
-                  
             
           //set Owner in keycloak
             resourceRepresentation.setOwner(resourceOwner);
             resourceRepresentation.setOwnerManagedAccess(true);
             
-            
             //create a new instance based on the configuration defined in keycloak.json
             AuthzClient authzClient = AuthzClient.create();
-            
+
             ProtectedResource resourceClient = authzClient.protection().resource();
             ResourceRepresentation existingResource =  resourceClient.findByName(resourceRepresentation.getName());
             

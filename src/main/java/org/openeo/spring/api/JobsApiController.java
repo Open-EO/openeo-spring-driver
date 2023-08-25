@@ -1,9 +1,7 @@
 package org.openeo.spring.api;
 
-//import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,33 +10,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.StringBufferInputStream;
-import java.io.Writer;
+
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
-
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.SignStyle;
-import java.time.temporal.ChronoField;
-
-
 import java.net.MalformedURLException;
 
 import java.nio.file.Files;
+
 import java.security.KeyStore;
 import java.security.Principal;
+
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.SignStyle;
 import java.time.temporal.ChronoField;
+
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -46,7 +38,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
 
 import java.util.stream.Collectors;
 
@@ -64,12 +55,9 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.entity.mime.MIME;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
-import org.apache.tomcat.util.json.JSONParser;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
@@ -105,19 +93,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import static org.openeo.spring.SecurityConfig.EURAC_ROLE;
 
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @RestController
@@ -250,7 +237,9 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs", produces = { "application/json" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
+
 		AccessToken token = null;
+
 		if(principal != null) {
 			token = TokenUtil.getAccessToken(principal);
 			job.setOwnerPrincipal(token.getPreferredUsername());
@@ -260,11 +249,14 @@ public class JobsApiController implements JobsApi {
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
 
+		ResponseEntity<?> response = null;
+		String warningMessage = null;
+
 		job.setStatus(JobStates.CREATED);
 		job.setPlan("free");
 		job.setCreated(OffsetDateTime.now());
 		job.setUpdated(OffsetDateTime.now());
-		log.debug("received jobs POST request for new job with ID + " + job.getId());
+		log.debug("received jobs POST request for new job with ID + {}", job.getId());
 		JSONObject processGraph = (JSONObject) job.getProcess().getProcessGraph();
 
 
@@ -278,11 +270,11 @@ public class JobsApiController implements JobsApi {
 			}
 		}
 
-
-		boolean isEuracUser = roles.contains("eurac");
+		boolean isEuracUser = roles.contains(EURAC_ROLE);
 
 		Iterator<String> keys = processGraph.keys();
 		boolean isCreateJobAllow= true;
+
 		while(keys.hasNext()) {
 			String key = keys.next();
 			JSONObject processNode = (JSONObject) processGraph.get(key);
@@ -292,64 +284,74 @@ public class JobsApiController implements JobsApi {
 			}
 		}
 
-		log.trace("Process Graph attached: " + processGraph.toString(4));
-		log.info("Graph of job successfully parsed and job created with ID: " + job.getId());
+		log.trace("Process Graph attached: {}", processGraph.toString(4));
+		log.info("Graph of job successfully parsed and job created with ID: {}", job.getId());
 
 		if (isCreateJobAllow) {
-			try {
-				EngineTypes resultEngine = null;
-				resultEngine = resultApiController.checkGraphValidityAndEngine(processGraph);
-				job.setEngine(resultEngine);
-			} catch (Exception e) {
-				Error error = new Error();
-				error.setCode("500");
-				error.setMessage(e.getMessage());
-				log.error(error.getMessage());
-				ThreadContext.clearMap();
-				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-			}
-		jobDAO.save(job);
+		    try {
+		        EngineTypes resultEngine = null;
+		        resultEngine = resultApiController.checkGraphValidityAndEngine(processGraph);
+		        job.setEngine(resultEngine);
+		    } catch (Exception e) {
+		        job.setEngine(null); // lenient: I can create an impossible graph
+//		        Error error = new Error();
+//		        error.setCode("500");
+//		        error.setMessage(e.getMessage());
+		        warningMessage = e.getMessage();
+		        log.warn("Creating an unfeasible process graph: {}", warningMessage);
+//		        ThreadContext.clearMap();
+//		        return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		    }
 
-		ThreadContext.put("jobid", job.getId().toString());
-		ObjectMapper mapper = new ObjectMapper();
-		try {
-			log.info("job saved to database: " + mapper.writeValueAsString(job));
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		Job verifiedSave = jobDAO.findOne(job.getId());
-		if (verifiedSave != null) {
-			if(token != null) {
+		    jobDAO.save(job);
 
-				authzService.createProtectedResource(job, token);
-			}
-			//WCPSQueryFactory wcpsFactory = new WCPSQueryFactory(processGraph);
-			log.debug("verified retrieved job: " + verifiedSave.toString());
-			URI jobUrl;
-			try {
-				jobUrl = new URI(openEOPublicEndpoint + "/jobs/" + job.getId().toString());
-				ThreadContext.clearMap();
-				return ResponseEntity.created(jobUrl).header("OpenEO-Identifier", job.getId().toString()).body(job);
-			} catch (URISyntaxException e) {
-				Error error = new Error();
-				error.setCode("500");
-				error.setMessage("The submitted job " + job.toString() + " has an invalid URI");
-				log.error("The submitted job " + job.toString() + " has an invalid URI");
-				ThreadContext.clearMap();
-				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-			}
+		    ThreadContext.put("jobid", job.getId().toString());
+		    ObjectMapper mapper = new ObjectMapper();
+		    try {
+		        log.info("job saved to database: {}", mapper.writeValueAsString(job));
+		    } catch (JsonProcessingException e) {
+		        log.warn("Could not save job to database.", e);
+		        // TODO should we return 500 here?
+		    }
 
+		    Job verifiedSave = jobDAO.findOne(job.getId());
+		    if (verifiedSave != null) {
+		        if(token != null) {
+		            authzService.createProtectedResource(job, token);
+		        }
+
+		        log.debug("verified retrieved job: {}", verifiedSave);
+		        URI jobUrl;
+
+		        try {
+		            jobUrl = new URI(openEOPublicEndpoint + "/jobs/" + job.getId().toString());
+		            ThreadContext.clearMap();
+		            response = ResponseEntity.created(jobUrl)
+		                    .header("OpenEO-Identifier", job.getId().toString())
+		                    .body(job);
+
+		            if (null == warningMessage) {
+		                //response.getHeaders().add("Warning", warningMessage); // -> immutable, do at building time
+		                // TODO properly encoded warning header:
+		                // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Warning
+		            }
+		        } catch (URISyntaxException e) {
+		            Error error = new Error();
+		            error.setCode("500");
+		            error.setMessage("The submitted job " + job.toString() + " has an invalid URI");
+		            log.error("The submitted job {} has an invalid URI.", job);
+		            ThreadContext.clearMap();
+		            response = new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		        }
+		    } else {
+		        Error error = new Error();
+		        error.setCode("500");
+		        error.setMessage("The submitted job " + job.toString() + " was not saved persistently");
+		        log.error("The submitted job {} was not saved persistently.", job);
+		        ThreadContext.clearMap();
+		        response = new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		    }
 		} else {
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage("The submitted job " + job.toString() + " was not saved persistently");
-			log.error("The submitted job " + job.toString() + " was not saved persistently");
-			ThreadContext.clearMap();
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		}
-		else {
 			Error error = new Error();
 			error.setCode("401");
 			error.setMessage("You are not authorized to create this job");
@@ -357,6 +359,7 @@ public class JobsApiController implements JobsApi {
 			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED);
 		}
 
+		return response;
 	}
 
 	/**
@@ -888,7 +891,16 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> listJobs(
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit, Principal principal) {
 
-	    AccessToken token = TokenUtil.getAccessToken(principal);
+	    AccessToken token = new AccessToken();
+	    try {
+	    	token = TokenUtil.getAccessToken(principal);
+	    } catch (Exception e) { 
+			Error error = new Error();
+			error.setCode("401");
+			error.setMessage("No acces token found, please authenticate.");
+			log.error(error);
+			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED);
+	    }
 	    String username =  token.getPreferredUsername();
 	    BatchJobs batchJobs = new BatchJobs();
 

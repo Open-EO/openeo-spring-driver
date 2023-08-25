@@ -1,80 +1,41 @@
 package org.openeo.spring.api;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.Principal;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.List;
-import java.util.Map;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.annotation.PostConstruct;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-//import org.openapitools.jackson.nullable.JsonNullable;
-import org.apache.http.HttpConnection;
+
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.gdal.osr.CoordinateTransformation;
-import org.gdal.osr.SpatialReference;
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.JDOMException;
-import org.jdom2.Namespace;
-import org.jdom2.input.SAXBuilder;
-import org.json.JSONObject;
-import org.keycloak.adapters.springsecurity.client.KeycloakRestTemplate;
-import org.json.JSONArray;
-import org.json.JSONException;
+import org.openeo.spring.api.loaders.ICollectionsLoader;
+import org.openeo.spring.api.loaders.ODCCollectionsLoader;
+import org.openeo.spring.api.loaders.STACFileCollectionsLoader;
+import org.openeo.spring.api.loaders.WCSCollectionsLoader;
 import org.openeo.spring.components.CollectionMap;
 import org.openeo.spring.components.CollectionsMap;
-import org.openeo.spring.model.AdditionalDimension;
-import org.openeo.spring.model.Asset;
-import org.openeo.spring.model.BandSummary;
 import org.openeo.spring.model.Collection;
-import org.openeo.spring.model.CollectionExtent;
-import org.openeo.spring.model.CollectionSpatialExtent;
-import org.openeo.spring.model.CollectionSummaries;
-import org.openeo.spring.model.CollectionSummaryStats;
-import org.openeo.spring.model.CollectionTemporalExtent;
 import org.openeo.spring.model.Collections;
-import org.openeo.spring.model.Dimension;
-import org.openeo.spring.model.Dimension.TypeEnum;
-import org.openeo.spring.model.DimensionBands;
-import org.openeo.spring.model.DimensionSpatial;
-import org.openeo.spring.model.DimensionSpatial.AxisEnum;
-import org.openeo.spring.model.DimensionTemporal;
 import org.openeo.spring.model.EngineTypes;
-import org.openeo.spring.model.Link;
 import org.openeo.spring.model.Providers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -82,1206 +43,314 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.NativeWebRequest;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @RestController
 @RequestMapping("${openapi.openEO.base-path:}")
 public class CollectionsApiController implements CollectionsApi {
-	private final NativeWebRequest request;
-	@Value("${org.openeo.wcps.endpoint}")
-	private String wcpsEndpoint;
+
+    /** Home directory used as root for cached catalogs. */
+    public static final String CACHE_ROOT_DIR = System.getProperty("user.dir");
+
+    /** Whether to run both inter- and intra-catalogue parallelized loading. */
+    @Value("${org.openeo.parallelizedHarvest}")
+    private boolean parallelizedHarvest;
+
+    @Value("${org.openeo.wcps.endpoint}")
+    private String wcpsEndpoint;
+
+    @Value("${org.openeo.wcps.endpoint.version}")
+    private String wcpsVersion;
+
     @Value("${org.openeo.wcps.provider.name}")
     private String wcpsProviderName;
+
     @Value("${org.openeo.wcps.provider.type}")
     private String wcpsProviderType;
+
     @Value("${org.openeo.wcps.provider.url}")
     private String wcpsProviderUrl;
+
     @Value("${org.openeo.odc.collectionsEndpoint}")
     private String odcCollEndpoint;
+
     @Value("${org.openeo.odc.provider.name}")
     private String odcProviderName;
+
     @Value("${org.openeo.odc.provider.type}")
     private String odcProviderType;
+
     @Value("${org.openeo.odc.provider.url}")
     private String odcProviderUrl;
-    
-	@Value("${org.openeo.querycollectionsonstartup}")
-	private boolean queryCollectionsOnStartup;
-
-	@Value("${org.openeo.wcps.collections.list}")
-	Resource collectionsFileWCPS;
-	@Value("${org.openeo.odc.collections.list}")
-	Resource collectionsFileODC;
-
-	@Autowired
-	private CollectionsMap collectionsMap;
-	
-	@Autowired
-	private CollectionMap collectionMap;
-
-	private final Logger log = LogManager.getLogger(CollectionsApiController.class);
-
-	@org.springframework.beans.factory.annotation.Autowired
-	public CollectionsApiController(NativeWebRequest request) {
-		this.request = request;
-	}
-
-	@PostConstruct
-	public void init() {
-		if (queryCollectionsOnStartup) {
-			collectionsMap.put(EngineTypes.WCPS, loadWcpsCollections());
-			collectionsMap.put(EngineTypes.ODC_DASK, loadOdcCollections());
-		} else {
-			collectionsMap.put(EngineTypes.WCPS, loadCollectionsFromFile(collectionsFileWCPS));
-			collectionsMap.put(EngineTypes.ODC_DASK, loadCollectionsFromFile(collectionsFileODC));
-		}
-		log.info(collectionsMap.keySet());
-		for (EngineTypes type : collectionsMap.keySet()) {
-			for (Collection currentCollection : collectionsMap.get(type).getCollections()) {
-				collectionMap.put(currentCollection.getId(), currentCollection);
-			}
-		}
-		
-	}
-
-	@Override
-	public Optional<NativeWebRequest> getRequest() {
-		return Optional.ofNullable(request);
-	}
-
-	/**
-	 * GET /collections : Basic metadata for all datasets Lists available
-	 * collections with at least the required information. It is **strongly
-	 * RECOMMENDED** to keep the response size small by omitting larger optional
-	 * values from the objects in &#x60;collections&#x60; (e.g. the
-	 * &#x60;summaries&#x60; and &#x60;cube:dimensions&#x60; properties). To get the
-	 * full metadata for a collection clients MUST request &#x60;GET
-	 * /collections/{collection_id}&#x60;. This endpoint is compatible with [STAC
-	 * 0.9.0](https://stacspec.org) and [OGC API -
-	 * Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC
-	 * API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features
-	 * / extensions and [STAC
-	 * extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions)
-	 * can be implemented in addition to what is documented here.
-	 *
-	 * @param limit This parameter enables pagination for the endpoint and specifies
-	 *              the maximum number of elements that arrays in the top-level
-	 *              object (e.g. jobs or log entries) are allowed to contain. The
-	 *              only exception is the &#x60;links&#x60; array, which MUST NOT be
-	 *              paginated as otherwise the pagination links may be missing ins
-	 *              responses. If the parameter is not provided or empty, all
-	 *              elements are returned. Pagination is OPTIONAL and back-ends and
-	 *              clients may not support it. Therefore it MUST be implemented in
-	 *              a way that clients not supporting pagination get all resources
-	 *              regardless. Back-ends not supporting pagination will return all
-	 *              resources. If the response is paginated, the links array MUST be
-	 *              used to propagate the links for pagination with pre-defined
-	 *              &#x60;rel&#x60; types. See the links array schema for supported
-	 *              &#x60;rel&#x60; types. *Note:* Implementations can use all kind
-	 *              of pagination techniques, depending on what is supported best by
-	 *              their infrastructure. So it doesn&#39;t care whether it is
-	 *              page-based, offset-based or uses tokens for pagination. The
-	 *              clients will use whatever is specified in the links with the
-	 *              corresponding &#x60;rel&#x60; types. (optional)
-	 * @return Lists of collections and related links. (status code 200) or The
-	 *         request can&#39;t be fulfilled due to an error on client-side, i.e.
-	 *         the request is invalid. The client should not repeat the request
-	 *         without modifications. The response body SHOULD contain a JSON error
-	 *         object. MUST be any HTTP status code specified in [RFC
-	 *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request
-	 *         MUST respond with HTTP status codes 401 if authorization is required
-	 *         or 403 if the authorization failed or access is forbidden in general
-	 *         to the authenticated user. HTTP status code 404 should be used if the
-	 *         value of a path parameter is invalid. See also: * [Error
-	 *         Handling](#section/API-Principles/Error-Handling) in the API in
-	 *         general. * [Common Error Codes](errors.json) (status code 400) or The
-	 *         request can&#39;t be fulfilled due to an error at the back-end. The
-	 *         error is never the client’s fault and therefore it is reasonable for
-	 *         the client to retry the exact same request that triggered this
-	 *         response. The response body SHOULD contain a JSON error object. MUST
-	 *         be any HTTP status code specified in [RFC
-	 *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). See also: *
-	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
-	 *         in general. * [Common Error Codes](errors.json) (status code 500)
-	 */
-	@Operation(summary = "Basic metadata for all datasets", operationId = "listCollections", description = "Lists available collections with at least the required information.  It is **strongly RECOMMENDED** to keep the response size small by omitting larger optional values from the objects in `collections` (e.g. the `summaries` and `cube:dimensions` properties). To get the full metadata for a collection clients MUST request `GET /collections/{collection_id}`.  This endpoint is compatible with [STAC 0.9.0](https://stacspec.org) and [OGC API - Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features / extensions and [STAC extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions) can be implemented in addition to what is documented here.")
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Lists of collections and related links."),
-			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
-			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
-	@GetMapping(value = "/collections", produces = { "application/json" })
-	@Override
-	public ResponseEntity<Collections> listCollections(
-			@Min(1) @Parameter(name = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
-		Collections collectionsList = new Collections();
-
-		for (EngineTypes type : collectionsMap.keySet()) {
-			for (Collection currentCollection : collectionsMap.get(type).getCollections()) {
-				collectionsList.addCollectionsItem(currentCollection);
-			}
-		}
-
-		return new ResponseEntity<Collections>(collectionsList, HttpStatus.OK);
-
-	}
-
-	private static String readAll(Reader rd) throws IOException {
-		StringBuilder sb = new StringBuilder();
-		int cp;
-		while ((cp = rd.read()) != -1) {
-			sb.append((char) cp);
-		}
-		return sb.toString();
-	}
-
-	private JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
-		log.debug("Trying to read JSON from the following URL : ");
-		log.debug(url);
-		InputStream is = new URL(url).openStream();
-		try {
-			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-			String jsonText = readAll(rd);
-			log.debug(jsonText);
-			JSONObject json = new JSONObject(jsonText);
-			return json;
-		} finally {
-			is.close();
-		}
-	}
-
-	/**
-	 * GET /collections/{collection_id} : Full metadata for a specific dataset Lists
-	 * **all** information about a specific collection specified by the identifier
-	 * &#x60;collection_id&#x60;. This endpoint is compatible with [STAC
-	 * 0.9.0](https://stacspec.org) and [OGC API -
-	 * Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC
-	 * API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features
-	 * / extensions and [STAC
-	 * extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions)
-	 * can be implemented in addition to what is documented here.
-	 *
-	 * @param collectionId Collection identifier (required)
-	 * @return JSON object with the full collection metadata. (status code 200) or
-	 *         The request can&#39;t be fulfilled due to an error on client-side,
-	 *         i.e. the request is invalid. The client should not repeat the request
-	 *         without modifications. The response body SHOULD contain a JSON error
-	 *         object. MUST be any HTTP status code specified in [RFC
-	 *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request
-	 *         MUST respond with HTTP status codes 401 if authorization is required
-	 *         or 403 if the authorization failed or access is forbidden in general
-	 *         to the authenticated user. HTTP status code 404 should be used if the
-	 *         value of a path parameter is invalid. See also: * [Error
-	 *         Handling](#section/API-Principles/Error-Handling) in the API in
-	 *         general. * [Common Error Codes](errors.json) (status code 400) or The
-	 *         request can&#39;t be fulfilled due to an error at the back-end. The
-	 *         error is never the client’s fault and therefore it is reasonable for
-	 *         the client to retry the exact same request that triggered this
-	 *         response. The response body SHOULD contain a JSON error object. MUST
-	 *         be any HTTP status code specified in [RFC
-	 *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). See also: *
-	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
-	 *         in general. * [Common Error Codes](errors.json) (status code 500)
-	 */
-
-	@Operation(summary = "Full metadata for a specific dataset", operationId = "describeCollecion", description = "Lists **all** information about a specific collection specified by the identifier `collection_id`.  This endpoint is compatible with [STAC 0.9.0](https://stacspec.org) and [OGC API - Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features / extensions and [STAC extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions) can be implemented in addition to what is documented here.", tags = {
-			"EO Data Discovery", })
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "JSON object with the full collection metadata."),
-			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
-			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
-	@GetMapping(value = "/collections/{collection_id}", produces = { "application/json" })
-	@Override
-	public ResponseEntity<Collection> describeCollection(
-			@Pattern(regexp = "^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier", required = true) @PathVariable("collection_id") String collectionId,
-			Principal principal) {
-
-//    	log.debug("The following user is authenticated: " + principal.getName());
-//    	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//    	if (!(authentication instanceof AnonymousAuthenticationToken)) {
-//    	    String currentUserName = authentication.getName();
-//    	    log.debug("The following user is authenticated: " + currentUserName);
-//    	}else {
-//    		log.warn("The current user is not authenticated!");
-//    	}
-
-		URL url;
-		Collection currentCollection = collectionMap.get(collectionId);
-		if(currentCollection != null) {
-			return new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
-		}
-		return new ResponseEntity<Collection>(HttpStatus.NOT_FOUND);
-
-	}
-
-	private Collections loadWcpsCollections() {
-		Collections collectionsList = new Collections();
-		InputStream wcpsInputStream;
-		URL urlWCPS;
-		HttpURLConnection conn;
-		try {
-			urlWCPS = new URL(wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCapabilities");
-			conn = (HttpURLConnection) urlWCPS.openConnection();
-			conn.setRequestMethod("GET");
-			wcpsInputStream = conn.getInputStream();
-		} catch (MalformedURLException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-			return collectionsList;
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return collectionsList;
-		}
-
-		SAXBuilder builder = new SAXBuilder();
-		Document capabilititesDoc;
-		try {
-			capabilititesDoc = builder.build(wcpsInputStream);
-		} catch (JDOMException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-			return collectionsList;
-		} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-			return collectionsList;
-		}
-
-		Element rootNodeCollectionsList = capabilititesDoc.getRootElement();
-		Namespace defaultNSCollectionsList = rootNodeCollectionsList.getNamespace();
-//			log.debug("root node info: " + rootNode.getName());
-		List<Element> coverageList = rootNodeCollectionsList.getChildren("Contents", defaultNSCollectionsList).get(0)
-				.getChildren("CoverageSummary", defaultNSCollectionsList);
-
-		for (int collection = 0; collection < coverageList.size(); collection++) {
-			Collection currentCollection = new Collection();
-			currentCollection.setEngine(EngineTypes.WCPS);
-			Element coverage = coverageList.get(collection);
-//				log.debug("root node info: " + coverage.getName() + ":" + coverage.getChildText("CoverageId", defaultNS));		
-			String coverageID = coverage.getChildText("CoverageId", defaultNSCollectionsList);
-			currentCollection.setId(coverageID);
-			currentCollection.setStacVersion("0.9.0");
-
-			URL urlCollections;
-			HttpURLConnection connCollections;
-			InputStream currentCollectionInputStream;
-			try {
-				urlCollections = new URL(
-						wcpsEndpoint + "?SERVICE=WCS&VERSION=2.0.1&REQUEST=DescribeCoverage&COVERAGEID=" + coverageID);
-				connCollections = (HttpURLConnection) urlCollections.openConnection();
-				connCollections.setRequestMethod("GET");
-				currentCollectionInputStream = connCollections.getInputStream();
-
-			} catch (MalformedURLException e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
-				continue;
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				continue;
-			}
-
-			SAXBuilder builderInt = new SAXBuilder();
-			Document capabilititesDocInt;
-			try {
-				capabilititesDocInt = builderInt.build(currentCollectionInputStream);
-			} catch (JDOMException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-				continue;
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-				continue;
-			}
-			List<Namespace> namespaces = capabilititesDocInt.getNamespacesIntroduced();
-			Element rootNode = capabilititesDocInt.getRootElement();
-			Namespace defaultNS = rootNode.getNamespace();
-			Namespace gmlNS = null;
-			Namespace sweNS = null;
-			Namespace gmlCovNS = null;
-			Namespace gmlrgridNS = null;
-			for (int n = 0; n < namespaces.size(); n++) {
-				Namespace current = namespaces.get(n);
-				if (current.getPrefix().equals("swe")) {
-					sweNS = current;
-				}
-				if (current.getPrefix().equals("gmlcov")) {
-					gmlCovNS = current;
-				}
-				if (current.getPrefix().equals("gml")) {
-					gmlNS = current;
-				}
-				if (current.getPrefix().equals("gmlrgrid")) {
-					gmlrgridNS = current;
-				}
-			}
-			log.debug("root node info: " + rootNode.getName());
-
-			Element coverageDescElement = rootNode.getChild("CoverageDescription", defaultNS);
-			Element boundedByElement = coverageDescElement.getChild("boundedBy", gmlNS);
-			Element boundingBoxElement = boundedByElement.getChild("Envelope", gmlNS);
-			Element metadataElement = null;
-			try {
-				metadataElement = rootNode.getChild("CoverageDescription", defaultNS).getChild("metadata", gmlNS)
-						.getChild("Extension", gmlNS).getChild("covMetadata", gmlNS);
-			} catch (Exception e) {
-				log.warn("Error in parsing bands :" + e.getMessage());
-			}
-
-//		metadataObj = new JSONObject(metadataString1);
-//		String metadataString2 = metadataString1.replaceAll("\\n","");
-//		String metadataString3 = metadataString2.replaceAll("\"\"","\"");
-//		metadataObj = new JSONObject(metadataString3);
-//		JSONArray slices = metadataObj.getJSONArray("slices");
-			Map<String, Dimension> cubeColonDimensions = new HashMap<String, Dimension>();
-			DimensionBands dimensionbands = new DimensionBands();
-			dimensionbands.setType(TypeEnum.BANDS);
-			DimensionSpatial dimensionXspatial = new DimensionSpatial();
-			dimensionXspatial.setType(TypeEnum.SPATIAL);
-			DimensionSpatial dimensionYspatial = new DimensionSpatial();
-			dimensionYspatial.setType(TypeEnum.SPATIAL);
-			DimensionTemporal dimensionTemporal = new DimensionTemporal();
-			dimensionTemporal.setType(TypeEnum.TEMPORAL);
-	
-			String srsDescription = boundingBoxElement.getAttributeValue("srsName");
-			Integer rows = 0;
-			Integer columns = 0;
-			if (srsDescription.contains("EPSG")) {
-				try {
-					srsDescription = srsDescription
-							.substring(srsDescription.indexOf("EPSG"), srsDescription.indexOf("&"))
-							.replace("/0/", ":");
-					srsDescription = srsDescription.replaceAll("EPSG:", "");
-
-				} catch (StringIndexOutOfBoundsException e) {
-					srsDescription = srsDescription.substring(srsDescription.indexOf("EPSG")).replace("/0/", ":");
-					srsDescription = srsDescription.replaceAll("EPSG:", "");
-				}
-
-				CollectionSummaryStats epsg = new CollectionSummaryStats();
-				try {
-					epsg.setMin(Double.parseDouble(srsDescription));
-					epsg.setMax(Double.parseDouble(srsDescription));
-				} catch (NumberFormatException e) {
-					continue;
-				}
-
-				SpatialReference src = new SpatialReference();
-				src.ImportFromEPSG(Integer.parseInt(srsDescription));
-
-				SpatialReference dst = new SpatialReference();
-				dst.ImportFromEPSG(4326);
-
-				String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
-				String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");
-
-				CoordinateTransformation tx = new CoordinateTransformation(src, dst);
-
-				String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
-				int xIndex = 0;
-				int yIndex = 0;
-
-				List<Element> bandsList = null;
-				List<Element> bandsListSwe = null;
-				Boolean bandsMeta = false;
-
-				try {
-					bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
-					bandsMeta = true;
-				} catch (Exception e) {
-					// log.warn("Error in parsing bands :" + e.getMessage());
-				}
-				try {
-					bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS)
-							.getChild("DataRecord", sweNS).getChildren("field", sweNS);
-				} catch (Exception e) {
-					// log.warn("Error in parsing bands List :" + e.getMessage());
-				}
-				if (bandsMeta) {
-					try {
-						for (int c = 0; c < bandsList.size(); c++) {
-							String bandWave = null;
-							String bandCommonName = null;
-							String bandGSD = null;
-							Element band = bandsList.get(c);
-							String bandId = band.getName();
-							dimensionbands.addValuesItem(bandId);
-							try {
-								bandWave = band.getChildText("wavelength");
-							} catch (Exception e) {
-//						log.warn("Error in parsing band wave-length:" + e.getMessage());
-							}
-							try {
-								bandCommonName = band.getChildText("common_name");
-							} catch (Exception e) {
-//						log.warn("Error in parsing band common name:" + e.getMessage());
-							}
-							try {
-								bandGSD = band.getChildText("gsd");
-							} catch (Exception e) {
-//						log.warn("Error in parsing band gsd:" + e.getMessage());
-							}
-							CollectionSummaryStats gsd = new CollectionSummaryStats();
-							CollectionSummaryStats[] eoGsd = { gsd };
-//					summaries.put("eo:bands", eoGsd);
-//					currentCollection.setSummaries(summaries);
-//					currentCollection.putSummariesItem("eo:gsd", eoGsd);
-						}
-					} catch (Exception e) {
-//				log.warn("Error in parsing bands :" + e.getMessage());
-					}
-				} else {
-					for (int c = 0; c < bandsListSwe.size(); c++) {
-						String bandId = bandsListSwe.get(c).getAttributeValue("name");
-						dimensionbands.addValuesItem(bandId);
-					}
-				}
-				cubeColonDimensions.put("bands", dimensionbands);
-				currentCollection.setCubeColonDimensions(cubeColonDimensions);
-
-				double[] c1 = null;
-				double[] c2 = null;
-				int j = 0;
-
-				for (int a = 0; a < axis.length; a++) {
-//	    	log.debug(axis[a]);
-					if (axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long") || axis[a].equals("N")
-							|| axis[a].equals("Y") || axis[a].equals("Lat")) {
-						j = a;
-						break;
-					}
-				}
-//		log.debug(j);
-
-				c1 = tx.TransformPoint(Double.parseDouble(minValues[j]), Double.parseDouble(minValues[j + 1]));
-				c2 = tx.TransformPoint(Double.parseDouble(maxValues[j]), Double.parseDouble(maxValues[j + 1]));
-
-				String[] spatDims = null;
-				try {
-					spatDims = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS)
-							.getChild("ReferenceableGridByVectors", gmlNS).getChild("limits", gmlNS)
-							.getChild("GridEnvelope", gmlNS).getChildText("high", gmlNS).split(" ");
-				} catch (Exception e) {
-					log.warn("Error in parsing bands :" + e.getMessage());
-				}
-
-				try {
-					spatDims = rootNode.getChild("CoverageDescription", defaultNS).getChild("domainSet", gmlNS)
-							.getChild("RectifiedGrid", gmlNS).getChild("limits", gmlNS)
-							.getChild("GridEnvelope", gmlNS).getChildText("high", gmlNS).split(" ");
-				} catch (Exception e) {
-					log.warn("Error in parsing bands :" + e.getMessage());
-				}
-
-				String startTime = null;
-				String endTime = null;
-				for (int a = 0; a < axis.length; a++) {
-//	    	log.debug(axis[a]);
-					if (axis[a].equals("E") || axis[a].equals("X") || axis[a].equals("Long")) {
-						xIndex = a;
-						columns = Integer.parseInt(spatDims[xIndex]) + 1;
-						dimensionXspatial.setReferenceSystem(Integer.parseInt(srsDescription));
-						dimensionXspatial.setAxis(AxisEnum.X);
-						List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
-						xExtent.add(0, new BigDecimal(c1[1]));
-						xExtent.add(1, new BigDecimal(c2[1]));
-						dimensionXspatial.setExtent(xExtent);
-						cubeColonDimensions.put(axis[a], dimensionXspatial);
-					}
-					if (axis[a].equals("N") || axis[a].equals("Y") || axis[a].equals("Lat")) {
-						yIndex = a;
-						rows = Integer.parseInt(spatDims[yIndex]) + 1;
-						dimensionYspatial.setReferenceSystem(Integer.parseInt(srsDescription));
-						dimensionYspatial.setAxis(AxisEnum.Y);
-						List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
-						yExtent.add(0, new BigDecimal(c1[0]));
-						yExtent.add(1, new BigDecimal(c2[0]));
-						dimensionYspatial.setExtent(yExtent);
-						cubeColonDimensions.put(axis[a], dimensionYspatial);
-					}
-					if (axis[a].equals("DATE") || axis[a].equals("TIME") || axis[a].equals("ANSI")
-							|| axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time")
-							|| axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")) {
-
-						boolean isDate = true;
-						try {
-							Integer isDateInteger = Integer.parseInt(minValues[a].replaceAll("\"", ""));
-							isDate = false;
-						} catch (Exception e) {
-						}
-						if (isDate) {
-							List<String> temporalExtent = new ArrayList<String>();
-							temporalExtent.add(0, minValues[a].replaceAll("\"", ""));
-							temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
-							startTime = minValues[a].replaceAll("\"", "");
-							endTime = maxValues[a].replaceAll("\"", "");
-							dimensionTemporal.setExtent(temporalExtent);
-							cubeColonDimensions.put(axis[a], dimensionTemporal);
-						} else {
-							AdditionalDimension additionalDimension = new AdditionalDimension();
-							additionalDimension.setType(TypeEnum.TEMPORAL);
-							List<Integer> temporalExtent = new ArrayList<Integer>();
-							temporalExtent.add(0, Integer.parseInt(minValues[a].replaceAll("\"", "")));
-							temporalExtent.add(1, Integer.parseInt(maxValues[a].replaceAll("\"", "")));
-							startTime = minValues[a].replaceAll("\"", "");
-							endTime = maxValues[a].replaceAll("\"", "");
-							additionalDimension.setExtent(temporalExtent);
-							cubeColonDimensions.put(axis[a], additionalDimension);
-						}
-					}
-				}
-//		log.debug(srsDescription);
-
-				CollectionExtent extent = new CollectionExtent();
-				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
-				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
-				List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
-				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
-				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
-				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
-				try {
-					bbox1.add(new BigDecimal(c1[1]));
-					bbox1.add(new BigDecimal(c1[0]));
-					bbox1.add(new BigDecimal(c2[1]));
-					bbox1.add(new BigDecimal(c2[0]));
-				} catch (Exception e) {
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-				}
-				bbox.add(bbox1);
-				spatialExtent.setBbox(bbox);
-				extent.setSpatial(spatialExtent);
-
-//		int k = 0;
-//		for(int a = 0; a < axis.length; a++) {
-//	    	log.debug(axis[a]);
-//			String timeAxis = axis[a].toUpperCase();
-//			if(timeAxis.equals("DATE") || timeAxis.equals("TIME") || timeAxis.equals("ANSI") || timeAxis.equals("UNIX"))
-//			{
-//				k = a;
-//				break;
-//			}
-//		}
-
-				try {
-					interval1.add(OffsetDateTime.parse(startTime));
-					interval1.add(OffsetDateTime.parse(endTime));
-				} catch (Exception e) {
-					interval1.add(null);
-					interval1.add(null);
-				}
-				log.debug("Interval : " + interval1);
-				interval.add(interval1);
-				temporalExtent.setInterval(interval);
-				extent.setTemporal(temporalExtent);
-				currentCollection.setExtent(extent);
-			}
-
-			else {
-				srsDescription = "0";
-				CollectionSummaryStats epsg = new CollectionSummaryStats();
-				epsg.setMin(Double.parseDouble(srsDescription));
-				epsg.setMax(Double.parseDouble(srsDescription));
-
-				String[] minValues = boundingBoxElement.getChildText("lowerCorner", gmlNS).split(" ");
-				String[] maxValues = boundingBoxElement.getChildText("upperCorner", gmlNS).split(" ");
-				String[] axis = boundingBoxElement.getAttribute("axisLabels").getValue().split(" ");
-				int xIndex = 0;
-				int yIndex = 0;
-
-				List<Element> bandsList = null;
-				List<Element> bandsListSwe = null;
-				Boolean bandsMeta = false;
-				try {
-					bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
-					bandsMeta = true;
-				} catch (Exception e) {
-				}
-				try {
-					bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS)
-							.getChild("DataRecord", sweNS).getChildren("field", sweNS);
-				} catch (Exception e) {
-				}
-				if (bandsMeta) {
-					try {
-						for (int c = 0; c < bandsList.size(); c++) {
-							String bandWave = null;
-							String bandCommonName = null;
-							String bandGSD = null;
-							Element band = bandsList.get(c);
-							String bandId = band.getName();
-							dimensionbands.addValuesItem(bandId);
-							try {
-								bandWave = band.getChildText("wavelength");
-							} catch (Exception e) {
-//							log.warn("Error in parsing band wave-lenght:" + e.getMessage());
-							}
-							try {
-								bandCommonName = band.getChildText("common_name");
-							} catch (Exception e) {
-//							log.warn("Error in parsing band common name:" + e.getMessage());
-							}
-							try {
-								bandGSD = band.getChildText("gsd");
-							} catch (Exception e) {
-//							log.warn("Error in parsing band gsd:" + e.getMessage());
-							}
-						}
-					} catch (Exception e) {
-//					log.warn("Error in parsing bands :" + e.getMessage());
-					}
-				} else {
-					for (int c = 0; c < bandsListSwe.size(); c++) {
-						String bandId = bandsListSwe.get(c).getAttributeValue("name");
-						dimensionbands.addValuesItem(bandId);
-					}
-				}
-				cubeColonDimensions.put("bands", dimensionbands);
-				currentCollection.setCubeColonDimensions(cubeColonDimensions);
-				int j = 0;
-
-				for (int a = 0; a < axis.length; a++) {
-//		    	log.debug(axis[a]);
-					if (axis[a].equals("i") || axis[a].equals("j")) {
-						j = a;
-						break;
-					}
-				}
-//			log.debug(j);
-				String startTime = null;
-				String endTime = null;
-
-				for (int a = 0; a < axis.length; a++) {
-//		    	log.debug(axis[a]);
-					if (axis[a].equals("i")) {
-						xIndex = a;
-						dimensionXspatial.setReferenceSystem(Integer.parseInt(srsDescription));
-						dimensionXspatial.setAxis(AxisEnum.X);
-						List<BigDecimal> xExtent = new ArrayList<BigDecimal>();
-						xExtent.add(0, new BigDecimal(minValues[j]));
-						xExtent.add(1, new BigDecimal(maxValues[j]));
-						dimensionXspatial.setExtent(xExtent);
-						cubeColonDimensions.put(axis[a], dimensionXspatial);
-					}
-					if (axis[a].equals("j")) {
-						yIndex = a;
-						dimensionYspatial.setReferenceSystem(Integer.parseInt(srsDescription));
-						dimensionYspatial.setAxis(AxisEnum.Y);
-						List<BigDecimal> yExtent = new ArrayList<BigDecimal>();
-						yExtent.add(0, new BigDecimal(minValues[j + 1]));
-						yExtent.add(1, new BigDecimal(maxValues[j + 1]));
-						dimensionYspatial.setExtent(yExtent);
-						cubeColonDimensions.put(axis[a], dimensionYspatial);
-					}
-					if (axis[a].equals("DATE") || axis[a].equals("TIME") || axis[a].equals("ANSI")
-							|| axis[a].equals("Time") || axis[a].equals("Date") || axis[a].equals("time")
-							|| axis[a].equals("ansi") || axis[a].equals("date") || axis[a].equals("unix")) {
-						boolean isDate = true;
-						try {
-							Integer isDateInteger = Integer.parseInt(minValues[a].replaceAll("\"", ""));
-							isDate = false;
-						} catch (Exception e) {
-
-						}
-						if (isDate) {
-							List<String> temporalExtent = new ArrayList<String>();
-							temporalExtent.add(0, minValues[a].replaceAll("\"", ""));
-							temporalExtent.add(1, maxValues[a].replaceAll("\"", ""));
-							startTime = minValues[a].replaceAll("\"", "");
-							endTime = maxValues[a].replaceAll("\"", "");
-							dimensionTemporal.setExtent(temporalExtent);
-							cubeColonDimensions.put(axis[a], dimensionTemporal);
-						} else {
-							AdditionalDimension additionalDimension = new AdditionalDimension();
-							additionalDimension.setType(TypeEnum.TEMPORAL);
-							List<Integer> temporalExtent = new ArrayList<Integer>();
-							temporalExtent.add(0, Integer.parseInt(minValues[a].replaceAll("\"", "")));
-							temporalExtent.add(1, Integer.parseInt(maxValues[a].replaceAll("\"", "")));
-							startTime = minValues[a].replaceAll("\"", "");
-							endTime = maxValues[a].replaceAll("\"", "");
-							additionalDimension.setExtent(temporalExtent);
-							cubeColonDimensions.put(axis[a], additionalDimension);
-						}
-					}
-				}
-//			log.debug(srsDescription);
-
-				CollectionExtent extent = new CollectionExtent();
-				CollectionSpatialExtent spatialExtent = new CollectionSpatialExtent();
-				List<List<BigDecimal>> bbox = new ArrayList<List<BigDecimal>>();
-				List<BigDecimal> bbox1 = new ArrayList<BigDecimal>();
-				CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
-				List<List<OffsetDateTime>> interval = new ArrayList<List<OffsetDateTime>>();
-				List<OffsetDateTime> interval1 = new ArrayList<OffsetDateTime>();
-				try {
-					bbox1.add(new BigDecimal(minValues[j]));
-					bbox1.add(new BigDecimal(minValues[j + 1]));
-					bbox1.add(new BigDecimal(maxValues[j]));
-					bbox1.add(new BigDecimal(maxValues[j + 1]));
-				} catch (Exception e) {
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-					bbox1.add(null);
-				}
-				bbox.add(bbox1);
-				spatialExtent.setBbox(bbox);
-				extent.setSpatial(spatialExtent);
-
-//			int k = 0;
-//			for(int a = 0; a < axis.length; a++) {
-//		    	log.debug(axis[a]);
-//				String timeAxis = axis[a].toUpperCase();
-//				if(timeAxis.equals("DATE") || timeAxis.equals("TIME") || timeAxis.equals("ANSI") || timeAxis.equals("UNIX"))
-//				{
-//					k = a;
-//					break;
-//				}
-//			}
-
-				try {
-					interval1.add(OffsetDateTime.parse(startTime));
-					interval1.add(OffsetDateTime.parse(endTime));
-				} catch (Exception e) {
-					interval1.add(null);
-					interval1.add(null);
-				}
-				log.debug("Interval : " + interval1);
-				interval.add(interval1);
-				temporalExtent.setInterval(interval);
-				extent.setTemporal(temporalExtent);
-				currentCollection.setExtent(extent);
-			}
-
-			List<Link> links = new ArrayList<Link>();
-			Link link1 = new Link();
-
-			currentCollection.setVersion("v1");
-
-			String license = null;
-			try {
-				license = metadataElement.getChildText("License", gmlNS);
-				link1.setHref(new URI(metadataElement.getChildText("License_Link", gmlNS)));
-				link1.setRel("licence");
-				link1.setTitle("License Link");
-				link1.setType(metadataElement.getChildText("License_Link_Type", gmlNS));
-			} catch (Exception e) {
-			}
-			if (license == null) {
-				license = "No License Information Available";
-			}
-			currentCollection.setLicense(license);
-			links.add(0, link1);
-			currentCollection.setLinks(links);
-
-			String title = null;
-			String citation = null;
-			String description = null;
-			String tempStep = null;
-			try {
-				title = metadataElement.getChildText("Title", gmlNS);
-			} catch (Exception e) {
-			}
-			if (title == null) {
-				title = "No Title Available";
-			}
-			currentCollection.setTitle(title);
-
-			try {
-				citation = metadataElement.getChildText("Citation", gmlNS);
-				currentCollection.setCitation(citation);
-			} catch (Exception e) {
-			}
-
-			try {
-				description = metadataElement.getChildText("Description", gmlNS);
-			} catch (Exception e) {	}
-			if (description == null) {
-				description = "No Description Available";
-			}
-			currentCollection.setDescription(description);
-
-			try {
-				tempStep = metadataElement.getChildText("Temporal_Step", gmlNS);
-				dimensionTemporal.setStep(tempStep);
-			} catch (Exception e) {	}
-
-			List<String> keywords = new ArrayList<String>();
-
-			try {
-				keywords = Arrays.asList(metadataElement.getChildText("Keywords", gmlNS).split(", "));
-			} catch (Exception e) {
-			}
-			log.debug("Keywords : " + keywords);
-			if (keywords.isEmpty()) {
-				keywords.add("No Keywords Available");
-			}
-			currentCollection.setKeywords(keywords);
-
-			Set<String> stacExtensions = new HashSet<String>();
-			stacExtensions.add("datacube");
-			currentCollection.setStacExtensions(stacExtensions);
-
-			List<Providers> providers = new ArrayList<Providers>();
-			Providers provider1 = new Providers();
-			String provider1Name = wcpsProviderName;
-			String provider1Role = wcpsProviderType;
-			String provider1Link = wcpsProviderUrl;
-			List<String> roles1 = new ArrayList<String>();
-			Providers provider2 = new Providers();
-			String provider2Name = null;
-			String provider2Role = null;
-			String provider2Link = null;
-			List<String> roles2 = new ArrayList<String>();
-			Providers provider3 = new Providers();
-			String provider3Name = null;
-			String provider3Role = null;
-			String provider3Link = null;
-			List<String> roles3 = new ArrayList<String>();
-			Providers provider4 = new Providers();
-			String provider4Name = null;
-			String provider4Role = null;
-			String provider4Link = null;
-			List<String> roles4 = new ArrayList<String>();
-
-			try {
-				provider1Name = metadataElement.getChildText("Provider1_Name", gmlNS);
-				provider1Role = metadataElement.getChildText("Provider1_Roles", gmlNS);
-				provider1Link = metadataElement.getChildText("Provider1_Link", gmlNS);
-			} catch (Exception e) {
-
-			}
-			try {
-				provider1.setName(provider1Name);
-				roles1.add(provider1Role);
-				provider1.setRoles(roles1);
-				provider1.setUrl(new URI(provider1Link));
-				providers.add(0, provider1);}
-			catch (Exception e) {}
-			
-			try {
-				provider2Name = metadataElement.getChildText("Provider2_Name", gmlNS);
-				provider2Role = metadataElement.getChildText("Provider2_Roles", gmlNS);
-				provider2Link = metadataElement.getChildText("Provider2_Link", gmlNS);
-				provider2.setName(provider2Name);
-				roles2.add(provider2Role);
-				provider2.setRoles(roles2);
-				provider2.setUrl(new URI(provider2Link));
-				providers.add(1, provider2);
-			} catch (Exception e) {
-
-			}
-
-			try {
-				provider3Name = metadataElement.getChildText("Provider3_Name", gmlNS);
-				provider3Role = metadataElement.getChildText("Provider3_Roles", gmlNS);
-				provider3Link = metadataElement.getChildText("Provider3_Link", gmlNS);
-				provider3.setName(provider3Name);
-				roles3.add(provider3Role);
-				provider3.setRoles(roles3);
-				provider3.setUrl(new URI(provider3Link));
-				providers.add(2, provider3);
-			} catch (Exception e) {
-
-			}
-
-			try {
-				provider4Name = metadataElement.getChildText("Provider4_Name", gmlNS);
-				provider4Role = metadataElement.getChildText("Provider4_Roles", gmlNS);
-				provider4Link = metadataElement.getChildText("Provider4_Link", gmlNS);
-				provider4.setName(provider4Name);
-				roles4.add(provider4Role);
-				provider4.setRoles(roles4);
-				provider4.setUrl(new URI(provider4Link));
-				providers.add(3, provider4);
-			} catch (Exception e) {
-
-			}
-			currentCollection.setProviders(providers);
-
-			CollectionSummaries summaries = new CollectionSummaries();
-			List<String> platform = new ArrayList<String>();
-			List<String> constellation = new ArrayList<String>();
-			List<Double> gsd = new ArrayList<Double>();
-			List<String> instruments = new ArrayList<String>();
-			List<BandSummary> bandsSummary = new ArrayList<BandSummary>();
-			CollectionSummaryStats cloudCover = new CollectionSummaryStats();
-
-			List<Element> slicesList = null;
-			JSONArray cloudCovArray = new JSONArray();
-
-			try {
-				platform.add(metadataElement.getChildText("Platform", gmlNS));
-			} catch (Exception e) {	}
-
-			try {
-				slicesList = metadataElement.getChild("slices", gmlNS).getChildren();
-				for (int c = 0; c < slicesList.size(); c++) {
-					try {
-						platform.add(slicesList.get(c).getChildText("DATATAKE_1_SPACECRAFT_NAME"));
-						platform = platform.stream().distinct().collect(Collectors.toList());
-					} catch (Exception e) {	}
-				}
-			} catch (Exception e) {	}
-
-			try {
-				constellation.add(metadataElement.getChildText("Constellation", gmlNS));
-			} catch (Exception e) {	}
-
-			try {
-				instruments.add(metadataElement.getChildText("Instruments", gmlNS));
-			} catch (Exception e) {	}
-
-//		try {
-//			rows = Integer.parseInt(metadataElement.getChildText("Rows", gmlNS));
-//		}catch(Exception e) {
-//			log.warn("Error in parsing Rows:" + e.getMessage());
-//		}
-//		
-//		try {
-//			columns = Integer.parseInt(metadataElement.getChildText("Columns", gmlNS));
-//		}catch(Exception e) {
-//			log.warn("Error in parsing Columns:" + e.getMessage());
-//		}
-
-			try {
-				slicesList = metadataElement.getChild("slices", gmlNS).getChildren();
-				for (int c = 0; c < slicesList.size(); c++) {
-					try {
-						double cloudCov = Double
-								.parseDouble(slicesList.get(c).getChildText("CLOUD_COVERAGE_ASSESSMENT"));
-						cloudCovArray.put(cloudCov);
-					} catch (Exception e) {
-						log.warn("Error in parsing Cloud Coverage:" + e.getMessage());
-					}
-				}
-			} catch (Exception e) {
-				log.warn("Error in parsing metadata slice :" + e.getMessage());
-			}
-
-			double maxCCValue = 0;
-			double minCCValue = 0;
-			Boolean cloudCoverFlag = false;
-			try {
-				maxCCValue = cloudCovArray.getDouble(0);
-				minCCValue = cloudCovArray.getDouble(0);
-				cloudCoverFlag = true;
-			} catch (Exception e) {
-				log.warn("Error in parsing cloud cover Extents :" + e.getMessage());
-			}
-
-			if (cloudCoverFlag) {
-				for (int i = 1; i < cloudCovArray.length(); i++) {
-					if (cloudCovArray.getDouble(i) > maxCCValue) {
-						maxCCValue = cloudCovArray.getDouble(i);
-					}
-					if (cloudCovArray.getDouble(i) < minCCValue) {
-						minCCValue = cloudCovArray.getDouble(i);
-					}
-				}
-			}
-
-			cloudCover.setMin(minCCValue);
-			cloudCover.setMax(maxCCValue);
-
-			List<Element> bandsList = null;
-			List<Element> bandsListSwe = null;
-			Boolean bandsMeta = false;
-			try {
-				bandsList = metadataElement.getChild("bands", gmlNS).getChildren();
-				bandsMeta = true;
-			} catch (Exception e) {
-			}
-			try {
-				bandsListSwe = rootNode.getChild("CoverageDescription", defaultNS).getChild("rangeType", gmlNS)
-						.getChild("DataRecord", sweNS).getChildren("field", sweNS);
-			} catch (Exception e) {
-			}
-			if (bandsMeta) {
-				try {
-					for (int c = 0; c < bandsList.size(); c++) {
-						BandSummary bandsSummaryList = new BandSummary();
-						Element band = bandsList.get(c);
-						String bandWave = "0";
-						String bandCommonName = "No Band Common Name found";
-						String bandGSD = "0";
-						String bandId = "No Band Name found";
-
-						bandId = band.getName();
-						bandsSummaryList.setName(bandId);
-
-						try {
-							bandGSD = band.getChildText("gsd");
-							gsd.add(Double.parseDouble(bandGSD));
-							gsd = gsd.stream().distinct().collect(Collectors.toList());
-							bandsSummaryList.setGsd(Double.parseDouble(bandGSD));
-						} catch (Exception e) {
-							log.warn("Error in parsing band gsd:" + e.getMessage());
-						}
-
-						try {
-							bandCommonName = band.getChildText("common_name");
-							bandsSummaryList.setCommonname(bandCommonName);
-						} catch (Exception e) {
-							log.warn("Error in parsing band common name:" + e.getMessage());
-						}
-
-						try {
-							bandWave = band.getChildText("wavelength");
-							bandsSummaryList.setCenterwavelength(Double.parseDouble(bandWave));
-						} catch (Exception e) {
-							log.warn("Error in parsing band wave-lenght:" + e.getMessage());
-						}
-
-						bandsSummary.add(c, bandsSummaryList);
-					}
-				} catch (Exception e) {
-					log.warn("Error in parsing bands :" + e.getMessage());
-				}
-			} else {
-				for (int c = 0; c < bandsListSwe.size(); c++) {
-					BandSummary bandsSummaryList = new BandSummary();
-					String bandId = bandsListSwe.get(c).getAttributeValue("name");
-					bandsSummaryList.setName(bandId);
-					bandsSummary.add(c, bandsSummaryList);
-				}
-			}
-
-			summaries.setPlatform(platform);
-			summaries.setConstellation(constellation);
-			summaries.setInstruments(instruments);
-			summaries.setCloudCover(cloudCover);
-			summaries.setGsd(gsd);
-			summaries.setRows(rows);
-			summaries.setColumns(columns);
-//		summaries.setEpsg(epsg);
-			summaries.setBands(bandsSummary);
-
-			currentCollection.setSummaries(summaries);
-
-			Map<String, Asset> assets = new HashMap<String, Asset>();
-
-			currentCollection.setAssets(assets);
-
-			collectionsList.addCollectionsItem(currentCollection);
-		}
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.enable(SerializationFeature.INDENT_OUTPUT);
-		mapper.registerModule(new JavaTimeModule());
-		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-		// Java object to JSON file
-		try {
-			log.info(collectionsFileWCPS.getFilename());
-			String rootPath = System.getProperty("user.dir");
-			File collectionsFile = new File(rootPath + "/" + collectionsFileWCPS.getFilename());
-			if (!collectionsFile.exists()) {
-				collectionsFile.createNewFile();
-			}
-			mapper.writeValue(collectionsFile, collectionsList);
-		} catch (JsonGenerationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JsonMappingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return collectionsList;
-	}
-
-	private Collections loadOdcCollections() {
-
-		Collections collectionsList = new Collections();
-
-		JSONObject odcSTACMetdata = null;
-		try {
-			odcSTACMetdata = readJsonFromUrl(odcCollEndpoint);
-		} catch (JSONException e) {
-			log.error("An error occured while parsing json from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builderODC = new StringBuilder();
-			for (StackTraceElement element : e.getStackTrace()) {
-				builderODC.append(element.toString() + "\n");
-			}
-			log.error(builderODC.toString());
-		} catch (IOException e) {
-			log.error("An error occured while receiving data from STAC metadata endpoint: " + e.getMessage());
-			StringBuilder builderODC = new StringBuilder();
-			for (StackTraceElement element : e.getStackTrace()) {
-				builderODC.append(element.toString() + "\n");
-			}
-			log.error(builderODC.toString());
-		}
-
-		if (odcSTACMetdata != null) {
-
-			//JSONObject odcCollections = odcSTACMetdata.getJSONObject("collections");
-
-			ObjectMapper mapper = new ObjectMapper();
-			mapper.registerModule(new JavaTimeModule());
-			mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-			String rootPath = System.getProperty("user.dir");
-			File collectionsFile = new File(rootPath + "/" + collectionsFileODC.getFilename());
-			if (!collectionsFile.exists()) {
-				try {
-					collectionsFile.createNewFile();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			try {
-				FileWriter file = new FileWriter(collectionsFile);
-				file.write(odcSTACMetdata.toString(4));
-				file.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			
-			try {
-				collectionsList = mapper.readValue(collectionsFile, Collections.class);
-			} catch (Exception e) {
-				addStackTraceAndErrorToLog(e);
-			}
-			}
-		return collectionsList;
-	}
-
-	private Collections loadCollectionsFromFile(Resource collectionResource) {
-		Collections collectionsList = null;
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
-		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-		try {
-			String rootPath = System.getProperty("user.dir");
-			File collectionsFile = new File(rootPath + "/" + collectionResource.getFilename());
-			collectionsList = mapper.readValue(collectionsFile, Collections.class);
-		} catch (Exception e) {
-			addStackTraceAndErrorToLog(e);
-		}
-		return collectionsList;
-	}
-
-	private void addStackTraceAndErrorToLog(Exception e) {
-		log.error(e.getMessage());
-		StringBuilder builder = new StringBuilder();
-		for (StackTraceElement element : e.getStackTrace()) {
-			builder.append(element.toString() + "\n");
-		}
-		log.error(builder.toString());
-	}
+
+    @Value("${org.openeo.querycollectionsonstartup}")
+    private boolean queryCollectionsOnStartup;
+
+    @Value("${org.openeo.wcps.collections.list}")
+    Resource collectionsFileWCPS;
+
+    @Value("${org.openeo.odc.collections.list}")
+    Resource collectionsFileODC;
+
+    @Autowired
+    private CollectionsMap collectionsMap;
+
+    @Autowired
+    private CollectionMap collectionMap;
+
+    private final NativeWebRequest request;
+
+    private static final Logger log = LogManager.getLogger(CollectionsApiController.class);
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public CollectionsApiController(NativeWebRequest request) {
+        this.request = request;
+    }
+
+    @PostConstruct
+    public void init() {
+
+        Instant start = Instant.now();
+
+        ExecutorService exec = Executors.newFixedThreadPool(
+                parallelizedHarvest ? 2 : 1,
+                new CustomizableThreadFactory("CollectionsLoaders-"));
+
+        ICollectionsLoader wcsLoader = null;
+        Future<Collections> wcsCatalog = null;
+
+        ICollectionsLoader odcLoader = null;
+        Future<Collections> odcCatalog = null;
+
+        try {
+            if (queryCollectionsOnStartup) {
+
+                boolean hasWcpsEndpoint = !wcpsEndpoint.isEmpty();
+                boolean hasOdcEndpoint = !odcCollEndpoint.isEmpty();
+
+                // WC(P)S collections loader
+                if (hasWcpsEndpoint) {
+                    wcsLoader = WCSCollectionsLoader.Builder
+                            .of(wcpsEndpoint)
+                            .version(wcpsVersion)
+                            .provider(new Providers()
+                                    .name(wcpsProviderName)
+                                    .roles(wcpsProviderType)
+                                    .url(new URI(wcpsProviderUrl)))
+                            .cache(collectionsFileWCPS)
+                            .parallelism(parallelizedHarvest ? -1 : 1)
+                            .build();
+                }
+
+                // ODC collections loader
+                if (hasOdcEndpoint) {
+                    odcLoader = ODCCollectionsLoader.Builder
+                            .of(odcCollEndpoint)
+                            .cache(collectionsFileODC)
+                            .build();
+                }
+
+                if (!hasWcpsEndpoint && !hasOdcEndpoint) {
+                    log.error("No STAC endpoint was specified.");
+                    // TOD: what to do here? Throw exception?
+                }
+
+            } else {
+                // cached STAC-WCS catalogue loader
+                wcsLoader = STACFileCollectionsLoader.Builder
+                        .of(collectionsFileWCPS)
+                        .engine(EngineTypes.WCPS)
+                        .build();
+
+                // cached STAC-ODC catalogue loader
+                odcLoader = STACFileCollectionsLoader.Builder
+                        .of(collectionsFileODC)
+                        .engine(EngineTypes.ODC_DASK)
+                        .build();
+            }
+        } catch (URISyntaxException e) {
+            log.error("Invalid URI provided.", e);
+        }
+
+        if (null != wcsLoader) {
+            wcsCatalog = exec.submit(wcsLoader);
+        }
+
+        if (null != odcLoader) {
+            odcCatalog = exec.submit(odcLoader);
+        }
+
+        // collect harvested collections
+        try {
+            if (null != wcsCatalog) {
+                collectionsMap.put(wcsLoader.getEngineType(), wcsCatalog.get());
+            }
+            if (null != odcCatalog) {
+                collectionsMap.put(odcLoader.getEngineType(), odcCatalog.get());
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Error while loading catalog.", e);
+        }
+
+        log.debug(collectionsMap.keySet());
+
+        // { collID -> coll  } mapping
+        for (EngineTypes type : collectionsMap.keySet()) {
+            collectionsMap.get(type).getCollections()
+                .forEach(coll -> collectionMap.put(coll.getId(), coll));
+        }
+
+        // profiling
+        Instant end = Instant.now();
+        long ds = Duration.between(start, end).toMillis() / 1000; // TODO from Java 9: .toSeconds()
+        long dms = Duration.between(start, end).minusSeconds(ds).toMillis();
+
+        log.printf(Level.INFO, "Catalogues harvesting done (%d.%03d s).", ds, dms);
+    }
+
+    @Override
+    public Optional<NativeWebRequest> getRequest() {
+        return Optional.ofNullable(request);
+    }
+
+    /**
+     * GET /collections : Basic metadata for all datasets Lists available
+     * collections with at least the required information. It is **strongly
+     * RECOMMENDED** to keep the response size small by omitting larger optional
+     * values from the objects in &#x60;collections&#x60; (e.g. the
+     * &#x60;summaries&#x60; and &#x60;cube:dimensions&#x60; properties). To get the
+     * full metadata for a collection clients MUST request &#x60;GET
+     * /collections/{collection_id}&#x60;. This endpoint is compatible with [STAC
+     * 0.9.0](https://stacspec.org) and [OGC API -
+     * Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC
+     * API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features
+     * / extensions and [STAC
+     * extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions)
+     * can be implemented in addition to what is documented here.
+     *
+     * @param limit This parameter enables pagination for the endpoint and specifies
+     *              the maximum number of elements that arrays in the top-level
+     *              object (e.g. jobs or log entries) are allowed to contain. The
+     *              only exception is the &#x60;links&#x60; array, which MUST NOT be
+     *              paginated as otherwise the pagination links may be missing ins
+     *              responses. If the parameter is not provided or empty, all
+     *              elements are returned. Pagination is OPTIONAL and back-ends and
+     *              clients may not support it. Therefore it MUST be implemented in
+     *              a way that clients not supporting pagination get all resources
+     *              regardless. Back-ends not supporting pagination will return all
+     *              resources. If the response is paginated, the links array MUST be
+     *              used to propagate the links for pagination with pre-defined
+     *              &#x60;rel&#x60; types. See the links array schema for supported
+     *              &#x60;rel&#x60; types. *Note:* Implementations can use all kind
+     *              of pagination techniques, depending on what is supported best by
+     *              their infrastructure. So it doesn&#39;t care whether it is
+     *              page-based, offset-based or uses tokens for pagination. The
+     *              clients will use whatever is specified in the links with the
+     *              corresponding &#x60;rel&#x60; types. (optional)
+     * @return Lists of collections and related links. (status code 200) or The
+     *         request can&#39;t be fulfilled due to an error on client-side, i.e.
+     *         the request is invalid. The client should not repeat the request
+     *         without modifications. The response body SHOULD contain a JSON error
+     *         object. MUST be any HTTP status code specified in [RFC
+     *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request
+     *         MUST respond with HTTP status codes 401 if authorization is required
+     *         or 403 if the authorization failed or access is forbidden in general
+     *         to the authenticated user. HTTP status code 404 should be used if the
+     *         value of a path parameter is invalid. See also: * [Error
+     *         Handling](#section/API-Principles/Error-Handling) in the API in
+     *         general. * [Common Error Codes](errors.json) (status code 400) or The
+     *         request can&#39;t be fulfilled due to an error at the back-end. The
+     *         error is never the client’s fault and therefore it is reasonable for
+     *         the client to retry the exact same request that triggered this
+     *         response. The response body SHOULD contain a JSON error object. MUST
+     *         be any HTTP status code specified in [RFC
+     *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). See also: *
+     *         [Error Handling](#section/API-Principles/Error-Handling) in the API
+     *         in general. * [Common Error Codes](errors.json) (status code 500)
+     */
+    @Operation(summary = "Basic metadata for all datasets", operationId = "listCollections", description = "Lists available collections with at least the required information.  It is **strongly RECOMMENDED** to keep the response size small by omitting larger optional values from the objects in `collections` (e.g. the `summaries` and `cube:dimensions` properties). To get the full metadata for a collection clients MUST request `GET /collections/{collection_id}`.  This endpoint is compatible with [STAC 0.9.0](https://stacspec.org) and [OGC API - Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features / extensions and [STAC extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions) can be implemented in addition to what is documented here.")
+    @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Lists of collections and related links."),
+            @ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
+            @ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
+    @GetMapping(value = "/collections", produces = { "application/json" })
+    @Override
+    public ResponseEntity<Collections> listCollections(
+            @Min(1) @Parameter(name = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
+        Collections collectionsList = new Collections();
+
+        for (EngineTypes type : collectionsMap.keySet()) {
+            for (Collection currentCollection : collectionsMap.get(type).getCollections()) {
+                collectionsList.addCollectionsItem(currentCollection);
+            }
+        }
+
+        return new ResponseEntity<Collections>(collectionsList, HttpStatus.OK);
+    }
+
+    /**
+     * GET /collections/{collection_id} : Full metadata for a specific dataset Lists
+     * **all** information about a specific collection specified by the identifier
+     * &#x60;collection_id&#x60;. This endpoint is compatible with [STAC
+     * 0.9.0](https://stacspec.org) and [OGC API -
+     * Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC
+     * API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features
+     * / extensions and [STAC
+     * extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions)
+     * can be implemented in addition to what is documented here.
+     *
+     * @param collectionId Collection identifier (required)
+     * @return JSON object with the full collection metadata. (status code 200) or
+     *         The request can&#39;t be fulfilled due to an error on client-side,
+     *         i.e. the request is invalid. The client should not repeat the request
+     *         without modifications. The response body SHOULD contain a JSON error
+     *         object. MUST be any HTTP status code specified in [RFC
+     *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request
+     *         MUST respond with HTTP status codes 401 if authorization is required
+     *         or 403 if the authorization failed or access is forbidden in general
+     *         to the authenticated user. HTTP status code 404 should be used if the
+     *         value of a path parameter is invalid. See also: * [Error
+     *         Handling](#section/API-Principles/Error-Handling) in the API in
+     *         general. * [Common Error Codes](errors.json) (status code 400) or The
+     *         request can&#39;t be fulfilled due to an error at the back-end. The
+     *         error is never the client’s fault and therefore it is reasonable for
+     *         the client to retry the exact same request that triggered this
+     *         response. The response body SHOULD contain a JSON error object. MUST
+     *         be any HTTP status code specified in [RFC
+     *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). See also: *
+     *         [Error Handling](#section/API-Principles/Error-Handling) in the API
+     *         in general. * [Common Error Codes](errors.json) (status code 500)
+     */
+
+    @Operation(summary = "Full metadata for a specific dataset", operationId = "describeCollecion", description = "Lists **all** information about a specific collection specified by the identifier `collection_id`.  This endpoint is compatible with [STAC 0.9.0](https://stacspec.org) and [OGC API - Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features / extensions and [STAC extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions) can be implemented in addition to what is documented here.", tags = {
+            "EO Data Discovery", })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "JSON object with the full collection metadata."),
+            @ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
+            @ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
+    @GetMapping(value = "/collections/{collection_id}", produces = { "application/json" })
+    @Override
+    public ResponseEntity<Collection> describeCollection(
+            @Pattern(regexp = "^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier", required = true) @PathVariable("collection_id") String collectionId,
+            Principal principal) {
+
+        //    	log.debug("The following user is authenticated: " + principal.getName());
+        //    	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        //    	if (!(authentication instanceof AnonymousAuthenticationToken)) {
+        //    	    String currentUserName = authentication.getName();
+        //    	    log.debug("The following user is authenticated: " + currentUserName);
+        //    	}else {
+        //    		log.warn("The current user is not authenticated!");
+        //    	}
+
+        URL url;
+        Collection currentCollection = collectionMap.get(collectionId);
+        if (currentCollection != null) {
+            return new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
+        }
+        return new ResponseEntity<Collection>(HttpStatus.NOT_FOUND);
+    }
 }
