@@ -42,9 +42,9 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
     public static final String[] NOAUTH_API_RESOURCES = new String[] {
             "/",
             "/conformance",
-            "/collections",
             "/collections/**",
-            "/download/**", 
+            "/download/**",
+            "/processes/**",
             "/favicon.ico",
             "/file_formats",
             "/.well-known/openeo"};
