@@ -44,7 +44,6 @@ import com.jayway.jsonpath.JsonPath;
  * @see ActiveProfiles
  */
 @WebMvcTest
-//@ActiveProfiles("test") // -> src/test/resources/application-$PROFILE.properties
 public abstract class TestBasicAuthentication {
 
     @Autowired
