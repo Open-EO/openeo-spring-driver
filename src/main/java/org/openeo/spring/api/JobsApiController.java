@@ -701,10 +701,17 @@ public class JobsApiController implements JobsApi {
 
 	    String username = principal.getName();
 	    AccessToken token = TokenUtil.getAccessToken(principal, tokenService);
+
 	    if (null != token) {
 	        username =  token.getName();
+	    } else {
+			Error error = new Error();
+			error.setCode("401");
+			error.setMessage("No acces token found, please authenticate.");
+			log.error(error);
+			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED);
 	    }
-	    
+
 	    BatchJobs batchJobs = new BatchJobs();
 
 	    for (Job job : jobDAO.findWithOwner(username)) {
