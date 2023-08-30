@@ -39,7 +39,8 @@ public class WellKnownApiController implements WellKnownApi {
 		return Optional.ofNullable(request);
 	}
 
-	@Operation(summary = "Supported openEO versions", operationId = "connect", description = "Well-Known URI (see [RFC 5785](https://tools.ietf.org/html/rfc5785)) for openEO, listing all implemented openEO versions supported by the service provider.  This allows a client to easily identify the most recent openEO implementation it supports. By default, a client SHOULD connect to the most recent production-ready version it supports. If not available, the most recent supported version of *all* versions SHOULD be connected to. Clients MAY let users choose to connect to versions that are not production-ready or outdated. The most recent version is determined by comparing the version numbers according to rules from [Semantic Versioning](https://semver.org/), especially [§11](https://semver.org/#spec-item-11). Any pair of API versions in this list MUST NOT be equal according to Semantic Versioning.  The Well-Known URI is the entry point for clients and users, so make sure it is permanent and easy to use and remember. Clients MUST NOT require the well-known path (`./well-known/openeo`) in the URL that is specified by a user to connect to the back-end. A client MUST request `https://example.com/.well-known/openeo` if a user tries to connect to `https://example.com`. If the request to the well-known URI fails, the client SHOULD try to request the capabilities at `/` from `https://example.com`.  **This URI MUST NOT be versioned as the other endpoints.** If your API is available at `https://example.com/api/v1.0`, the Well-Known URI SHOULD be located at `https://example.com/.well-known/openeo` and the URI users connect to SHOULD be `https://example.com`.  Clients MAY get additional information (e.g. title or description) about a back-end from the most recent version that has the `production` flag set to `true`.", tags = {
+	@Override
+    @Operation(summary = "Supported openEO versions", operationId = "connect", description = "Well-Known URI (see [RFC 5785](https://tools.ietf.org/html/rfc5785)) for openEO, listing all implemented openEO versions supported by the service provider.  This allows a client to easily identify the most recent openEO implementation it supports. By default, a client SHOULD connect to the most recent production-ready version it supports. If not available, the most recent supported version of *all* versions SHOULD be connected to. Clients MAY let users choose to connect to versions that are not production-ready or outdated. The most recent version is determined by comparing the version numbers according to rules from [Semantic Versioning](https://semver.org/), especially [§11](https://semver.org/#spec-item-11). Any pair of API versions in this list MUST NOT be equal according to Semantic Versioning.  The Well-Known URI is the entry point for clients and users, so make sure it is permanent and easy to use and remember. Clients MUST NOT require the well-known path (`./well-known/openeo`) in the URL that is specified by a user to connect to the back-end. A client MUST request `https://example.com/.well-known/openeo` if a user tries to connect to `https://example.com`. If the request to the well-known URI fails, the client SHOULD try to request the capabilities at `/` from `https://example.com`.  **This URI MUST NOT be versioned as the other endpoints.** If your API is available at `https://example.com/api/v1.0`, the Well-Known URI SHOULD be located at `https://example.com/.well-known/openeo` and the URI users connect to SHOULD be `https://example.com`.  Clients MAY get additional information (e.g. title or description) about a back-end from the most recent version that has the `production` flag set to `true`.", tags = {
 			"Capabilities", })
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "List of all available API instances, each with URL and the implemented openEO API version."),
@@ -55,10 +56,9 @@ public class WellKnownApiController implements WellKnownApi {
 		try {
 			apiInstance.setUrl(new URI(openEOPublicEndpoint));
 		} catch (URISyntaxException e) {
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage("The api endpoint uri was not correctly set: " + e.getMessage());
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+		            String.format("The api endpoint uri was not correctly set: %s", e.getMessage()));
+			return response;
 		}
 
 		wellKnownDiscovery.addVersionsItem(apiInstance);

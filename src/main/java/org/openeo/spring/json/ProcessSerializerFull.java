@@ -1,18 +1,16 @@
 package org.openeo.spring.json;
 
 import java.io.IOException;
+import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.openeo.spring.model.Link;
+import org.openeo.spring.model.Process;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import java.util.List;
-import java.util.ArrayList;
-import org.openeo.spring.model.Link;
-import org.openeo.spring.model.Process;
-import org.openeo.spring.model.ProcessReturnValue;
 
 public class ProcessSerializerFull extends StdSerializer<Process>{
 	
@@ -43,11 +41,11 @@ public class ProcessSerializerFull extends StdSerializer<Process>{
 		if(parameters != null) {
 			gen.writeObjectField("parameters", parameters.toList());
 		}
-		List<String> categories = (ArrayList<String>) value.getCategories();
+		List<String> categories = value.getCategories();
 		if(categories != null) {
 			gen.writeObjectField("categories", categories.toArray());
 		}
-		List<Link> links = (ArrayList<Link>) value.getLinks();		
+		List<Link> links = value.getLinks();		
 		if(links != null) {
 			gen.writeObjectField("links", links.toArray());
 		}

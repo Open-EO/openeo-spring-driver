@@ -1,36 +1,48 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.openeo</groupId>
 	<artifactId>openeo-spring-driver</artifactId>
 	<packaging>jar</packaging>
 	<name>openeo-spring-driver</name>
-	<version>1.0.0</version>
+	<version>1.1.0</version>
+	
+    <parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.6.1</version>
+		<!--
+		  2.5.1  ->  Spring Framework v5.3.8
+		  2.5.1  ->  Spring Security  v5.5.0
+		  
+		  2.6.1  ->  Spring Framework v5.3.13
+		  2.6.1  ->  Spring Security  v5.6.0
+		  
+		  See : https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/2.5.1/spring-boot-dependencies-2.5.1.pom 
+		-->
+	</parent>
+	
 	<properties>
 		<java.version>11</java.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<springfox-version>3.0.0</springfox-version>
-		<springdoc-version>1.4.6</springdoc-version>
-		<gdal.path>/usr/share/java/gdal.jar</gdal.path>
-		<gdal.version>3.1.0</gdal.version>
+		<springdoc-version>1.5.13</springdoc-version>
+		<!--gdal.path>/usr/share/java/gdal.jar</gdal.path-->
+		<gdal.version>3.4.0</gdal.version>
 		<netcdfJavaVersion>5.2.0</netcdfJavaVersion>
 		<log4JVersion>2.17.0</log4JVersion>
 		<commonsio.version>2.8.0</commonsio.version>
-		<json.version>20200518</json.version>
+		<json.version>20230618</json.version>
 		<keycloak.version>12.0.4</keycloak.version>
 		<tomcat.dbcp.version>9.0.37</tomcat.dbcp.version>
 		<jackson.nullable.version>0.2.1</jackson.nullable.version>
-		<spring.security.version>5.5.1</spring.security.version>
-		<spring.test.version>2.7.4</spring.test.version>
+		<jjwt.version>0.11.5</jjwt.version>
 		<maven.test.skip>false</maven.test.skip>
 	</properties>
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.5.1</version>
-	</parent>
+	
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
 		<plugins>
@@ -75,20 +87,11 @@
 					<outputDir>${project.build.directory}</outputDir>
 				</configuration>
 			</plugin>
-			<!--plugin>
-			    <artifactId>maven-surefire-plugin</artifactId>
-			    <executions>
-					<execution>
-						<phase>test</phase>
-						<goals>
-							<goal>test</goal>
-						</goals>
-					</execution>
-				</executions>
-            </plugin-->
 		</plugins>
 	</build>
+	
 	<dependencies>
+		<!-- Spring Boot -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -116,6 +119,41 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+			<exclusions>
+				<!-- JsonObject implementation selection --> 
+				<exclusion>
+					<groupId>com.vaadin.external.google</groupId>
+					<artifactId>android-json</artifactId>
+			    </exclusion>
+			    <!-- Force Junit 5 -->
+			    <exclusion>
+					<groupId>junit</groupId>
+					<artifactId>junit</artifactId>
+		        </exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+		    <scope>test</scope>
+		</dependency>
+		
+        <!-- deprecated Keycloak adapters --> 
+		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-spring-security-adapter</artifactId>
 			<version>${keycloak.version}</version>
@@ -125,21 +163,40 @@
 			<artifactId>keycloak-authz-client</artifactId>
 			<version>${keycloak.version}</version>
 		</dependency>
+		
+		<!-- 
+		    Spring Boot - OAuth2 libraries
+		    @see https://www.baeldung.com/spring-boot-keycloak
+		-->
 		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-core</artifactId>
-			<version>${spring.security.version}</version>
-		</dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
+	    </dependency>
 		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-web</artifactId>
-			<version>${spring.security.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-config</artifactId>
-			<version>${spring.security.version}</version>
-		</dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+	    </dependency>
+	    
+	    <!-- JWT (Bearer Token) Dependencies -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+	    
+	    <!-- Spring Misc -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-ui</artifactId>
@@ -148,8 +205,10 @@
 		<dependency>
 			<groupId>io.springfox</groupId>
 			<artifactId>springfox-boot-starter</artifactId>
-			<version>3.0.0</version>
+			<version>${springfox-version}</version>
 		</dependency>
+		
+		<!-- Misc -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.datatype</groupId>
 			<artifactId>jackson-datatype-jsr310</artifactId>
@@ -191,12 +250,6 @@
 			<version>${json.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<scope>runtime</scope>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-core</artifactId>
 		</dependency>
@@ -219,18 +272,8 @@
 			<artifactId>log4j2-ecs-layout</artifactId>
 			<version>1.2.0</version>
 		</dependency>
-	    <dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<version>${spring.test.version}</version>  
-			<scope>test</scope>
-		</dependency>
-		<!--dependency>
-		    <groupId>org.junit.jupiter</groupId>
-		    <artifactId>junit-jupiter-engine</artifactId>
-		    <scope>test</scope>
-        </dependency-->			
 	</dependencies>
+	
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -242,6 +285,7 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+	
 	<repositories>
 		<repository>
 			<id>unidata-all</id>
@@ -254,4 +298,5 @@
 			<url>http://oss.jfrog.org/artifactory/oss-snapshot-local/</url>
 		</repository>
 	</repositories>
+	
 </project>
