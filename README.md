@@ -18,24 +18,25 @@ https://localhost:8443/
 
 ## Configuration setup hints
 
-This back-end is only functional if an application.properties file is added to ```/src/main/resources```.
+This back-end is only functional if an `application.properties` file is added to */src/main/resources*.
 This file should contain at least the following:
 
 ```
-springfox.documentation.swagger.v2.path=/api-docs
+# authentication
+spring.security.enable-basic={true,false}
+spring.security.enable-keycloak={true,false}
 
 spring.jackson.date-format=org.openeo.spring.RFC3339DateFormat
 spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS=false
 spring.h2.console.enabled=true
 spring.h2.console.settings.web-allow-others=true
-spring.autoconfigure.exclude = org.keycloak.adapters.springboot.KeycloakAutoConfiguration
-spring.datasource.jdbc=jdbc:h2:/path/to/openeo.db;DB_CLOSE_DELAY=-1
-spring.datasource.username=my_username
-spring.datasource.initialization-mode
-spring.security.filter.order=5
 
 server.tomcat.port=8081
 server.port=8443
+
+spring.datasource.jdbc=jdbc:h2:/path/to/openeo.db;DB_CLOSE_DELAY=-1
+spring.datasource.username=my_username
+spring.datasource.initialization-mode
 
 server.ssl.key-store-type=PKCS12
 server.ssl.key-store=classpath:my_keystore.p12
@@ -43,6 +44,7 @@ server.ssl.key-store-password=my_keystore_password
 server.ssl.key-alias=my_alias
 
 security.require-ssl=true
+spring.security.filter.order=5
 
 org.openeo.endpoint=https://my_openeo.url
 org.openeo.public.endpoint=https://my_openeo_public.url
@@ -76,31 +78,28 @@ org.openeo.udf.python.endpoint=http://my_openeo_python_udf_service.url
 org.openeo.udf.r.endpoint=http://my_openeo_R_udf_service.url
 org.openeo.udf.dir=/my/udf/working/directory/
 org.openeo.udf.importscript=/my/udf/import/script/import_udf.sh
+
+spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.SecurityAutoConfiguration
 ```
 
-Further files needed are for connection with keycloak: `keycloak.json`
+Further files needed are for authentication management through an external Keycloak server.
+The `keycloak.properties`:
 
 ```
-{
-	"realm": "my_realm",
-	"auth-server-url": "https://my_keycloak.url/auth",
-	"ssl-required": "external",
-	"resource": "my_client_id",
-	"verify-token-audience": false,
-	"credentials": {
-		"secret": "my_secret"
-	},
-	"use-resource-role-mappings": true,
-	"confidential-port": 0,
-	"policy-enforcer": {
-		"enforcement-mode" : "PERMISSIVE",
-		"claim-information-point": {
-			"claims": {
-				"claim-from-relativePath": "{request.relativePath}"
-			}
-		}
-	}
-}
+spring.security.oauth2.client.registration.keycloak.client-id=openEO
+spring.security.oauth2.client.registration.keycloak.client-secret={{secret}}
+spring.security.oauth2.client.registration.keycloak.authorization-grant-type=authorization_code
+spring.security.oauth2.client.registration.keycloak.scope=openid
+
+# OpenID Connect (OIDC)
+spring.security.oauth2.client.provider.keycloak.issuer-uri=https://my_keycloak.url/auth/realms/my_realm
+spring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username
+
+# OAUTH2-JWT token
+spring.security.oauth2.resourceserver.jwt.issuer-uri=https://my_keycloak.url/auth/realms/my_realm
+
+# openEO credentials
+org.openeo.oidc.providers.list=classpath:oidc_providers.json
 ```
 
 and for the support of default client id configuration: `oidc_providers.json`
@@ -139,6 +138,16 @@ and for the support of default client id configuration: `oidc_providers.json`
 		}
 	]
 }
+```
+
+For internal basic authentication instead, a bearer token issuer configuration file shall also be created: ``jwt.properties``
+
+```
+jwt.secret={{secret-hash}}
+jwt.issuer=ACME Srl
+jwt.type=JWT
+jwt.audience=openEO
+jwt.exp-minutes={{N}}
 ```
 
 ## Logging
