@@ -431,9 +431,10 @@ public class JobsApiController implements JobsApi {
 		LogEntries logEntries = new LogEntries();
 		
 		// Construcing ES query URL on selected index
-		String elasticSearchQuery = serviceIndexName + "/_search?size=10000"; //TODO (Lorenzo): sostituire
-		// il size con il metodo di paging indicato dalla documentazione (serve però anche, per facilitare 
-		// questo, riscrivere la query sotto direttamente tramite oggetto JSON anziché StringBuilder)
+		String elasticSearchQuery = serviceIndexName + "/_search?size=10000"; 
+
+		//FIXME: replace "/_search?size=10000" query with specific ES hits-retrieving pagination
+		// (the "size" param in paging  method as ES official documentation )
 				
 		try {
 			
@@ -442,18 +443,18 @@ public class JobsApiController implements JobsApi {
 			int check_code = HttpURLConnection.HTTP_OK;
 			
 			//check if elasticSearchEndpoint is an HTTP or HTTPS URL
-			if (elasticSearchEndpoint.startsWith("https://")) // break point here (10 aug 23)
+			if (elasticSearchEndpoint.startsWith("https://"))
 			{
 				HostnameVerifier customHostnameVerifier = new HostnameVerifier() {
 				    @Override
 				    public boolean verify(String hostname, SSLSession session) {
-				        // In questa implementazione, considereremo qualsiasi nome di host valido.
-				        // Se hai esigenze specifiche di verifica, puoi aggiungere la logica qui.
+				        // FIXME: every hostname is treated as "valid"
+				        // For specific verification need, you can add logical part here
 				        return true;
 				    }
 				};
 
-				// Imposto come default questo verificatore personalizzato HTTPS temporaneo (TOFIX)
+				// FIXME: setting this custom HTTPS verifier (temporary)
 				HttpsURLConnection.setDefaultHostnameVerifier(customHostnameVerifier);
 				
 				// Load the truststore
@@ -489,7 +490,7 @@ public class JobsApiController implements JobsApi {
 				check_code = HttpsURLConnection.HTTP_OK;
 			}
 			
-			else //elseif
+			else
 			{
 				conn = (HttpURLConnection) url.openConnection();
 			}
@@ -506,7 +507,7 @@ public class JobsApiController implements JobsApi {
 		    conn.setRequestProperty("Authorization", authHeaderValue);
 			
 		    
-
+			
 		    // Build the query using a JSON object
 		    JSONObject termObject = new JSONObject();
 		    termObject.put("job_id.keyword", jobId);
