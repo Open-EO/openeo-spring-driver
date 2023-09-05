@@ -15,8 +15,10 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.KeyStore;
 import java.security.Principal;
 import java.time.OffsetDateTime;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -25,6 +27,12 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManagerFactory;
 import javax.swing.event.EventListenerList;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
@@ -36,6 +44,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.openeo.spring.bearer.ITokenService;
 import org.openeo.spring.bearer.TokenUtil;
 import org.openeo.spring.components.JobScheduler;
@@ -115,6 +124,27 @@ public class JobsApiController implements JobsApi {
 	@Value("${co.elasticsearch.service.node.name}")
 	private String serviceNodeName;
 
+	@Value("${co.elasticsearch.service.index.name}")
+	private String serviceIndexName;
+	
+	@Value("${co.elasticsearch.service.truststore.password}")
+	private String trustStorePassword;
+	
+	@Value("${co.elasticsearch.service.truststore.path}")
+	private String trustStorePath;
+	
+	@Value("${co.elasticsearch.service.keystore.password}")
+	private String keyStorePassword;
+	
+	@Value("${co.elasticsearch.service.keystore.path}")
+	private String keyStorePath;
+	
+	@Value("${co.elasticsearch.service.username}")
+	private String elasticsearchServiceUsername;
+	
+	@Value("${co.elasticsearch.service.password}")
+	private String elasticsearchServicePassword;
+	
 	@Autowired
 	private JobScheduler jobScheduler;
 
@@ -379,77 +409,213 @@ public class JobsApiController implements JobsApi {
 			@Parameter(description = "The last identifier (property `id` of a log entry) the client has received. If provided, the back-ends only sends the entries that occured after the specified identifier. If not provided or empty, start with the first entry.") @Valid @RequestParam(value = "offset", required = false) String offset,
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit) {
 		LogEntries logEntries = new LogEntries();
-		//TODO describe query
-		String elasticSearchQuery = "filebeat-7.13.3-2021.07.13-000001/_search";
+		
+		// Construcing ES query URL on selected index
+		String elasticSearchQuery = serviceIndexName + "/_search?size=10000"; 
+
+		//FIXME: replace "/_search?size=10000" query with specific ES hits-retrieving pagination
+		// (the "size" param in paging  method as ES official documentation )
+				
 		try {
-			//TODO query elastic search endpoint here for all log information regarding a job queued for processing.
-			URL url = new URL(elasticSearchEndpoint + "/" + elasticSearchQuery);
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestMethod("GET");
-			conn.setDoOutput(true);
-			conn.setRequestProperty("Content-Type", "application/json");
-			StringBuilder queryString = new StringBuilder();
-			//TODO insert elastic search parameters from application.properties through resource loader here
-			queryString.append("{");
-			queryString.append("    \"query\":{");
-			queryString.append("            \"bool\":{");
-			queryString.append("                    \"filter\":[");
-			queryString.append("                            {\"term\": {\"service.name\":\""+  serviceName +"\"}},");
-			queryString.append("                            {\"term\": {\"service.node.name\":\""+ serviceNodeName +"\"}},");
-			queryString.append("                            {\"term\": {\"jobid\":\"" + jobId + "\"}}");
-			queryString.append("                            ]");
-			queryString.append("                    }");
-			queryString.append("            },");
-			queryString.append("    \"fields\":[");
-			queryString.append("            \"@timestamp\",");
-			queryString.append("            \"message\",");
-			queryString.append("            \"log.level\",");
-			queryString.append("            \"log.logger\"");
-			queryString.append("    ],");
-			queryString.append("    \"_source\": false");
-			queryString.append("}");
-			OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream());
-			out.write(queryString.toString());
-			out.close();
-			InputStream errorStream = conn.getErrorStream();
-			if (errorStream != null) {
-				BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream));
-				StringBuilder errorMessage = new StringBuilder();
-				String line;
-				while ((line = reader.readLine()) != null) {
-					log.error(line);
-					errorMessage.append(line);
-					errorMessage.append(System.getProperty("line.separator"));
+			
+	        HttpURLConnection conn = null;
+			URL url = new URL(elasticSearchEndpoint + elasticSearchQuery);
+			int check_code = HttpURLConnection.HTTP_OK;
+			
+			//check if elasticSearchEndpoint is an HTTP or HTTPS URL
+			if (elasticSearchEndpoint.startsWith("https://"))
+			{
+				HostnameVerifier customHostnameVerifier = new HostnameVerifier() {
+				    @Override
+				    public boolean verify(String hostname, SSLSession session) {
+				        // FIXME: every hostname is treated as "valid"
+				        // For specific verification need, you can add logical part here
+				        return true;
+				    }
+				};
+
+				// FIXME: setting this custom HTTPS verifier (temporary)
+				HttpsURLConnection.setDefaultHostnameVerifier(customHostnameVerifier);
+				
+				// Load the truststore
+				char[] trustStorePassword_ = trustStorePassword.toCharArray();
+				KeyStore trustStore = KeyStore.getInstance("JKS");
+				try (InputStream trustStoreInputStream = new FileInputStream(trustStorePath)) {
+					trustStore.load(trustStoreInputStream, trustStorePassword_);
 				}
+		
+				// Create TrustManagerFactory
+				TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+				trustManagerFactory.init(trustStore);
+		
+				// Load the keystore
+				char[] keyStorePassword_ = keyStorePassword.toCharArray();
+				KeyStore keyStore = KeyStore.getInstance("JKS");
+				try (InputStream keyStoreInputStream = new FileInputStream(keyStorePath)) {
+					keyStore.load(keyStoreInputStream, keyStorePassword_);
+				}
+		
+				// Create KeyManagerFactory
+				KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+				keyManagerFactory.init(keyStore, keyStorePassword_);
+		
+				// Create SSLContext
+				SSLContext sslContext = SSLContext.getInstance("TLS");
+				sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+				
+				// Open connection
+				conn = (HttpsURLConnection) url.openConnection();
+				((HttpsURLConnection) conn).setSSLSocketFactory(sslContext.getSocketFactory());
+				
+				check_code = HttpsURLConnection.HTTP_OK;
+			}
+			
+			else
+			{
+				conn = (HttpURLConnection) url.openConnection();
+			}
+			
+			// conn.setRequestMethod("GET");
+			conn.setDoOutput(true); 
+			
+			conn.setRequestProperty("Content-Type", "application/json");
+	
+		    // Set authentication credentials
+		    String authCredentials = elasticsearchServiceUsername + ":" + elasticsearchServicePassword;
+		    byte[] encodedAuth = Base64.getEncoder().encode(authCredentials.getBytes());
+		    String authHeaderValue = "Basic " + new String(encodedAuth);
+		    conn.setRequestProperty("Authorization", authHeaderValue);
+			
+		    
+			
+		    // Build the query using a JSON object
+		    JSONObject termObject = new JSONObject();
+		    termObject.put("job_id.keyword", jobId);
+
+		    JSONObject queryObject = new JSONObject();
+		    queryObject.put("term", termObject);
+
+		    JSONObject requestObject = new JSONObject();
+		    requestObject.put("query", queryObject);
+		    requestObject.put("_source", true);
+
+		    
+			OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream());
+			out.write(requestObject.toString());
+			out.close();
+		    
+		    
+			// Read response
+			int responseCode = conn.getResponseCode();
+			if (responseCode == check_code) {				
+				InputStream errorStream = conn.getErrorStream();
+				if (errorStream != null) {
+					BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream));
+					StringBuilder errorMessage = new StringBuilder();
+					String line;
+					while ((line = reader.readLine()) != null) {
+						log.error(line);
+						errorMessage.append(line);
+						errorMessage.append(System.getProperty("line.separator"));
+					}
+					log.error("An error when accessing logs from elastic stac: " + errorMessage.toString());
+					Error error = new Error();
+					error.setCode("500");
+					error.setMessage("An error when accessing logs from elastic stac: " + errorMessage.toString());
+					return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+
+				} else {
+					ByteArrayOutputStream result = new ByteArrayOutputStream();
+					byte[] buffer = new byte[1024];
+					 for (int length; (length = conn.getInputStream().read(buffer)) != -1; ) {
+					     result.write(buffer, 0, length);
+					 }
+					log.trace(result.toString());
+					//TODO create log result as json mappable object in domain model and map directly using annotations.
+					//automatic parsing as below is currently failing...
+					JSONObject logResult = new JSONObject(result.toString());
+					JSONArray results =  logResult.getJSONObject("hits").getJSONArray("hits");
+					
+					int esTotalHits =  logResult.getJSONObject("hits").getJSONObject("total").getInt("value");
+
+					if (esTotalHits == 0) {
+						log.error("Wrong Job ID or empty index: ES returned 0 hits");
+						Error error = new Error();
+						error.setCode("422"); // error 422
+						error.setMessage("Wrong Job ID or empty index: ES returned 0 hits");
+						return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+
+					}
+					
+					results.forEach(item -> {
+						JSONObject logEntryItem = (JSONObject) item;
+						JSONObject logInfoFields =  logEntryItem.getJSONObject("_source");  // "fields"
+						log.trace(logEntryItem.toString());
+						log.trace(logInfoFields.toString());
+						LogEntry logEntry = new LogEntry();
+						
+						// FIELDS
+						
+						// id
+						logEntry.setId(logEntryItem.getString("_id"));
+						//--//
+						
+						// code
+						logEntry.setCode("HTTP" + responseCode);
+						//--//
+						
+						// level
+						//String logLevel = logInfoFields.getJSONArray("log.level").getString(0); 
+						String logLevel = logInfoFields.getString("level");
+						//logEntry.setLevel(LevelEnum.valueOf(logLevel.toUpperCase()));
+						//logEntry.setLevel(logEntryItem.getString("level"));
+					    logEntry.setLevel(LevelEnum.valueOf(logLevel.toUpperCase()));
+					    //--//
+					    
+					    // message
+						//logEntry.setMessage(logInfoFields.getJSONArray("message").getString(0));
+						logEntry.setMessage(logInfoFields.getString("msg"));
+						//--//
+					    
+						//time
+						logEntry.setTime(logInfoFields.getString("time"));
+						//--//
+						
+						// data
+				        JsonNullable<Object> jsonNullableObject = null;
+						logEntry.setData(jsonNullableObject);
+						//--//
+						
+						// path
+						//LogEntryPath lep = new LogEntryPath(logInfoFields.getJSONObject("host").getString(""));
+						//logEntry.addPathItem((logInfoFields.getJSONObject("log").getJSONObject("file").getString("path"));  // "fields"
+						//--//
+						
+						// usage
+				        JsonNullable<Object> jsonNullableObject2 = null;
+						logEntry.setUsage(jsonNullableObject2);
+						//--//
+						
+						// links
+						//--//
+						
+						//log.info(logEntryItem);//.getJSONArray("container").getString(0)); //[for debug]
+						
+						logEntries.addLogsItem(logEntry);
+					});
+				}
+			} else if (responseCode > 399 && responseCode < 600) {
+			    String errorMessage = String.format("Error: %d response from Elastic server.", responseCode);
 				ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
 				        String.format("An error when accessing logs from elastic stac: %s", errorMessage));
 				log.error(response.getBody());
 				return response;
-			} else {
-				ByteArrayOutputStream result = new ByteArrayOutputStream();
-				byte[] buffer = new byte[1024];
-				 for (int length; (length = conn.getInputStream().read(buffer)) != -1; ) {
-				     result.write(buffer, 0, length);
-				 }
-				log.trace(result.toString());
-				//TODO create log result as json mappable object in domain model and map directly using annotations.
-				//automatic parsing as below is currently failing...
-				JSONObject logResult = new JSONObject(result.toString());
-				JSONArray results =  logResult.getJSONObject("hits").getJSONArray("hits");
-				results.forEach(item -> {
-					JSONObject logEntryItem = (JSONObject) item;
-					JSONObject logInfoFields =  logEntryItem.getJSONObject("fields");
-					log.trace(logEntryItem.toString());
-					log.trace(logInfoFields.toString());
-					LogEntry logEntry = new LogEntry();
-					String logLevel = logInfoFields.getJSONArray("log.level").getString(0);
-					logEntry.setLevel(LevelEnum.valueOf(logLevel.toUpperCase()));
-					logEntry.setMessage(logInfoFields.getJSONArray("message").getString(0));
-					logEntry.setId(logEntryItem.getString("_id"));
-					logEntries.addLogsItem(logEntry);
-				});
 			}
-		} catch(Exception e) {
+	
+			conn.disconnect();
+		
+		} catch(Exception e) {			
+			// TODO: rows below must become a new method/function
 			log.error("An error when accessing logs from elastic stac: " + e.getMessage());
 			StringBuilder builder = new StringBuilder(e.getMessage());
 			for (StackTraceElement element : e.getStackTrace()) {
@@ -462,7 +628,6 @@ public class JobsApiController implements JobsApi {
 		}
 		//TODO implement logEntry and add to logEntries list and return result with pagination links
 		return new ResponseEntity<LogEntries>(logEntries, HttpStatus.OK);
-
 	}
 
 	/**
