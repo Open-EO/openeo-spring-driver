@@ -11,27 +11,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.net.MalformedURLException;
-
-import java.nio.file.Files;
-
 import java.security.KeyStore;
 import java.security.Principal;
-
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.SignStyle;
-import java.time.temporal.ChronoField;
-
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -40,17 +26,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import java.util.stream.Collectors;
-
 import javax.annotation.PostConstruct;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
-import javax.net.ssl.HttpsURLConnection;
-
-import javax.net.ssl.HostnameVerifier;
-
+import javax.net.ssl.TrustManagerFactory;
 import javax.swing.event.EventListenerList;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
@@ -80,7 +62,6 @@ import org.openeo.spring.model.Link;
 import org.openeo.spring.model.LogEntries;
 import org.openeo.spring.model.LogEntry;
 import org.openeo.spring.model.LogEntry.LevelEnum;
-import org.openeo.spring.model.LogEntryPath;
 import org.openeo.wcps.ConvenienceHelper;
 import org.openeo.wcps.events.JobEvent;
 import org.openeo.wcps.events.JobEventListener;
@@ -624,6 +605,7 @@ public class JobsApiController implements JobsApi {
 					});
 				}
 			} else if (responseCode > 399 && responseCode < 600) {
+			    String errorMessage = String.format("Error: %d response from Elastic server.", responseCode);
 				ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
 				        String.format("An error when accessing logs from elastic stac: %s", errorMessage));
 				log.error(response.getBody());
