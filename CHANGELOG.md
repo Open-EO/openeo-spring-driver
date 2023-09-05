@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tests to use JUnit 5.
 
 ### Deprecated
-- Legacy Keycloak security adapters, replaced by 
+- Legacy Keycloak security adapters, replaced by new Spring Booth OAuth2 implementation.
 
 
 ## [1.1.0] - 2022-08-01
