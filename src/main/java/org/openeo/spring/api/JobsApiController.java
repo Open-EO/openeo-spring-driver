@@ -1,6 +1,7 @@
 package org.openeo.spring.api;
 
-import java.io.BufferedInputStream;
+import static org.openeo.spring.keycloak.legacy.KeycloakSecurityConfigAdapter.EURAC_ROLE;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -62,9 +63,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
 import org.openapitools.jackson.nullable.JsonNullable;
+import org.openeo.spring.bearer.ITokenService;
+import org.openeo.spring.bearer.TokenUtil;
 import org.openeo.spring.components.JobScheduler;
 import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.JobDAO;
+import org.openeo.spring.keycloak.legacy.AuthzService;
 import org.openeo.spring.model.BatchJobEstimate;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobs;
@@ -103,8 +107,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import static org.openeo.spring.SecurityConfig.EURAC_ROLE;
 
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @RestController
@@ -165,8 +167,11 @@ public class JobsApiController implements JobsApi {
 	@Autowired
 	private JobScheduler jobScheduler;
 
-	@Autowired
+	@Autowired(required = false)
 	private AuthzService authzService;
+	
+	@Autowired(required = false)
+	private ITokenService tokenService;
 
 	@Autowired
 	private ResultApiController resultApiController;
@@ -228,7 +233,8 @@ public class JobsApiController implements JobsApi {
 	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
 	 *         in general. * [Common Error Codes](errors.json) (status code 500)
 	 */
-	@Operation(summary = "Create a new batch job", operationId = "createJob", description = "Creates a new batch processing task (job) from one or more (chained) processes at the back-end.  Processing the data doesn't start yet. The job status gets initialized as `created` by default.", tags = {
+	@Override
+    @Operation(summary = "Create a new batch job", operationId = "createJob", description = "Creates a new batch processing task (job) from one or more (chained) processes at the back-end.  Processing the data doesn't start yet. The job status gets initialized as `created` by default.", tags = {
 			"Data Processing", "Batch Jobs", })
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "201", description = "The batch job has been created successfully."),
@@ -238,13 +244,15 @@ public class JobsApiController implements JobsApi {
 			"application/json" }, method = RequestMethod.POST)
 	public ResponseEntity<?> createJob(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
 
-		AccessToken token = null;
-
-		if(principal != null) {
-			token = TokenUtil.getAccessToken(principal);
-			job.setOwnerPrincipal(token.getPreferredUsername());
-			ThreadContext.put("userid", token.getPreferredUsername());
+		String username = principal.getName();
+		AccessToken token = TokenUtil.getAccessToken(principal, tokenService);
+		if (null != token) {
+		    username =  token.getName();
 		}
+
+		job.setOwnerPrincipal(username);
+		ThreadContext.put("userid", username);
+			
 		//TODO add validity check of the job using ValidationApiController
 //    	UUID jobID = UUID.randomUUID();
 //    	job.setId(jobID);
@@ -293,14 +301,10 @@ public class JobsApiController implements JobsApi {
 		        resultEngine = resultApiController.checkGraphValidityAndEngine(processGraph);
 		        job.setEngine(resultEngine);
 		    } catch (Exception e) {
-		        job.setEngine(null); // lenient: I can create an impossible graph
-//		        Error error = new Error();
-//		        error.setCode("500");
-//		        error.setMessage(e.getMessage());
-		        warningMessage = e.getMessage();
-		        log.warn("Creating an unfeasible process graph: {}", warningMessage);
-//		        ThreadContext.clearMap();
-//		        return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+//		        job.setEngine(null); // lenient: I can create an impossible "draft" graph ?
+		        ThreadContext.clearMap();
+		        return ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+		                "Creating an unfeasible process graph.");
 		    }
 
 		    jobDAO.save(job);
@@ -316,7 +320,7 @@ public class JobsApiController implements JobsApi {
 
 		    Job verifiedSave = jobDAO.findOne(job.getId());
 		    if (verifiedSave != null) {
-		        if(token != null) {
+		        if((null != token) && (null != authzService)) {
 		            authzService.createProtectedResource(job, token);
 		        }
 
@@ -336,27 +340,21 @@ public class JobsApiController implements JobsApi {
 		                // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Warning
 		            }
 		        } catch (URISyntaxException e) {
-		            Error error = new Error();
-		            error.setCode("500");
-		            error.setMessage("The submitted job " + job.toString() + " has an invalid URI");
-		            log.error("The submitted job {} has an invalid URI.", job);
+		            response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+		                    String.format("The submitted job \"%s\" has an invalid URI.", job));
+		            log.error(response.getBody());
 		            ThreadContext.clearMap();
-		            response = new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		        }
 		    } else {
-		        Error error = new Error();
-		        error.setCode("500");
-		        error.setMessage("The submitted job " + job.toString() + " was not saved persistently");
-		        log.error("The submitted job {} was not saved persistently.", job);
+		        response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+		                String.format("The submitted job \"%s\" was not saved persistently.", job));
+		        log.error(response.getBody());
 		        ThreadContext.clearMap();
-		        response = new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 		    }
 		} else {
-			Error error = new Error();
-			error.setCode("401");
-			error.setMessage("You are not authorized to create this job");
-			log.error("You are not authorized to create this job");
-			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED);
+		    response = ApiUtil.errorResponse(HttpStatus.UNAUTHORIZED,
+		            "You are not authorized to create this job");
+			log.error(response.getBody());
 		}
 
 		return response;
@@ -418,7 +416,8 @@ public class JobsApiController implements JobsApi {
 	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
 	 *         in general. * [Common Error Codes](errors.json) (status code 500)
 	 */
-	@Operation(summary = "Logs for a batch job", operationId = "debugJob", description = "Shows log entries for the batch job, usually for debugging purposes.  Back-ends can log any information that may be relevant for a user. Users can log information during data processing using respective processes such as `debug`.  If requested consecutively while a job is running, it is RECOMMENDED that clients use the offset parameter to get only the entries they have not received yet.  While pagination itself is OPTIONAL, the `offset` parameter is REQUIRED to be implemented by back-ends.", tags = {
+	@Override
+    @Operation(summary = "Logs for a batch job", operationId = "debugJob", description = "Shows log entries for the batch job, usually for debugging purposes.  Back-ends can log any information that may be relevant for a user. Users can log information during data processing using respective processes such as `debug`.  If requested consecutively while a job is running, it is RECOMMENDED that clients use the offset parameter to get only the entries they have not received yet.  While pagination itself is OPTIONAL, the `offset` parameter is REQUIRED to be implemented by back-ends.", tags = {
 			"Data Processing", "Batch Jobs", })
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Lists the requested log entries."),
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
@@ -543,7 +542,8 @@ public class JobsApiController implements JobsApi {
 					error.setCode("500");
 					error.setMessage("An error when accessing logs from elastic stac: " + errorMessage.toString());
 					return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-				}else {
+
+				} else {
 					ByteArrayOutputStream result = new ByteArrayOutputStream();
 					byte[] buffer = new byte[1024];
 					 for (int length; (length = conn.getInputStream().read(buffer)) != -1; ) {
@@ -624,27 +624,15 @@ public class JobsApiController implements JobsApi {
 					});
 				}
 			} else if (responseCode > 399 && responseCode < 600) {
-				// TODO: rows below must become a new method/function
-				// TODO: evaluate if implement or not this 'else if'
-				/*log.error("An error when accessing logs from elastic stac: " + e.getMessage());
-				StringBuilder builder = new StringBuilder(e.getMessage());
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-				Error error = new Error();
-				error.setCode("500");
-				error.setMessage("An error when accessing logs from elastic stac: " + builder.toString());
-				return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-				*/
+				ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+				        String.format("An error when accessing logs from elastic stac: %s", errorMessage));
+				log.error(response.getBody());
+				return response;
 			}
-			
 	
 			conn.disconnect();
-
 		
-		}catch(Exception e) {
-			
+		} catch(Exception e) {			
 			// TODO: rows below must become a new method/function
 			log.error("An error when accessing logs from elastic stac: " + e.getMessage());
 			StringBuilder builder = new StringBuilder(e.getMessage());
@@ -652,14 +640,12 @@ public class JobsApiController implements JobsApi {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage("An error when accessing logs from elastic stac: " + builder.toString());
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+			        builder.toString());
+			return response;
 		}
 		//TODO implement logEntry and add to logEntries list and return result with pagination links
 		return new ResponseEntity<LogEntries>(logEntries, HttpStatus.OK);
-
 	}
 
 	/**
@@ -689,7 +675,8 @@ public class JobsApiController implements JobsApi {
 	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
 	 *         in general. * [Common Error Codes](errors.json) (status code 500)
 	 */
-	@Operation(summary = "Delete a batch job", operationId = "deleteJob", description = "Deletes all data related to this job. Computations are stopped and computed results are deleted. This job won't generate additional costs for processing.", tags = {
+	@Override
+    @Operation(summary = "Delete a batch job", operationId = "deleteJob", description = "Deletes all data related to this job. Computations are stopped and computed results are deleted. This job won't generate additional costs for processing.", tags = {
 			"Data Processing", "Batch Jobs", })
 	@ApiResponses(value = { @ApiResponse(responseCode = "204", description = "The job has been successfully deleted."),
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
@@ -701,33 +688,33 @@ public class JobsApiController implements JobsApi {
 		if (job != null) {
 			BatchJobResult jobResult = resultDAO.findOne(UUID.fromString(jobId));
 			if(jobResult != null) {
-				log.debug("The job result " + jobId + " was detected.");
+				log.debug("The job result {} was detected.", jobId);
 				File jobResults = new File(tmpDir + jobId);
 				if(jobResults.exists()) {
-					log.debug("Directory of job results has been found: " + jobResults.getAbsolutePath());
+					log.debug("Directory of job results has been found: {}", jobResults.getAbsolutePath());
 					for(File file: jobResults.listFiles()) {
-						log.debug("The following result will be deleted: " + file.getName());
+						log.debug("The following result will be deleted: {}", file.getName());
 						file.delete();
 					}
 					jobResults.delete();
 					log.debug("All persistent files have been successfully deleted for job with id: " + jobId);
 				}
 				resultDAO.delete(jobResult);
-				log.debug("The job result " + jobId + " was successfully deleted.");
+				log.debug("The job result {} was successfully deleted.", jobId);
 			}
 			jobDAO.delete(job);
-			log.debug("The job " + jobId + " was successfully deleted.");
-			authzService.deleteProtectedResource(job);
-			log.debug("The job " + jobId + " was successfully deleted from Keycloak.");
+			log.debug("The job {} was successfully deleted.", jobId);
+			if (null != authzService) {
+			    authzService.deleteProtectedResource(job);
+			    log.debug("The job {} was successfully deleted from Keycloak.", jobId);
+			}
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} else {
-			Error error = new Error();
-			error.setCode("400");
-			error.setMessage("The requested job " + jobId + " could not be found.");
-			log.error("The requested job " + jobId + " could not be found.");
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+		            String.format("The requested job %s could not be found.", jobId));
+			log.error(response.getBody());
+			return response;
 		}
-
 	}
 
 	/**
@@ -756,7 +743,8 @@ public class JobsApiController implements JobsApi {
 	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
 	 *         in general. * [Common Error Codes](errors.json) (status code 500)
 	 */
-	@Operation(summary = "Full metadata for a batch job", operationId = "describeJob", description = "Returns all information about a submitted batch job.", tags = {
+	@Override
+    @Operation(summary = "Full metadata for a batch job", operationId = "describeJob", description = "Returns all information about a submitted batch job.", tags = {
 			"Data Processing", "Batch Jobs", })
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Full job information."),
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
@@ -772,11 +760,11 @@ public class JobsApiController implements JobsApi {
 			ThreadContext.clearMap();
 			return new ResponseEntity<Job>(job, HttpStatus.OK);
 		} else {
-			Error error = new Error();
-			error.setCode("400");
-			error.setMessage("The requested job " + jobId + " could not be found.");
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+		            String.format("The requested job %s could not be found.", jobId));
+		    log.error(response.getBody());
 			ThreadContext.clearMap();
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			return response;
 		}
 	}
 
@@ -814,7 +802,8 @@ public class JobsApiController implements JobsApi {
 	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
 	 *         in general. * [Common Error Codes](errors.json) (status code 500)
 	 */
-	@Operation(summary = "Get an estimate for a batch job", operationId = "estimateJob", description = "Clients can ask for an estimate for a batch job. Back-ends can decide to either calculate the duration, the costs, the size or a combination of them. This MUST be the upper limit of the incurring costs. Clients can be charged less than specified, but never more. Back-end providers MAY specify an expiry time for the estimate. Starting to process data afterwards MAY be charged at a higher cost. Costs MAY NOT include downloading costs. This can be indicated with the `downloads_included` flag.", tags = {
+	@Override
+    @Operation(summary = "Get an estimate for a batch job", operationId = "estimateJob", description = "Clients can ask for an estimate for a batch job. Back-ends can decide to either calculate the duration, the costs, the size or a combination of them. This MUST be the upper limit of the incurring costs. Clients can be charged less than specified, but never more. Back-end providers MAY specify an expiry time for the estimate. Starting to process data afterwards MAY be charged at a higher cost. Costs MAY NOT include downloading costs. This can be indicated with the `downloads_included` flag.", tags = {
 			"Data Processing", "Batch Jobs", })
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "The estimated costs with regard to money, processing time and storage capacity. At least one of `costs`, `duration` or `size` MUST be provided."),
@@ -883,7 +872,8 @@ public class JobsApiController implements JobsApi {
 	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
 	 *         in general. * [Common Error Codes](errors.json) (status code 500)
 	 */
-	@Operation(summary = "List all batch jobs", operationId = "listJobs", description = "Requests to this endpoint will list all batch jobs submitted by a user.  It is **strongly RECOMMENDED** to keep the response size small by omitting all optional non-scalar values from objects in `jobs` (i.e. the `process` property). To get the full metadata for a job clients MUST request `GET /jobs/{job_id}`.", tags = {
+	@Override
+    @Operation(summary = "List all batch jobs", operationId = "listJobs", description = "Requests to this endpoint will list all batch jobs submitted by a user.  It is **strongly RECOMMENDED** to keep the response size small by omitting all optional non-scalar values from objects in `jobs` (i.e. the `process` property). To get the full metadata for a job clients MUST request `GET /jobs/{job_id}`.", tags = {
 			"Data Processing", "Batch Jobs", })
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Array of job descriptions"),
 			@ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
@@ -892,17 +882,19 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> listJobs(
 			@Min(1) @Parameter(description = "This parameter enables pagination for the endpoint and specifies the maximum number of elements that arrays in the top-level object (e.g. jobs or log entries) are allowed to contain. The only exception is the `links` array, which MUST NOT be paginated as otherwise the pagination links may be missing ins responses. If the parameter is not provided or empty, all elements are returned.  Pagination is OPTIONAL and back-ends and clients may not support it. Therefore it MUST be implemented in a way that clients not supporting pagination get all resources regardless. Back-ends not supporting  pagination will return all resources.  If the response is paginated, the links array MUST be used to propagate the  links for pagination with pre-defined `rel` types. See the links array schema for supported `rel` types.  *Note:* Implementations can use all kind of pagination techniques, depending on what is supported best by their infrastructure. So it doesn't care whether it is page-based, offset-based or uses tokens for pagination. The clients will use whatever is specified in the links with the corresponding `rel` types.") @Valid @RequestParam(value = "limit", required = false) Integer limit, Principal principal) {
 
-	    AccessToken token = new AccessToken();
-	    try {
-	    	token = TokenUtil.getAccessToken(principal);
-	    } catch (Exception e) { 
+	    String username = principal.getName();
+	    AccessToken token = TokenUtil.getAccessToken(principal, tokenService);
+
+	    if (null != token) {
+	        username =  token.getName();
+	    } else {
 			Error error = new Error();
 			error.setCode("401");
 			error.setMessage("No acces token found, please authenticate.");
 			log.error(error);
 			return new ResponseEntity<Error>(error, HttpStatus.UNAUTHORIZED);
 	    }
-	    String username =  token.getPreferredUsername();
+
 	    BatchJobs batchJobs = new BatchJobs();
 
 	    for (Job job : jobDAO.findWithOwner(username)) {
@@ -972,7 +964,8 @@ public class JobsApiController implements JobsApi {
 	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
 	 *         in general. * [Common Error Codes](errors.json) (status code 500)
 	 */
-	@Operation(summary = "Download results for a completed batch job", operationId = "listResults", description = "After finishing processing, this request will provide signed URLs to the processed files of the batch job with some additional metadata. The response is a [STAC Item (version 0.9.0)](https://github.com/radiantearth/stac-spec/tree/v0.9.0/item-spec) if it has spatial and temporal references included.  URL signing is a way to protect files from unauthorized access with a key in the URL instead of HTTP header based authorization. The URL signing key is similar to a password and its inclusion in the URL allows to download files using simple GET requests supported by a wide range of programs, e.g. web browsers or download managers. Back-ends are responsible to generate the URL signing keys and to manage their appropriate expiration. The back-end MAY indicate an expiration time by setting the `expires` property.  If processing has not finished yet requests to this endpoint MUST be rejected with openEO error `JobNotFinished`.", tags = {
+	@Override
+    @Operation(summary = "Download results for a completed batch job", operationId = "listResults", description = "After finishing processing, this request will provide signed URLs to the processed files of the batch job with some additional metadata. The response is a [STAC Item (version 0.9.0)](https://github.com/radiantearth/stac-spec/tree/v0.9.0/item-spec) if it has spatial and temporal references included.  URL signing is a way to protect files from unauthorized access with a key in the URL instead of HTTP header based authorization. The URL signing key is similar to a password and its inclusion in the URL allows to download files using simple GET requests supported by a wide range of programs, e.g. web browsers or download managers. Back-ends are responsible to generate the URL signing keys and to manage their appropriate expiration. The back-end MAY indicate an expiration time by setting the `expires` property.  If processing has not finished yet requests to this endpoint MUST be rejected with openEO error `JobNotFinished`.", tags = {
 			"Data Processing", "Batch Jobs", })
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Valid download links have been returned. The download links doesn't necessarily need to be located under the API base url."),
@@ -988,12 +981,10 @@ public class JobsApiController implements JobsApi {
 			log.trace(result.toString());
 			return new ResponseEntity<BatchJobResult>(result, HttpStatus.OK);
 		} else {
-			Error error = new Error();
-			error.setCode("400");
-			error.setMessage("The requested job " + jobId + " could not be found.");
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+		            String.format("The requested job %s could not be found.", jobId));
+			return response;
 		}
-
 	}
 
 	@Operation(summary = "Download data for given file", operationId = "downloadAsset", description = "Download asset as a result from a successfully executed process graph.", tags = {
@@ -1028,11 +1019,10 @@ public class JobsApiController implements JobsApi {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
-			Error error = new Error();
-			error.setCode("400");
-			error.setMessage("The requested file " + fileName + " could not be found.");
+			ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+			        String.format("The requested file %s could not be found.", fileName));
 			ThreadContext.clearMap();
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			return response;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			log.error("IOEXception error");
@@ -1041,11 +1031,10 @@ public class JobsApiController implements JobsApi {
 				builder.append(element.toString() + "\n");
 			}
 			log.error(builder.toString());
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage("IOEXception error " + builder.toString());
+			ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+			        String.format("IOException error %s", builder));
 			ThreadContext.clearMap();
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			return response;
 		}
 	}
 
@@ -1084,7 +1073,8 @@ public class JobsApiController implements JobsApi {
 	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
 	 *         in general. * [Common Error Codes](errors.json) (status code 500)
 	 */
-	@Operation(summary = "Start processing a batch job", operationId = "startJob", description = "Adds a batch job to the processing queue to compute the results.  The result will be stored in the format specified in the process graph. To specify the format use a process such as `save_result`.  This endpoint has no effect if the job status is already `queued` or `running`. In particular, it doesn't restart a running job. Processing MUST be canceled before to restart it.  The job status is set to `queued`, if processing doesn't start instantly. * Once the processing starts the status is set to `running`.   * Once the data is available to download the status is set to `finished`.      * Whenever an error occurs during processing, the status must be set to `error`.", tags = {
+	@Override
+    @Operation(summary = "Start processing a batch job", operationId = "startJob", description = "Adds a batch job to the processing queue to compute the results.  The result will be stored in the format specified in the process graph. To specify the format use a process such as `save_result`.  This endpoint has no effect if the job status is already `queued` or `running`. In particular, it doesn't restart a running job. Processing MUST be canceled before to restart it.  The job status is set to `queued`, if processing doesn't start instantly. * Once the processing starts the status is set to `running`.   * Once the data is available to download the status is set to `finished`.      * Whenever an error occurs during processing, the status must be set to `error`.", tags = {
 			"Data Processing", "Batch Jobs", })
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "202", description = "The creation of the resource has been queued successfully."),
@@ -1097,28 +1087,25 @@ public class JobsApiController implements JobsApi {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			if (job.getStatus() == JobStates.FINISHED) {
-				Error error = new Error();
-				error.setCode("400");
-				error.setMessage("The requested job " + jobId + " has been finished and can't be restarted. Please create a new job.");
-				log.error(error.getMessage());
+			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+			            String.format("The requested job %s has been finished and cannot be restarted. Please create a new job.", jobId));
+				log.error(response.getBody());
 				ThreadContext.clearMap();
-				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+				return response;
 			}
 			if (job.getStatus() == JobStates.QUEUED)  {
-				Error error = new Error();
-				error.setCode("400");
-				error.setMessage("The requested job " + jobId + " is queued and can't be restarted before finishing.");
-				log.error(error.getMessage());
-				ThreadContext.clearMap();
-				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+                        String.format("The requested job %s is queued and cannot be restarted before finishing.", jobId));
+                log.error(response.getBody());
+                ThreadContext.clearMap();
+                return response;
 			}
 			if (job.getStatus() == JobStates.RUNNING)  {
-				Error error = new Error();
-				error.setCode("400");
-				error.setMessage("The requested job " + jobId + " is running and can't be restarted before finishing.");
-				log.error(error.getMessage());
-				ThreadContext.clearMap();
-				return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+                        String.format("The requested job %s is running and cannot be restarted before finishing.", jobId));
+                log.error(response.getBody());
+                ThreadContext.clearMap();
+                return response;
 			}
 			job.setStatus(JobStates.QUEUED);
 			job.setUpdated(OffsetDateTime.now());
@@ -1127,14 +1114,12 @@ public class JobsApiController implements JobsApi {
 			ThreadContext.clearMap();
 			return new ResponseEntity<Job>(HttpStatus.ACCEPTED);
 		} else {
-			Error error = new Error();
-			error.setCode("400");
-			error.setMessage("The requested job " + jobId + " could not be found.");
-			log.error("The requested job " + jobId + " could not be found.");
-			ThreadContext.clearMap();
-			return new ResponseEntity<Error>(error, HttpStatus.BAD_REQUEST);
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
+                    String.format("The requested job %s could not be found.", jobId));
+            log.error(response.getBody());
+            ThreadContext.clearMap();
+            return response;
 		}
-
 	}
 
 	/**
@@ -1171,7 +1156,8 @@ public class JobsApiController implements JobsApi {
 	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
 	 *         in general. * [Common Error Codes](errors.json) (status code 500)
 	 */
-	@Operation(summary = "Cancel processing a batch job", operationId = "stopJob", description = "Cancels all related computations for this job at the back-end. It will stop generating additional costs for processing.  A subset of processed results may be available for downloading depending on the state of the job as it was canceled. Finished results MUST NOT be deleted until the job is deleted or job processing is started again.  This endpoint only has an effect if the job status is `queued` or `running`.  The job status is set to `canceled` if the status was `running` beforehand and partial or preliminary results are available to be downloaded. Otherwise the status is set to `created`. ", tags = {
+	@Override
+    @Operation(summary = "Cancel processing a batch job", operationId = "stopJob", description = "Cancels all related computations for this job at the back-end. It will stop generating additional costs for processing.  A subset of processed results may be available for downloading depending on the state of the job as it was canceled. Finished results MUST NOT be deleted until the job is deleted or job processing is started again.  This endpoint only has an effect if the job status is `queued` or `running`.  The job status is set to `canceled` if the status was `running` beforehand and partial or preliminary results are available to be downloaded. Otherwise the status is set to `created`. ", tags = {
 			"Data Processing", "Batch Jobs", })
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "204", description = "Processing the job has been successfully canceled."),
@@ -1184,10 +1170,10 @@ public class JobsApiController implements JobsApi {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			if(job.getEngine()==EngineTypes.WCPS){
-				Error error = new Error();
-				error.setMessage("The requested WCPS job " + jobId + " cannot be stopped, not implemented.");
+			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.NOT_IMPLEMENTED,
+			            String.format("The requested WCPS job %s cannot be stopped, not implemented.", jobId));
 				ThreadContext.clearMap();
-				return new ResponseEntity<Error>(error, HttpStatus.NOT_IMPLEMENTED);
+				return response;
 			}
 			else if(job.getEngine()==EngineTypes.ODC_DASK) {
 				if (job.getStatus()==JobStates.RUNNING) {
@@ -1206,6 +1192,14 @@ public class JobsApiController implements JobsApi {
 					ThreadContext.clearMap();
 					return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 				}
+			} else  {
+			    log.warn("No engine attached to job {}.", job);
+			    if (JobStates.CREATED != job.getStatus()) {
+			        throw new InternalError("Job draft should not have status " + job.getStatus());
+			    } else {
+			        return ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+			                String.format("The requested job %s has no engine.", jobId));
+			    }
 			}
 		}
 		Error error = new Error();
@@ -1245,7 +1239,8 @@ public class JobsApiController implements JobsApi {
 	 *         [Error Handling](#section/API-Principles/Error-Handling) in the API
 	 *         in general. * [Common Error Codes](errors.json) (status code 500)
 	 */
-	@Operation(summary = "Modify a batch job", operationId = "updateJob", description = "Modifies an existing job at the back-end but maintains the identifier. Changes can be grouped in a single request.  Jobs can only be modified when the job is not queued or running. Otherwise requests to this endpoint MUST be rejected with openEO error `JobLocked`.", tags = {
+	@Override
+    @Operation(summary = "Modify a batch job", operationId = "updateJob", description = "Modifies an existing job at the back-end but maintains the identifier. Changes can be grouped in a single request.  Jobs can only be modified when the job is not queued or running. Otherwise requests to this endpoint MUST be rejected with openEO error `JobLocked`.", tags = {
 			"Data Processing", "Batch Jobs", })
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "204", description = "Changes to the job applied successfully."),
@@ -1260,11 +1255,10 @@ public class JobsApiController implements JobsApi {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
 			if (job.getStatus()==JobStates.QUEUED || job.getStatus()==JobStates.RUNNING) {
-					Error error = new Error();
-					error.setCode("400");
-					error.setMessage("JobLocked: The requested job " + jobId + " is queued or running, not possible to update it now.");
+			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.FORBIDDEN,
+			            String.format("JobLocked: The requested job %s is queued or running, not possible to update it now.", jobId));
 					ThreadContext.clearMap();
-					return new ResponseEntity<Error>(error, HttpStatus.FORBIDDEN);
+					return response;
 				}
 			if(updateBatchJobRequest.getEngine() != null) {
 				job.setEngine(updateBatchJobRequest.getEngine());

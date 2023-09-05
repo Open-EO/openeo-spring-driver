@@ -12,7 +12,9 @@ import org.openeo.spring.model.Capabilities;
 import org.openeo.spring.model.Endpoint;
 import org.openeo.spring.model.Endpoint.MethodsEnum;
 import org.openeo.spring.model.Link;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -31,8 +33,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @RequestMapping("${openapi.openEO.base-path:}")
 public class DefaultApiController implements DefaultApi {
 
-	public static final String DEFAULT_OPENEO_API_VERSION = "1.0.0";
-	public static final String DEFAULT_STAC_VERSION = "0.9.0";
+	public static final String IMPLEMENTED_OPENEO_API_VERSION = "1.0.0"; // TODO 1.1.0 ?
+	public static final String IMPLEMENTED_STAC_VERSION = "0.9.0";
 
 	private final NativeWebRequest request;
 
@@ -43,6 +45,15 @@ public class DefaultApiController implements DefaultApi {
 
 	@Value("${org.openeo.wcps.provider.url}")
 	private String providerUrl;
+	
+    @Value("${spring.security.enable-basic}")
+    boolean enableBasicAuth;
+    
+    @Value("${spring.security.enable-keycloak}")
+    boolean enableKeycloakAuth;
+    
+    @Autowired
+    ConfigurableEnvironment env;
 
 	@org.springframework.beans.factory.annotation.Autowired
 	public DefaultApiController(NativeWebRequest request) {
@@ -54,7 +65,8 @@ public class DefaultApiController implements DefaultApi {
 		return Optional.ofNullable(request);
 	}
 
-	@Operation(summary = "Information about the back-end", operationId = "capabilities", description = "Returns general information about the back-end, including which version and endpoints of the openEO API are supported. May also include billing information.", tags = {
+	@Override
+    @Operation(summary = "Information about the back-end", operationId = "capabilities", description = "Returns general information about the back-end, including which version and endpoints of the openEO API are supported. May also include billing information.", tags = {
 			"Capabilities", })
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Information about the API version and supported endpoints / features."),
@@ -65,13 +77,13 @@ public class DefaultApiController implements DefaultApi {
 
 		Capabilities capabilities = new Capabilities();
 
-		capabilities.apiVersion(DEFAULT_OPENEO_API_VERSION);
+		capabilities.apiVersion(IMPLEMENTED_OPENEO_API_VERSION);
 		capabilities.backendVersion("Spring-Dev-1.0.0");
 		capabilities.description(
 				"The Eurac Research backend provides EO data available for processing using OGC WC(P)S and the open data cube");
 		capabilities.title("Eurac Research - openEO - backend");
 		capabilities.setId("Eurac_openEO");
-		capabilities.setStacVersion(DEFAULT_STAC_VERSION);
+		capabilities.setStacVersion(IMPLEMENTED_STAC_VERSION);
 
 		Endpoint capabilitiesEndPoint = new Endpoint();
 		capabilitiesEndPoint.setPath("/");
@@ -123,10 +135,19 @@ public class DefaultApiController implements DefaultApi {
 		conformanceEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(conformanceEndpoint);
 
-		Endpoint credntialsOIDCEndpoint = new Endpoint();
-		credntialsOIDCEndpoint.setPath("/credentials/oidc");
-		credntialsOIDCEndpoint.addMethodsItem(MethodsEnum.GET);
-		capabilities.addEndpointsItem(credntialsOIDCEndpoint);
+		if (enableBasicAuth) {
+            Endpoint credentialsBasicEndpoint = new Endpoint();
+            credentialsBasicEndpoint.setPath("/credentials/basic");
+            credentialsBasicEndpoint.addMethodsItem(MethodsEnum.GET);
+            capabilities.addEndpointsItem(credentialsBasicEndpoint);
+        }
+		
+		if (enableKeycloakAuth) {
+		    Endpoint credentialsOIDCEndpoint = new Endpoint();
+		    credentialsOIDCEndpoint.setPath("/credentials/oidc");
+		    credentialsOIDCEndpoint.addMethodsItem(MethodsEnum.GET);
+		    capabilities.addEndpointsItem(credentialsOIDCEndpoint);
+		}
 
 		Endpoint jobsEndpoint = new Endpoint();
 		jobsEndpoint.setPath("/jobs");

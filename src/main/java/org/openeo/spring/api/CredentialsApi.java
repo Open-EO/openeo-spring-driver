@@ -7,8 +7,6 @@ package org.openeo.spring.api;
 
 import java.util.Optional;
 
-import org.openeo.spring.model.HTTPBasicAccessToken;
-import org.openeo.spring.model.OpenIDConnectProviders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -45,7 +43,7 @@ public interface CredentialsApi {
     @RequestMapping(value = "/credentials/basic",
         produces = { "application/json" }, 
         method = RequestMethod.GET)
-    default ResponseEntity<HTTPBasicAccessToken> authenticateBasic() {
+    default ResponseEntity</*HTTPBasicAccessToken*/?> authenticateBasic() {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {

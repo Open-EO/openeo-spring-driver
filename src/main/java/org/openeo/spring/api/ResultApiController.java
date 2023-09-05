@@ -1,5 +1,7 @@
 package org.openeo.spring.api;
 
+import static org.openeo.spring.keycloak.legacy.KeycloakSecurityConfigAdapter.EURAC_ROLE;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +33,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
+import org.openeo.spring.bearer.ITokenService;
+import org.openeo.spring.bearer.TokenUtil;
 import org.openeo.spring.components.CollectionMap;
 import org.openeo.spring.components.CollectionsMap;
 import org.openeo.spring.components.JobScheduler;
@@ -63,8 +67,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
-import static org.openeo.spring.SecurityConfig.EURAC_ROLE;
-
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Component
 @RestController
@@ -79,6 +81,9 @@ public class ResultApiController implements ResultApi {
 
 	@Autowired
 	private CollectionMap  collectionMap;
+	
+	@Autowired(required = false)
+	private ITokenService tokenService;
 
 	private final NativeWebRequest request;
 
@@ -98,15 +103,17 @@ public class ResultApiController implements ResultApi {
 
 	@Value("${org.openeo.wcps.collections.list}")
 	Resource collectionsFileWCPS;
+
 	@Value("${org.openeo.odc.collections.list}")
 	Resource collectionsFileODC;
 
 	@Value("${org.openeo.wcps.processes.list}")
 	Resource processesFileWCPS;
+
 	@Value("${org.openeo.odc.processes.list}")
 	Resource processesFileODC;
 
-	@org.springframework.beans.factory.annotation.Autowired
+	@Autowired
 	public ResultApiController(NativeWebRequest request) {
 		this.request = request;
 	}
@@ -116,7 +123,8 @@ public class ResultApiController implements ResultApi {
 		return Optional.ofNullable(request);
 	}
 
-	@Operation(summary = "Process and download data synchronously", operationId = "computeResult", description = "A user-defined process will be executed directly and the result will be downloaded in the format specified in the process graph. This endpoint can be used to generate small previews or test user-defined processes before starting a batch job. Timeouts on either client- or server-side are to be expected for complex computations. Back-ends MAY send the openEO error `ProcessGraphComplexity` immediately if the computation is expected to time out. Otherwise requests MAY time-out after a certain amount of time by sending openEO error `RequestTimeout`. A header named `OpenEO-Costs` MAY be sent with all responses, which MUST include the costs for processing and downloading the data. Additionally,  a link to a log file MAY be sent in the header.", tags = {
+	@Override
+    @Operation(summary = "Process and download data synchronously", operationId = "computeResult", description = "A user-defined process will be executed directly and the result will be downloaded in the format specified in the process graph. This endpoint can be used to generate small previews or test user-defined processes before starting a batch job. Timeouts on either client- or server-side are to be expected for complex computations. Back-ends MAY send the openEO error `ProcessGraphComplexity` immediately if the computation is expected to time out. Otherwise requests MAY time-out after a certain amount of time by sending openEO error `RequestTimeout`. A header named `OpenEO-Costs` MAY be sent with all responses, which MUST include the costs for processing and downloading the data. Additionally,  a link to a log file MAY be sent in the header.", tags = {
 			"Data Processing", })
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Result data in the requested output format"),
@@ -124,24 +132,26 @@ public class ResultApiController implements ResultApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/result", produces = { "*" }, consumes = {
 			"application/json" }, method = RequestMethod.POST)
-	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job,Principal principal) {
+	public ResponseEntity<?> computeResult(@Parameter(description = "", required = true) @Valid @RequestBody Job job, Principal principal) {
 		JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
 
 		AccessToken token = null;
+		
 		if(principal != null) {
-			token = TokenUtil.getAccessToken(principal);
+			token = TokenUtil.getAccessToken(principal, tokenService);
 		}
 
 		Set<String> roles = new HashSet<>();
-		Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
-		for (Map.Entry<String, AccessToken.Access> e : resourceAccess.entrySet()) {
-			if (e.getValue().getRoles() != null){
-				for(String r: e.getValue().getRoles()) {
-					roles.add(r);
-				}
-			}
+		if (null != token) {
+		    Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
+		    for (Map.Entry<String, AccessToken.Access> e : resourceAccess.entrySet()) {
+		        if (e.getValue().getRoles() != null){
+		            for(String r: e.getValue().getRoles()) {
+		                roles.add(r);
+		            }
+		        }
+		    }
 		}
-
 
 		boolean isEuracUser = roles.contains(EURAC_ROLE);
 
@@ -151,7 +161,7 @@ public class ResultApiController implements ResultApi {
 			String key = keys.next();
 			JSONObject processNode = (JSONObject) processGraphJSON.get(key);
 			String process_id = processNode.get("process_id").toString();
-			if (process_id.equals("run_udf") && !isEuracUser) {
+			if (process_id.equals("run_udf") && !isEuracUser) { // FIXME ?
 				isRunProcessAllow =false;
 			}
 		}
@@ -163,11 +173,10 @@ public class ResultApiController implements ResultApi {
 			resultEngine = checkGraphValidityAndEngine(processGraphJSON);
 			job.setEngine(resultEngine); // it might not have been defined at creation time
 		} catch (Exception e) {
-			Error error = new Error();
-			error.setCode("500");
-			error.setMessage(e.getMessage());
-			log.error(error.getMessage());
-			return new ResponseEntity<Error>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+		            e.getMessage());
+			log.error(response.getBody());
+			return response;
 		}
 		if (resultEngine == EngineTypes.ODC_DASK) {
 			JSONObject process = new JSONObject();
@@ -305,22 +314,24 @@ public class ResultApiController implements ResultApi {
 				for (JSONObject loadCollectionNode: loadCollectionNodes) {
 					collectionID = loadCollectionNode.getJSONObject("arguments").get("id").toString(); // The collection id requested in the process graph
 
-					Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
-					Collection collection = null;
+					if (collectionsMap.containsKey(enType)) {
+					    Collections engineCollections = collectionsMap.get(enType); // All the collections offered by this engine type
+					    Collection collection = null;
 
-					for (Collection coll: engineCollections.getCollections()) {
-						if (coll.getId().equals(collectionID)) {
-							collection = coll; // We found the requested collection in the current engine of the loop
-							break;
-						}
-					}
-					if (collection == null) {
-						containsSameEngineCollections = false;
-						break;
-					}
-					else {
-						selectedEngineType = enType;
-						containsSameEngineCollections = true;
+					    for (Collection coll: engineCollections.getCollections()) {
+					        if (coll.getId().equals(collectionID)) {
+					            collection = coll; // We found the requested collection in the current engine of the loop
+					            break;
+					        }
+					    }
+					    if (collection == null) {
+					        containsSameEngineCollections = false;
+					        break;
+					    }
+					    else {
+					        selectedEngineType = enType;
+					        containsSameEngineCollections = true;
+					    }
 					}
 				}
 				if (containsSameEngineCollections) {
