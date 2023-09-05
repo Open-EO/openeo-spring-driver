@@ -3,7 +3,7 @@ The ELK Stack (E stands for elasticsearch, L for logstash and K for Kibana, the 
 Elasticsearch is accessible and queryable via HTTP APIs and both results and query are formatted as JSON documents.\
 Since ES is a search engine, every JSON document returned is better know as "hit"
 
-# Our envirnment
+# Our environment
 For our OpenEO componentes (such as spring driver and ODC driver) we need to implement a specific version of ELK with Filebeat in order to ingest logfiles into Elasticsearch.\
 FileBeat has to be installed on client machines (that usually generate logs).\
 Logstash has better to be properly configured in the same machine as the ELK master node, in order to receive and process log entries recived from FileBeat via TCP or UDP according to specific grok regex specifications that will parse and ingest into ElasticSearch every according on our log formats
@@ -13,7 +13,7 @@ In our specific case, we are configuring an ELK stack made up by two distributed
 eosao13 (10.8.244.14): hosts major services and operates as the “master” for the elasticsearch services\
 eosao14 (10.8.244.15): hosts only elasticsearch as a secondary node 
 
-Elasticsearch, due to our security policy, operetes only via HTTPS (and with rispectives SSL certificates too)
+Elasticsearch, due to our security policy, operates only via HTTPS (and with respectives SSL certificates too)
 
 # Installation and configurations
 
@@ -115,7 +115,7 @@ sudo service logstash start
 
 ### Editing logstash conf
 \
-Edit /etc/logstash/conf.d/logsatsh.conf as follows:
+Edit /etc/logstash/conf.d/logstash.conf as follows:
 
 ```
 input{
@@ -254,7 +254,7 @@ xpack.security.http.ssl.enabled: true
 xpack.security.http.ssl.keystore.path: /etc/elasticsearch/certs/elastic-stack-ca.p12
 xpack.security.http.ssl.truststore.path: /etc/elasticsearch/certs/elastic-stack-ca.p12
 
-# Ohter configs
+# Other configs
 discovery.seed_hosts: ["10.8.244.14", "10.8.244.15", "eosao13", "eosao14"]
 cluster.initial_master_nodes: ["eosao13"]
 
