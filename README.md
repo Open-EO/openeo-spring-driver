@@ -77,7 +77,6 @@ org.openeo.wcps.provider.url=http://www.my-company.url
 org.openeo.wcps.provider.type=host
 org.openeo.wcps.processes.list=classpath:processes_wcps.json
 org.openeo.wcps.collections.list=collections_wcps.json
-org.openeo.wcps.provider.type=host
 
 org.openeo.odc.endpoint=http://my_open_data_cube_endpoint
 org.openeo.odc.deleteResultEndpoint=http://my_open_data_cube_endpoint_for_stopping_a_job
@@ -87,7 +86,6 @@ org.openeo.odc.provider.url=http://www.open_data_cube_provider.url
 org.openeo.odc.provider.type=host
 org.openeo.odc.processes.list=classpath:processes_odc.json
 org.openeo.odc.collections.list=collections_odc.json
-org.openeo.odc.provider.type=host
 
 org.openeo.endpoint=https://my_openeo.url
 org.openeo.public.endpoint=https://my_openeo_public.url
