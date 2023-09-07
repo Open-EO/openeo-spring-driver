@@ -16,6 +16,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -230,7 +231,12 @@ public class ResultApiController implements ResultApi {
 					return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/octet-stream")).body(outputFileBytes);
 				}
 				return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(outputFileBytes);
-			} catch (Exception e) {
+			} 
+			catch (NoSuchFileException e) {
+				log.error("Result file not found", e);
+				return ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,"Result file not found.");
+			}
+			catch (Exception e) {
 				StringBuilder importProcessLogger = new StringBuilder();
 				BufferedReader importProcessLogErrorReader = new BufferedReader(
 				new InputStreamReader(conn.getErrorStream()));
