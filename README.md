@@ -67,9 +67,6 @@ org.openeo.file.expiry=1
 org.openeo.querycollectionsonstartup=true
 org.openeo.parallelizedHarvest=true
 
-org.openeo.oidc.configuration.endpoint=https://my_keycloak.url/auth/realms/openeo/
-org.openeo.oidc.providers.list=classpath:oidc_providers.json
-
 org.openeo.wcps.endpoint=http://my_wcps_server:8080
 org.openeo.wcps.endpoint.version=2.0.1
 org.openeo.wcps.provider.name=My Company
