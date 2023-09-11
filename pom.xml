@@ -7,7 +7,7 @@
 	<artifactId>openeo-spring-driver</artifactId>
 	<packaging>jar</packaging>
 	<name>openeo-spring-driver</name>
-	<version>1.1.0</version>
+	<version>1.2.0-master</version>
 	
     <parent>
 		<groupId>org.springframework.boot</groupId>
