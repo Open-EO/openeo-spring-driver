@@ -78,7 +78,7 @@ public class DefaultApiController implements DefaultApi {
 		Capabilities capabilities = new Capabilities();
 
 		capabilities.apiVersion(IMPLEMENTED_OPENEO_API_VERSION);
-		capabilities.backendVersion("Spring-Dev-1.0.0");
+		capabilities.backendVersion("Spring-Dev-1.2.0");
 		capabilities.description(
 				"The Eurac Research backend provides EO data available for processing using OGC WC(P)S and the open data cube");
 		capabilities.title("Eurac Research - openEO - backend");
