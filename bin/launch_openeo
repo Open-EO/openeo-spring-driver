@@ -14,4 +14,4 @@ java -Xms4G -Xmx16G \
      -Djavax.net.ssl.trustStore="${JAVA_HOME}/lib/security/cacerts" \
      -Djavax.net.ssl.trustStorePassword=changeit \
      -Djava.library.path="${GDAL_HOME}/share/java/" \
-     "${SRC_DIR}/target/openeo-spring-driver-1.1.0-draft.jar"
+     "${SRC_DIR}/target/openeo-spring-driver-1.2.0-rc1.jar"

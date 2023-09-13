@@ -21,6 +21,8 @@ public class ApiFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) 
     		throws IOException, ServletException {
 	    
+        log.trace("Spring Security Filter Chain: {}", chain.getClass());
+        	    
         HttpServletResponse res = response;
         HttpServletRequest req = request;
         log.debug("Filter: URL" + " called: "+req.getRequestURL().toString());

@@ -39,7 +39,7 @@ import org.springframework.security.web.context.SecurityContextRepository;
 @Configuration
 @ConditionalOnProperty(prefix="spring.security", value="enable-basic")
 @ImportResource({ "classpath:spring-ba-security.xml" })
-@ComponentScan("org.openeo.spring.token")
+@ComponentScan("org.openeo.spring.bearer")
 //@Profile(BasicSecurityFromFileConfig.PROFILE_ID) -> better use @ConditionalOnProperty
 public class BasicSecurityConfig {
     
@@ -67,7 +67,7 @@ public class BasicSecurityConfig {
      * Requires login input on the basic-auth endpoint. 
      */
     @Bean
-    public SecurityFilterChain baLoginFilterChain(HttpSecurity http) throws Exception {       
+    public SecurityFilterChain baLoginFilterChain(HttpSecurity http) throws Exception {      
         http
         .antMatcher(BASIC_AUTH_API_RESOURCE)
         .authorizeHttpRequests(authorize -> authorize
@@ -84,7 +84,7 @@ public class BasicSecurityConfig {
         .addFilterAfter(jwtAuthenticationFilter, BasicAuthenticationFilter.class);
 //      - filters non ci sono se KEYCLOAK abilitato? solo quelli REGISTRATI. FIXME
         //      .rememberMe(Customizer.withDefaults()); TODO
-        
+                
         LOGGER.info("Basic authentication security chain set.");
 
         return http.build();

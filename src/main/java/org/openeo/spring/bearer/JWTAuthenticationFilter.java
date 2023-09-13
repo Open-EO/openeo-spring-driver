@@ -60,6 +60,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws IOException, ServletException {
         
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        LOGGER.debug("AUTH HEADER: {}", authorizationHeader);
         
         if (authorizationHeaderIsValid(authorizationHeader)) {
             Authentication authResult = SecurityContextHolder.getContext().getAuthentication(); 
@@ -67,7 +68,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 onSuccessfulAuthentication(request, response, authResult);
             } else {
                 LOGGER.debug("Unauthenticated user: NOOP.");
-            }
+            }       
         } else {
             LOGGER.debug("No valid \"Authorization\" header found.");
         }
@@ -81,6 +82,8 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
      */
     protected void onSuccessfulAuthentication(HttpServletRequest request,
             HttpServletResponse response, Authentication authResult) {
+        LOGGER.debug("Authentication successful: {}", authResult.getClass());
+        
         Object authPrincipal = authResult.getPrincipal();
         
         if (authPrincipal instanceof UserDetails) {
