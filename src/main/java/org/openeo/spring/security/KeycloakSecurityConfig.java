@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
@@ -34,30 +35,31 @@ public class KeycloakSecurityConfig {
 
     /** Used to define a {@link Profile}. */
     public static final String PROFILE_ID = "KEYCLOAK_AUTH";
-    
+
     /** The beginning of an OIDC JWT token prefix (full prefix depends on provider) */
     public static final String TOKEN_PREFIX_START = "oidc/"; // "oidc/ms/TOKEN"
-    
+
     private static final Logger LOGGER = LogManager.getLogger(KeycloakSecurityConfig.class);
 
     @Autowired
     KeycloakLogoutHandler keycloakLogoutHandler;
-    
+
     @Autowired
     FilterChainExceptionHandler filterChainExHandler;
-    
+
     @Bean
     protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {
         return new RegisterSessionAuthenticationStrategy(new SessionRegistryImpl());
     }
 
     /**
-     * Requires login input on the basic-auth endpoint. 
+     * Requires login input on the basic-auth endpoint.
      * @param http
      * @return
      * @throws Exception
      */
     @Bean
+    @Order(1)
     public SecurityFilterChain kcLoginFilterChain(HttpSecurity http) throws Exception {
         http
         .antMatcher(OIDC_AUTH_API_RESOURCE)
@@ -72,13 +74,14 @@ public class KeycloakSecurityConfig {
                 .addLogoutHandler(keycloakLogoutHandler)
                 .logoutSuccessUrl("/")
         );
-        
+
         LOGGER.info("Keycloak authentication security chain set.");
 
         return http.build();
     }
 
     @Bean
+    @Order(2)
     public SecurityFilterChain kcSecurityFilterChain(HttpSecurity http) throws Exception {
         http
         .authorizeHttpRequests(authorize -> authorize
@@ -92,7 +95,7 @@ public class KeycloakSecurityConfig {
         .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
         // catch exceptions and resolve them to error for the client
         .addFilterBefore(filterChainExHandler, LogoutFilter.class);
-        
+
         LOGGER.info("Keycloak authentication security chain set.");
 
         return http.build();
@@ -108,19 +111,19 @@ public class KeycloakSecurityConfig {
                 .antMatchers(NOAUTH_API_RESOURCES)
                 .antMatchers(BASIC_AUTH_API_RESOURCE);
     }
-    
+
     /**
-     * Need to strip away the {@code oidc/ms/} prefix from the token before decoding it. 
+     * Need to strip away the {@code oidc/ms/} prefix from the token before decoding it.
      */
     @Bean
     BearerTokenResolver bearerTokenResolver() {
         return new PrefixedBearerTokenResolver(TOKEN_PREFIX_START);
     }
-    
+
     /**
      * Overrides default API filters set up by Spring Boot auto-configuration.
-     * Without this, OAuth2 login redirection specified in {@code application.properties} is processed. 
-     * 
+     * Without this, OAuth2 login redirection specified in {@code application.properties} is processed.
+     *
      * @see org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration#OAuth2ClientAutoConfiguration()
      * @see <a href="https://docs.spring.io/spring-security/reference/servlet/oauth2/login/core.html#oauth2login-override-boot-autoconfig">Overriding Spring Boot 2.x Auto-configuration</a>
      */
@@ -130,7 +133,7 @@ public class KeycloakSecurityConfig {
 
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-            // NOOP, but avoid OAuth 2.0 Login auto-configuration 
+            // NOOP, but avoid OAuth 2.0 Login auto-configuration
             return http.build();
         }
     }

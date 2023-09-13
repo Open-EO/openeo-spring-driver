@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -42,32 +43,33 @@ import org.springframework.security.web.context.SecurityContextRepository;
 @ComponentScan("org.openeo.spring.token")
 //@Profile(BasicSecurityFromFileConfig.PROFILE_ID) -> better use @ConditionalOnProperty
 public class BasicSecurityConfig {
-    
+
     @Autowired
     JWTAuthenticationFilter jwtAuthenticationFilter;
-    
+
     @Autowired
     JWTAuthorizationFilter jwtAuthorizationFilter;
-    
+
     @Autowired
     FilterChainExceptionHandler filterChainExHandler;
-    
+
     @Autowired
     BAuthEntrypoint authEntrypoint;
-    
+
     /** Used to define a {@link Profile}. */
     public static final String PROFILE_ID = "BASIC_AUTH";
-    
+
     /** Override default session repository. */
     public static SecurityContextRepository REPO;
-    
+
     private static final Logger LOGGER = LogManager.getLogger(BasicSecurityConfig.class);
-    
+
     /**
-     * Requires login input on the basic-auth endpoint. 
+     * Requires login input on the basic-auth endpoint.
      */
     @Bean
-    public SecurityFilterChain baLoginFilterChain(HttpSecurity http) throws Exception {       
+    @Order(1)
+    public SecurityFilterChain baLoginFilterChain(HttpSecurity http) throws Exception {
         http
         .antMatcher(BASIC_AUTH_API_RESOURCE)
         .authorizeHttpRequests(authorize -> authorize
@@ -84,20 +86,21 @@ public class BasicSecurityConfig {
         .addFilterAfter(jwtAuthenticationFilter, BasicAuthenticationFilter.class);
 //      - filters non ci sono se KEYCLOAK abilitato? solo quelli REGISTRATI. FIXME
         //      .rememberMe(Customizer.withDefaults()); TODO
-        
+
         LOGGER.info("Basic authentication security chain set.");
 
         return http.build();
     }
-    
+
     /**
      * Requires authenticated user on all resources.
-     * 
+     *
      * NOTE: resources to be ignored by the authorization service are
      * configured in {@link #webSecurityCustomizer()}.
      */
     @Bean
-    public SecurityFilterChain baSecurityFilterChain(HttpSecurity http) throws Exception {     
+    @Order(2)
+    public SecurityFilterChain baSecurityFilterChain(HttpSecurity http) throws Exception {
         http
         .authorizeHttpRequests(authorize -> authorize
                 .anyRequest().authenticated()
@@ -112,12 +115,12 @@ public class BasicSecurityConfig {
         .and()
         .addFilterBefore(filterChainExHandler, LogoutFilter.class)
         .addFilterBefore(jwtAuthorizationFilter, BasicAuthenticationFilter.class);
-        
+
         LOGGER.info("Basic authorization security chain set.");
-        
+
         return http.build();
     }
-    
+
     /**
      * Sets the resources that do not required security rules.
      */
@@ -128,7 +131,7 @@ public class BasicSecurityConfig {
                 .antMatchers(NOAUTH_API_RESOURCES)
                 .antMatchers(OIDC_AUTH_API_RESOURCE);
     }
-    
+
     // to encode passwords, use Spring Boot CLI
     // $ spring encodepassword "password"
     // THIS IS CONFIGURED IN THE XML CONFIG FILE:
@@ -147,45 +150,45 @@ public class BasicSecurityConfig {
 //
 //        return new InMemoryUserDetailsManager(user, admin);
 //    }
-    
+
     /**
      * Crypto-encoder for local storage of passwords.
-     * 
+     *
      * NOTE: this has nothing to do with the basic-auth encoding
-     * function used in HTTP headers (which shall be Base64 by 
+     * function used in HTTP headers (which shall be Base64 by
      * <a href="https://www.rfc-editor.org/rfc/rfc7617.html">
      * Basic HTTP Authentication scheme standard</a>).
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
         // it will detect the {id} of passwords (eg. {bcrypt}) and delegate
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); 
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
-    
+
     @Bean
     @Primary
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
-    
+
     /** Overload for {@link #authenticationManager(AuthenticationConfiguration)}. */
 //  public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
 //      final AuthenticationConfiguration AC = http.getSharedObject(AuthenticationConfiguration.class);
 //      return authenticationManager(AC);
 //  }
-  
+
   /*
    * (force my custom Authentication Provider here)
    * NO: automatically injected in the manager if it is a @Component
    */
 //  @Bean
 //  public AuthenticationManager authManager(HttpSecurity http) throws Exception {
-//      AuthenticationManagerBuilder authenticationManagerBuilder = 
+//      AuthenticationManagerBuilder authenticationManagerBuilder =
 //          http.getSharedObject(AuthenticationManagerBuilder.class);
 //      authenticationManagerBuilder.authenticationProvider(AP);
 //      return authenticationManagerBuilder.build();
 //  }
-    
+
     /**
      * Custom security context repository, to manually store session information.
      */
@@ -204,6 +207,6 @@ public class BasicSecurityConfig {
         @Override
         public boolean containsContext(HttpServletRequest request) {
             return super.containsContext(request);
-        }        
+        }
     }
 }
