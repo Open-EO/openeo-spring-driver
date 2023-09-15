@@ -107,6 +107,12 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
     /** Default internal concurrency. */
     public static final int DEFAULT_NTHREADS = 5;
 
+    /**
+     * Index of elements not found in a Java lists.
+     * @see List#indexOf(Object)
+     */
+    private static final int NOT_FOUND = -1;
+
     /*
      * members
      */
@@ -621,7 +627,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
 
                     // guard
                     if (!axisLabels.contains(abbrev)) {
-                        log.error("Spatial axis '{}' not found in coverage definition.", label);
+                        log.warn("{}: spatial axis '{}' not found in coverage definition.", coverageID, label);
                         // skip or lenient?
                     }
                 }
@@ -829,6 +835,12 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                     .map(x -> axisLabels.indexOf(x))
                     .collect(Collectors.toList()); //Java 9: .toList());
 
+            if (indexes.contains(NOT_FOUND)) {
+                log.error("{}: wrong spatial axes label(s): {}. Expected full list: {}",
+                        coverageID, spatialAxisLabels, axisLabels);
+                return null;
+            }
+
             double[] lowerCorner = indexes.stream()
                     .map(i -> Double.parseDouble(minValues[i]))
                     .mapToDouble(Double::doubleValue)
@@ -920,6 +932,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
         List<Link> links = new ArrayList<>();
 
         // licence link
+        // FIXME: <About_Link> of eg. ADO_SM_anomalies_ERA5 is not link, but a sentence containing links
         String licenseLink = metadataElement.getChildText("License_Link", gmlNS);
         if (null != licenseLink) {
             Link link = new Link();
@@ -940,6 +953,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
         }
 
         // about link
+        // FIXME
         String aboutLink = metadataElement.getChildText("About_Link");
         if (null != aboutLink) {
             Link link = new Link();
@@ -1067,7 +1081,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                     provider.setUrl(new URI(link));
                     providers.add(provider);
                 } catch (URISyntaxException e) {
-                    log.error("Invalid provider link. ", e);
+                    log.error("{}: Invalid provider link.", coverageID, e);
                     return null;
                 }
             }
