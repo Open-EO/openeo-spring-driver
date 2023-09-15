@@ -6,7 +6,9 @@ name: Java CI with Maven (+ tests)
 on:
   schedule:
     # just testing
-    - cron:  '30 12 * * 5'
+    - cron:  '40 12 * * 5'
+  push:
+    branches: [ master ]
 
 jobs:
   build:
