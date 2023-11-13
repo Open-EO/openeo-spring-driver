@@ -217,7 +217,7 @@ public class DefaultApiController implements DefaultApi {
 			log.error("the url provided is not valid: " + openEOEndpoint);
 		}
 		openEOUrl.setTitle("URL to openEO API Service");
-		openEOUrl.setType("applicaton/json");
+		openEOUrl.setType("application/json");
 		openEOUrl.setRel("self");
 		capabilities.addLinksItem(openEOUrl);
 
@@ -229,7 +229,7 @@ public class DefaultApiController implements DefaultApi {
 			log.error("the url provided is not valid: " + versionHistoryUrl);
 		}
 		versionHistoryLink.setTitle("Well-Known URL");
-		versionHistoryLink.setType("applicaton/json");
+		versionHistoryLink.setType("application/json");
 		versionHistoryLink.setRel("version-history");
 		capabilities.addLinksItem(versionHistoryLink);
 
@@ -241,7 +241,7 @@ public class DefaultApiController implements DefaultApi {
 			log.error("the url provided is not valid: " + collDataUrl	);
 		}
 		collDataLink.setTitle("Collections");
-		collDataLink.setType("applicaton/json");
+		collDataLink.setType("application/json");
 		collDataLink.setRel("data");
 		capabilities.addLinksItem(collDataLink);
 
