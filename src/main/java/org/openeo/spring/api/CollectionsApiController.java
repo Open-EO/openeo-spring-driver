@@ -20,6 +20,7 @@ import javax.validation.constraints.Pattern;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.openeo.spring.components.CollectionMap;
 import org.openeo.spring.components.CollectionsMap;
 import org.openeo.spring.loaders.ICollectionsLoader;
@@ -101,6 +102,9 @@ public class CollectionsApiController implements CollectionsApi {
 
     @Autowired
     private CollectionMap collectionMap;
+    
+    @Autowired
+    private JobsApi jobsApi;
 
     private final NativeWebRequest request;
 
@@ -353,4 +357,102 @@ public class CollectionsApiController implements CollectionsApi {
         }
         return new ResponseEntity<Collection>(HttpStatus.NOT_FOUND);
     }
+
+/**
+ * GET /collections/{collection_id}/coverage : Full metadata for a specific dataset Lists
+ * **all** information about a specific collection specified by the identifier
+ * &#x60;collection_id&#x60;. This endpoint is compatible with [STAC
+ * 0.9.0](https://stacspec.org) and [OGC API -
+ * Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC
+ * API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features
+ * / extensions and [STAC
+ * extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions)
+ * can be implemented in addition to what is documented here.
+ *
+ * @param collectionId Collection identifier (required)
+ * @return JSON object with the full collection metadata. (status code 200) or
+ *         The request can&#39;t be fulfilled due to an error on client-side,
+ *         i.e. the request is invalid. The client should not repeat the request
+ *         without modifications. The response body SHOULD contain a JSON error
+ *         object. MUST be any HTTP status code specified in [RFC
+ *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request
+ *         MUST respond with HTTP status codes 401 if authorization is required
+ *         or 403 if the authorization failed or access is forbidden in general
+ *         to the authenticated user. HTTP status code 404 should be used if the
+ *         value of a path parameter is invalid. See also: * [Error
+ *         Handling](#section/API-Principles/Error-Handling) in the API in
+ *         general. * [Common Error Codes](errors.json) (status code 400) or The
+ *         request can&#39;t be fulfilled due to an error at the back-end. The
+ *         error is never the client’s fault and therefore it is reasonable for
+ *         the client to retry the exact same request that triggered this
+ *         response. The response body SHOULD contain a JSON error object. MUST
+ *         be any HTTP status code specified in [RFC
+ *         7231](https://tools.ietf.org/html/rfc7231#section-6.6). See also: *
+ *         [Error Handling](#section/API-Principles/Error-Handling) in the API
+ *         in general. * [Common Error Codes](errors.json) (status code 500)
+ */
+
+@Operation(summary = "Full metadata for a specific dataset", operationId = "describeCollecion", description = "Lists **all** information about a specific collection specified by the identifier `collection_id`.  This endpoint is compatible with [STAC 0.9.0](https://stacspec.org) and [OGC API - Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html). [STAC API](https://github.com/radiantearth/stac-spec/tree/v0.9.0/api-spec) features / extensions and [STAC extensions](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions) can be implemented in addition to what is documented here.", tags = {
+        "EO Data Discovery", })
+@ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "JSON object with the full collection metadata."),
+        @ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
+        @ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
+@GetMapping(value = "/collections/{collection_id}/coverage", produces = { "application/json" })
+@Override
+public ResponseEntity<?> getCoverage(
+        @Pattern(regexp = "^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier", required = true) @PathVariable("collection_id") String collectionId,
+        Principal principal) {
+    
+//	if (principal == null) {
+//        return ApiUtil.errorResponse(HttpStatus.FORBIDDEN,
+//                "Please authenticate to access the /coverage endpoint.");
+//    }
+//    log.info("The following user is authenticated: " + principal.getName());
+    //    	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    //    	if (!(authentication instanceof AnonymousAuthenticationToken)) {
+    //    	    String currentUserName = authentication.getName();
+    //    	    log.debug("The following user is authenticated: " + currentUserName);
+    //    	}else {
+    //    		log.warn("The current user is not authenticated!");
+    //    	}
+
+    URL url;
+    Collection currentCollection = collectionMap.get(collectionId);
+    if (currentCollection != null) {
+        return new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
+    }
+    return new ResponseEntity<Collection>(HttpStatus.NOT_FOUND);
+    
+    //1. Mapping of Collection to CIS JSON METADATA SCHEMA, coverageByDomainAndRange
+    //2. Create job object for the download:
+    //2.1 Translate to openEO Process Graph with load_collection + save_result
+    //3. Submit job to jobsApiController
+    //4. Get /jobs/job_id/result from JobsApiController and add link to output JSON RangeSet
+    
+//    {
+//    	  "process_graph": {
+//    	    "load1": {
+//    	      "process_id": "load_collection",
+//    	      "arguments": {
+//    	        "id": "s2_l2a",
+//    	        "spatial_extent": null,
+//    	        "temporal_extent": null,
+//    	        "bands": null
+//    	      }
+//    	    },
+//    	    "save2": {
+//    	      "process_id": "save_result",
+//    	      "arguments": {
+//    	        "format": "NETCDF",
+//    	        "data": {
+//    	          "from_node": "load1"
+//    	        }
+//    	      },
+//    	      "result": true
+//    	    }
+//    	  },
+//    	  "parameters": []
+//    	}
+}
 }

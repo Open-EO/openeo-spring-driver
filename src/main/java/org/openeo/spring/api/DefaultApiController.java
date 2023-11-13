@@ -115,6 +115,11 @@ public class DefaultApiController implements DefaultApi {
 		collectionIDEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(collectionIDEndpoint);
 
+		Endpoint collectionCoverageEndpoint = new Endpoint();
+		collectionCoverageEndpoint.setPath("/collections/{collection_id}/coverage");
+		collectionCoverageEndpoint.addMethodsItem(MethodsEnum.GET);
+		capabilities.addEndpointsItem(collectionCoverageEndpoint);
+
 		Endpoint processesEndpoint = new Endpoint();
 		processesEndpoint.setPath("/processes");
 		processesEndpoint.addMethodsItem(MethodsEnum.GET);
