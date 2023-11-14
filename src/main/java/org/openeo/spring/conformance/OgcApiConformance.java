@@ -12,6 +12,31 @@ public interface OgcApiConformance {
     URI getUri();
 
     /**
+     * OGC API - Common (Part 1 & 2)
+     * @see https://docs.ogc.org/is/19-072/19-072.html
+     * @see https://docs.ogc.org/DRAFTS/20-024.html
+     */
+    enum Common implements OgcApiConformance {
+        CORE("http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core"),
+        COLLECTIONS("http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections");
+
+        private final String uri;
+
+        private Common(String uri) {
+            this.uri = uri;
+        }
+
+        @Override
+        public URI getUri() {
+            try {
+                return new URI(uri);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException("Invalid conformance URI: " + uri);
+            }
+        }
+    }
+
+    /**
      * OGC API - Coverages
      * @see https://docs.ogc.org/DRAFTS/19-087.html 
      */

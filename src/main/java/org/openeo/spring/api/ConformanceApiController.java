@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.openeo.spring.conformance.OgcApiConformance;
+import org.openeo.spring.conformance.OgcApiConformance.Common;
 import org.openeo.spring.conformance.OgcApiConformance.Coverages;
 import org.openeo.spring.model.OGCConformanceClasses;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Controller
 @RequestMapping("${openapi.openEO.base-path:}")
@@ -28,6 +30,8 @@ public class ConformanceApiController implements ConformanceApi {
      */
     public static final List<OgcApiConformance> SERVER_OGCAPI_CONFORMANCE =
             Arrays.asList(
+                    Common.CORE,
+                    Common.COLLECTIONS,
                     Coverages.CORE,
                     Coverages.SUBSETTING
 //                    Coverages.CIS_JSON ?

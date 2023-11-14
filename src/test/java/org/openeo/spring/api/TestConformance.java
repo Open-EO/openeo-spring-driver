@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
+import org.openeo.spring.conformance.OgcApiConformance.Common;
 import org.openeo.spring.conformance.OgcApiConformance.Coverages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -27,7 +28,9 @@ public class TestConformance {
                 jsonPath("$.conformsTo").exists(),
                 jsonPath("$.conformsTo").isNotEmpty(),
                 jsonPath("$.conformsTo").isArray(),
-                jsonPath("$.conformsTo[0]").value(Coverages.CORE.getUri().toString()),
-                jsonPath("$.conformsTo[1]").value(Coverages.SUBSETTING.getUri().toString()));
+                jsonPath("$.conformsTo[0]").value(Common.CORE.getUri().toString()),
+                jsonPath("$.conformsTo[1]").value(Common.COLLECTIONS.getUri().toString()),
+                jsonPath("$.conformsTo[2]").value(Coverages.CORE.getUri().toString()),
+                jsonPath("$.conformsTo[3]").value(Coverages.SUBSETTING.getUri().toString()));
     }
 }
