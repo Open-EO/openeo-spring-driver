@@ -35,7 +35,7 @@
 		<netcdfJavaVersion>5.2.0</netcdfJavaVersion>
 		<log4JVersion>2.17.0</log4JVersion>
 		<commonsio.version>2.8.0</commonsio.version>
-		<json.version>20230618</json.version>
+		<json.version>20231013</json.version>
 		<keycloak.version>12.0.4</keycloak.version>
 		<tomcat.dbcp.version>9.0.37</tomcat.dbcp.version>
 		<jackson.nullable.version>0.2.1</jackson.nullable.version>
