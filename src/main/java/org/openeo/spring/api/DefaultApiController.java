@@ -46,13 +46,13 @@ public class DefaultApiController implements DefaultApi {
 
 	@Value("${org.openeo.wcps.provider.url}")
 	private String providerUrl;
-	
+
     @Value("${spring.security.enable-basic}")
     boolean enableBasicAuth;
-    
+
     @Value("${spring.security.enable-keycloak}")
     boolean enableKeycloakAuth;
-    
+
     @Autowired
     ConfigurableEnvironment env;
 
@@ -153,7 +153,7 @@ public class DefaultApiController implements DefaultApi {
             credentialsBasicEndpoint.addMethodsItem(MethodsEnum.GET);
             capabilities.addEndpointsItem(credentialsBasicEndpoint);
         }
-		
+
 		if (enableKeycloakAuth) {
 		    Endpoint credentialsOIDCEndpoint = new Endpoint();
 		    credentialsOIDCEndpoint.setPath("/credentials/oidc");
@@ -210,7 +210,7 @@ public class DefaultApiController implements DefaultApi {
 		capabilities.setBilling(billing);
 
 		/*
-         * HTML Home page link 
+         * HTML Home page link
          */
 		Link operatorUrl = new Link();
 		try {
@@ -266,7 +266,7 @@ public class DefaultApiController implements DefaultApi {
 		collDataLink.setType("application/json");
 		collDataLink.setRel("data");
 		capabilities.addLinksItem(collDataLink);
-		
+
 		/*
 		 * Conformance link
 		 */
@@ -281,10 +281,9 @@ public class DefaultApiController implements DefaultApi {
 		conformanceLink.setType("application/json");
 		conformanceLink.setRel(OgcLinkRelation.CONFORMANCE.toString());
 		capabilities.addLinksItem(conformanceLink);
-		
+
 
 		return new ResponseEntity<Capabilities>(capabilities, HttpStatus.OK);
-
 	}
 
 }
