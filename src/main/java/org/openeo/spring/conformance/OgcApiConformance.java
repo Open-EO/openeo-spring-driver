@@ -18,7 +18,8 @@ public interface OgcApiConformance {
      */
     enum Common implements OgcApiConformance {
         CORE("http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core"),
-        COLLECTIONS("http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections");
+        COLLECTIONS("http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections"),
+        JSON("http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json");
 
         private final String uri;
 

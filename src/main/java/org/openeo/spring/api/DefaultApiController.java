@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.openeo.spring.conformance.OgcLinkRelation;
 import org.openeo.spring.model.Billing;
 import org.openeo.spring.model.BillingPlan;
 import org.openeo.spring.model.Capabilities;
@@ -77,6 +78,9 @@ public class DefaultApiController implements DefaultApi {
 
 		Capabilities capabilities = new Capabilities();
 
+	    /*
+         * openEO/STAC implemented versions
+         */
 		capabilities.apiVersion(IMPLEMENTED_OPENEO_API_VERSION);
 		capabilities.backendVersion("Spring-Dev-1.2.0-master");
 		capabilities.description(
@@ -85,6 +89,9 @@ public class DefaultApiController implements DefaultApi {
 		capabilities.setId("Eurac_openEO");
 		capabilities.setStacVersion(IMPLEMENTED_STAC_VERSION);
 
+	    /*
+         * API endpoints
+         */
 		Endpoint capabilitiesEndPoint = new Endpoint();
 		capabilitiesEndPoint.setPath("/");
 		capabilitiesEndPoint.addMethodsItem(MethodsEnum.GET);
@@ -184,6 +191,9 @@ public class DefaultApiController implements DefaultApi {
 		downloadEndpoint.addMethodsItem(MethodsEnum.GET);
 		capabilities.addEndpointsItem(downloadEndpoint);
 
+		/*
+         * Billing info
+         */
 		Billing billing = new Billing();
 		billing.setDefaultPlan("free");
 		billing.setCurrency(null);
@@ -199,6 +209,9 @@ public class DefaultApiController implements DefaultApi {
 		billing.addPlansItem(billingPlan);
 		capabilities.setBilling(billing);
 
+		/*
+         * HTML Home page link 
+         */
 		Link operatorUrl = new Link();
 		try {
 			operatorUrl.setHref(new URI(providerUrl));
@@ -210,6 +223,9 @@ public class DefaultApiController implements DefaultApi {
 		operatorUrl.setRel("Eurac Research");
 		capabilities.addLinksItem(operatorUrl);
 
+		/*
+         * Self link
+         */
 		Link openEOUrl = new Link();
 		try {
 			openEOUrl.setHref(new URI(this.openEOEndpoint));
@@ -221,6 +237,9 @@ public class DefaultApiController implements DefaultApi {
 		openEOUrl.setRel("self");
 		capabilities.addLinksItem(openEOUrl);
 
+		/*
+         * Well-Known link
+         */
 		String versionHistoryUrl = String.format("%s/.well-known/openeo", this.openEOEndpoint);
 		Link versionHistoryLink = new Link();
 		try {
@@ -233,17 +252,36 @@ public class DefaultApiController implements DefaultApi {
 		versionHistoryLink.setRel("version-history");
 		capabilities.addLinksItem(versionHistoryLink);
 
+		/*
+         * Collections link
+         */
 		String collDataUrl = String.format("%s/collections", this.openEOEndpoint);
 		Link collDataLink = new Link();
 		try {
 			collDataLink.setHref(new URI(collDataUrl));
 		} catch (URISyntaxException e) {
-			log.error("the url provided is not valid: " + collDataUrl	);
+			log.error("the url provided is not valid: " + collDataUrl);
 		}
 		collDataLink.setTitle("Collections");
 		collDataLink.setType("application/json");
 		collDataLink.setRel("data");
 		capabilities.addLinksItem(collDataLink);
+		
+		/*
+		 * Conformance link
+		 */
+		String conformanceUrl = String.format("%s/conformance", openEOEndpoint);
+		Link conformanceLink = new Link();
+		try {
+		    conformanceLink.setHref(new URI(conformanceUrl));
+		} catch (URISyntaxException e) {
+            log.error("the conformance URI is not valid: " + conformanceUrl);
+        }
+		conformanceLink.setTitle("Conformance Declaration as JSON");
+		conformanceLink.setType("application/json");
+		conformanceLink.setRel(OgcLinkRelation.CONFORMANCE.toString());
+		capabilities.addLinksItem(conformanceLink);
+		
 
 		return new ResponseEntity<Capabilities>(capabilities, HttpStatus.OK);
 
