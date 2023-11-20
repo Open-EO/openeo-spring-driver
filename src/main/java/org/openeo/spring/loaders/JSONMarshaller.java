@@ -115,10 +115,10 @@ public class JSONMarshaller {
     /**
      * Override method with default indentation factor.
      * @throws IOException
-     * @see #syncWiteToFile(JSONObject, int)
+     * @see #syncWriteToFile(JSONObject, int)
      */
-    public static boolean syncWiteToFile(final JSONObject stacObj, File jsonOut) throws IOException {
-        return JSONMarshaller.syncWiteToFile(stacObj, jsonOut, DEFAULT_INDENT);
+    public static boolean syncWriteToFile(final JSONObject stacObj, File jsonOut) throws IOException {
+        return JSONMarshaller.syncWriteToFile(stacObj, jsonOut, DEFAULT_INDENT);
     }
 
     /**
@@ -126,8 +126,8 @@ public class JSONMarshaller {
      * @return {@code true} on successful JSON serialization, {@code false} otherwise.
      * @throws IOException
      */
-    // FIXME "merge" with #syncWiteToFile(final JSONObject stacObj, File jsonOut, int indent) ?
-    public static boolean syncWiteToFile(final Object obj, File jsonOut) throws IOException {
+    // FIXME "merge" with #syncWriteToFile(final JSONObject stacObj, File jsonOut, int indent) ?
+    public static boolean syncWriteToFile(final Object obj, File jsonOut) throws IOException {
         boolean ok = true;
         try {
             MAPPER.writeValue(jsonOut, jsonOut);
@@ -145,7 +145,7 @@ public class JSONMarshaller {
      * @return {@code true} on success; {@code false} when serialization is not possible
      * @throws IOException in case the given target {@code jsonOut} file is not writable.
      */
-    public static boolean syncWiteToFile(final JSONObject stacObj, File jsonOut, int indent) throws IOException {
+    public static boolean syncWriteToFile(final JSONObject stacObj, File jsonOut, int indent) throws IOException {
 
         boolean ok = true;
 

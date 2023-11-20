@@ -1,12 +1,24 @@
 package org.openeo.spring.api;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,15 +33,27 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.keycloak.representations.AccessToken;
+import org.openeo.spring.api.JobsApiController;
+import org.openeo.spring.bearer.ITokenService;
+import org.openeo.spring.bearer.TokenUtil;
 import org.openeo.spring.components.CollectionMap;
 import org.openeo.spring.components.CollectionsMap;
 import org.openeo.spring.loaders.ICollectionsLoader;
 import org.openeo.spring.loaders.ODCCollectionsLoader;
 import org.openeo.spring.loaders.STACFileCollectionsLoader;
 import org.openeo.spring.loaders.WCSCollectionsLoader;
+import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.Collection;
+import org.openeo.spring.model.CollectionTemporalExtent;
 import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.EngineTypes;
+import org.openeo.spring.model.Error;
+import org.openeo.spring.model.Job;
+import org.openeo.spring.model.JobStates;
+import org.openeo.spring.model.Process;
 import org.openeo.spring.model.Providers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,7 +80,10 @@ public class CollectionsApiController implements CollectionsApi {
 
     /** Home directory used as root for cached catalogs. */
     public static final String CACHE_ROOT_DIR = System.getProperty("user.dir");
-
+    
+    @Autowired
+    private JobsApiController jobsApiController;
+    
     /** Whether to run both inter- and intra-catalogue parallelized loading. */
     @Value("${org.openeo.parallelizedHarvest}")
     private boolean parallelizedHarvest;
@@ -103,8 +130,8 @@ public class CollectionsApiController implements CollectionsApi {
     @Autowired
     private CollectionMap collectionMap;
     
-    @Autowired
-    private JobsApi jobsApi;
+	@Autowired(required = false)
+	private ITokenService tokenService;
 
     private final NativeWebRequest request;
 
@@ -160,7 +187,7 @@ public class CollectionsApiController implements CollectionsApi {
 
                 if (!hasWcpsEndpoint && !hasOdcEndpoint) {
                     log.error("No STAC endpoint was specified.");
-                    // TOD: what to do here? Throw exception?
+                    // TODO: what to do here? Throw exception?
                 }
 
             } else {
@@ -400,35 +427,120 @@ public class CollectionsApiController implements CollectionsApi {
         @ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 @GetMapping(value = "/collections/{collection_id}/coverage", produces = { "application/json" })
 @Override
-public ResponseEntity<?> getCoverage(
-        @Pattern(regexp = "^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier", required = true) @PathVariable("collection_id") String collectionId,
-        Principal principal) {
+public ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId,
+	    @RequestParam(name = "bbox") Optional<List<Double>> bboxList,
+	    @RequestParam(name = "datetime") Optional<String> temporalString, 
+	    @RequestParam(name = "f") Optional<String> requestedFileFormat, 
+	    Principal principal){
+    // TODO: if principal is null, return     	500 INTERNAL_SERVER_ERROR
+	if (principal == null) {
+		return ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,"Please authenticate!");
+	}
+	String username = new String();
+	try{
+		principal.getName();
+	} catch(Exception e){
+		log.error("Can't get name from principal. Trying to continue.");
+	}
+	AccessToken token = TokenUtil.getAccessToken(principal, tokenService);
+	if (null != token) {
+	    username =  token.getName();
+	}
+//    URL url;
+	//We enforce the bbox and datetime parameters only if we want to return the data and not only the metadata
+	//Enum: "png" "geotiff" "netcdf" "json" "covjson" "html" 
+	String fileFormat = "netcdf";
+	if (requestedFileFormat.isPresent()){
+		fileFormat = requestedFileFormat.get();
+	}
+	if ((bboxList.isEmpty() || temporalString.isEmpty()) && (fileFormat=="geotiff" || fileFormat=="netcdf")) {
+		return ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,"Please provide the bbox and datetime parameters, otherwise the file would be too large!");
+	}
+	
+	// spatial and temporal extent parsing
+    Map<String,Double> spatialExtent = new LinkedHashMap<>();
+    spatialExtent.put("west",bboxList.get().get(0));
+    spatialExtent.put("east",bboxList.get().get(2));
+    spatialExtent.put("north",bboxList.get().get(3));
+    spatialExtent.put("south",bboxList.get().get(1));
     
-//	if (principal == null) {
-//        return ApiUtil.errorResponse(HttpStatus.FORBIDDEN,
-//                "Please authenticate to access the /coverage endpoint.");
-//    }
-//    log.info("The following user is authenticated: " + principal.getName());
-    //    	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    //    	if (!(authentication instanceof AnonymousAuthenticationToken)) {
-    //    	    String currentUserName = authentication.getName();
-    //    	    log.debug("The following user is authenticated: " + currentUserName);
-    //    	}else {
-    //    		log.warn("The current user is not authenticated!");
-    //    	}
+    String[] temporalExtent = new String[2];
+    String startDate = new String();
+    String endDate = new String();
 
-    URL url;
-    Collection currentCollection = collectionMap.get(collectionId);
-    if (currentCollection != null) {
-        return new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
+    startDate = temporalString.get().split("/")[0];
+    endDate = temporalString.get().split("/")[1];
+    temporalExtent[0] = startDate;
+    if (endDate==".."){
+    	temporalExtent[1] = null;
+    } else {
+    	temporalExtent[1] = endDate;
     }
-    return new ResponseEntity<Collection>(HttpStatus.NOT_FOUND);
-    
+
     //1. Mapping of Collection to CIS JSON METADATA SCHEMA, coverageByDomainAndRange
     //2. Create job object for the download:
     //2.1 Translate to openEO Process Graph with load_collection + save_result
     //3. Submit job to jobsApiController
     //4. Get /jobs/job_id/result from JobsApiController and add link to output JSON RangeSet
+    Map<String, Object> loadSaveProcessGraph = new LinkedHashMap<>();
+    Map<String, Object> loadNode = new LinkedHashMap<>();
+    Map<String, Object> loadArguments = new LinkedHashMap<>();
+    Map<String, Object> saveNode = new LinkedHashMap<>();
+    Map<String, Object> saveArguments = new LinkedHashMap<>();
+    Map<String, Object> saveArgumentsInner = new LinkedHashMap<>();
+
+    loadArguments.put("id",collectionId);
+    loadArguments.put("spatial_extent",spatialExtent);
+    loadArguments.put("temporal_extent",temporalExtent);
+    loadArguments.put("bands",null);
+
+    loadNode.put("arguments",loadArguments);
+    loadNode.put("process_id","load_collection");
+
+    loadSaveProcessGraph.put("load1",loadNode);
+
+    saveArguments.put("format",fileFormat);
+    saveArgumentsInner.put("from_node","load1");
+    saveArguments.put("data",saveArgumentsInner);
+    
+    saveNode.put("arguments",saveArguments);
+    saveNode.put("process_id","save_result");
+    saveNode.put("result",true);
+
+    loadSaveProcessGraph.put("save1",saveNode);
+    
+    Process process = new Process();
+	process.setProcessGraph(loadSaveProcessGraph);
+	
+    Job job = new Job();
+    job.setProcess(process);
+	job.setTitle("OGC-Coverage-"+fileFormat);
+    ResponseEntity<?> response = jobsApiController.createJob(job, principal);
+    
+    job = (Job) response.getBody();
+    response = jobsApiController.startJob(job.getId().toString());
+    for (int i = 0; i < 30; i++) {
+	    try {
+	    	  Thread.sleep(10000);
+	    	  ResponseEntity<?> jobDescription = jobsApiController.describeJob(job.getId().toString());
+	    	  job = (Job) jobDescription.getBody();
+	    	  log.debug(job.getStatus());
+	    	  if (job.getStatus()==JobStates.FINISHED) {
+	    		  break;
+	    	  }
+	    	} catch (InterruptedException e) {
+	    	  Thread.currentThread().interrupt();
+	    	}
+    }
+    response = jobsApiController.listResults(job.getId().toString());
+    BatchJobResult result = (BatchJobResult) response.getBody();
+	return new ResponseEntity<BatchJobResult>(result, HttpStatus.OK);
+	
+//	Collection currentCollection = collectionMap.get(collectionId);
+//	if (currentCollection != null) {
+//	    return new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
+//	}
+//	return new ResponseEntity<Collection>(HttpStatus.NOT_FOUND);
     
 //    {
 //    	  "process_graph": {

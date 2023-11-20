@@ -317,7 +317,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                         this.cache.getFilename());
                 File collectionsFile = new File(absPath);
 
-                JSONMarshaller.syncWiteToFile(collectionsList, collectionsFile);
+                JSONMarshaller.syncWriteToFile(collectionsList, collectionsFile);
                 log.info("WCS catalogue serialized: {}.", collectionsFile.getName());
 
             } catch (JsonGenerationException | JsonMappingException jse) {

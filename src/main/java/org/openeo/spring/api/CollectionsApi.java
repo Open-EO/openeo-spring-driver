@@ -7,6 +7,7 @@ package org.openeo.spring.api;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.validation.Valid;
@@ -17,6 +18,7 @@ import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.Collections;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -70,20 +72,11 @@ public interface CollectionsApi {
         @ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
         @ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
     @GetMapping(value = "/collections/{collection_id}/coverage", produces = { "application/json" })
-    default ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$")
-    @Parameter(name = "Collection identifier",required=true) 
-//    @RequestParam(name = "subset",required = false)
-//    @RequestParam(name = "bbox",required = false)
-    //@RequestParam(name = "datetime",required = false) String dateString,
-    //@RequestParam(name = "bbox",required = false) List<Double> bboxArray,
-//    @RequestParam(name = "",required = false)
-//    @RequestParam(name = "",required = false)
-//    @RequestParam(name = "",required = false)
-//    @RequestParam(name = "",required = false)
-//    @RequestParam(name = "",required = false)
-//    @RequestParam(name = "",required = false)
-//    @RequestParam(name = "",required = false) 
-    @PathVariable("collection_id") String collectionId, Principal principal){
+    default ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId,
+    	    @RequestParam(name = "bbox") Optional<List<Double>> bboxList,
+    	    @RequestParam(name = "datetime") Optional<String> temporalString,
+    	    @RequestParam(name = "f") Optional<String> requestedFileFormat, 
+    	    Principal principal){
         return new ResponseEntity<Collection>(HttpStatus.NOT_IMPLEMENTED);
     }
 
