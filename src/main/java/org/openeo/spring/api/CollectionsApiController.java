@@ -1,24 +1,14 @@
 package org.openeo.spring.api;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,11 +22,7 @@ import javax.validation.constraints.Pattern;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.ThreadContext;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.keycloak.representations.AccessToken;
-import org.openeo.spring.api.JobsApiController;
 import org.openeo.spring.bearer.ITokenService;
 import org.openeo.spring.bearer.TokenUtil;
 import org.openeo.spring.components.CollectionMap;
@@ -47,10 +33,8 @@ import org.openeo.spring.loaders.STACFileCollectionsLoader;
 import org.openeo.spring.loaders.WCSCollectionsLoader;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.Collection;
-import org.openeo.spring.model.CollectionTemporalExtent;
 import org.openeo.spring.model.Collections;
 import org.openeo.spring.model.EngineTypes;
-import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
 import org.openeo.spring.model.Process;
@@ -377,7 +361,6 @@ public class CollectionsApiController implements CollectionsApi {
         //    		log.warn("The current user is not authenticated!");
         //    	}
 
-        URL url;
         Collection currentCollection = collectionMap.get(collectionId);
         if (currentCollection != null) {
             return new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);

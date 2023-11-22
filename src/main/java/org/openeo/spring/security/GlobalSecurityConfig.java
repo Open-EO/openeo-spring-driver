@@ -49,7 +49,8 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
             "/favicon.ico",
             "/file_formats/**",
             "/.well-known/openeo"};
-    // "a pattern of /aaa/** will match /aaa, /aaa/ and any sub-directories, such as /aaa/bbb/ccc."
+    // /aaa/*  will match /aaa/bbb etc
+    // /aaa/** will match /aaa, /aaa/ and any sub-directories, such as /aaa/bbb/ccc.
     
     public static final String BASIC_AUTH_API_RESOURCE = "/credentials/basic";
     public static final String OIDC_AUTH_API_RESOURCE = "/credentials/oidc";

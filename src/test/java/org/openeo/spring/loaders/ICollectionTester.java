@@ -1,5 +1,7 @@
 package org.openeo.spring.loaders;
 
+import java.io.IOException;
+
 import org.openeo.spring.model.Collection;
 
 /**
@@ -39,4 +41,7 @@ interface ICollectionTester {
 
     /** Tests the collection's {@code assets} element. */
     void testAssets();
+    
+    /** Tests unmarshalling/deserializing a STAC document. */
+    void testStacOracle() throws IOException;
 }

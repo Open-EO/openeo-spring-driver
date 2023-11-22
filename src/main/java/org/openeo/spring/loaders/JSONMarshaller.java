@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.time.OffsetDateTime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
@@ -42,8 +44,10 @@ public class JSONMarshaller {
     public static final ObjectMapper MAPPER = new ObjectMapper();
     static {
         MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
-        MAPPER.registerModule(new JavaTimeModule());
         MAPPER.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        MAPPER.registerModule(new JavaTimeModule());        
+        MAPPER.registerModule(new SimpleModule()
+                .addSerializer(OffsetDateTime.class, new OffsetDateTimeSerializer()));
     }
 
     /**
@@ -130,7 +134,7 @@ public class JSONMarshaller {
     public static boolean syncWriteToFile(final Object obj, File jsonOut) throws IOException {
         boolean ok = true;
         try {
-            MAPPER.writeValue(jsonOut, jsonOut);
+            MAPPER.writeValue(jsonOut, obj);
         } catch (JsonGenerationException | JsonMappingException e) {
             ok = false;
         }

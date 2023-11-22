@@ -13,6 +13,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -900,11 +901,11 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                 String maxT = dim.getExtent().get(1);
 
                 List<OffsetDateTime> interval = new ArrayList<>();
+                DateTimeFormatter fmt = OffsetDateTimeSerializer.FORMATTER;
                 try {
                     //STAC requires format: https://www.rfc-editor.org/rfc/rfc3339#section-5.6
-                    //We use: java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.
-                    interval.add(OffsetDateTime.parse(minT));
-                    interval.add(OffsetDateTime.parse(maxT));
+                    interval.add(OffsetDateTime.parse(minT, fmt));
+                    interval.add(OffsetDateTime.parse(maxT, fmt));
 
                 } catch (DateTimeParseException e) {
                     log.warn("Error parsing time extent: {}:{}", minT, maxT);
