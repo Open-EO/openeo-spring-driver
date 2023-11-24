@@ -1,10 +1,19 @@
 package org.openeo.spring.api;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +28,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +41,7 @@ import org.openeo.spring.loaders.ICollectionsLoader;
 import org.openeo.spring.loaders.ODCCollectionsLoader;
 import org.openeo.spring.loaders.STACFileCollectionsLoader;
 import org.openeo.spring.loaders.WCSCollectionsLoader;
+import org.openeo.spring.model.Asset;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.Collections;
@@ -39,10 +50,12 @@ import org.openeo.spring.model.Job;
 import org.openeo.spring.model.JobStates;
 import org.openeo.spring.model.Process;
 import org.openeo.spring.model.Providers;
+import org.openeo.wcps.ConvenienceHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -414,21 +427,22 @@ public ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parame
 	    @RequestParam(name = "bbox") Optional<List<Double>> bboxList,
 	    @RequestParam(name = "datetime") Optional<String> temporalString, 
 	    @RequestParam(name = "f") Optional<String> requestedFileFormat, 
+	    @RequestParam(name = "properties") Optional<List<String>> requestedProperties, 
 	    Principal principal){
-    // TODO: if principal is null, return     	500 INTERNAL_SERVER_ERROR
+//	subset=Lon(9.8382568359375,11.2554931640625),Lat(43.5882568359375,45.0054931640625),time(%22023-10-01T0:00:00Z%22)
 	if (principal == null) {
 		return ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,"Please authenticate!");
 	}
-	String username = new String();
+//	String username = new String();
 	try{
 		principal.getName();
 	} catch(Exception e){
 		log.error("Can't get name from principal. Trying to continue.");
 	}
 	AccessToken token = TokenUtil.getAccessToken(principal, tokenService);
-	if (null != token) {
-	    username =  token.getName();
-	}
+//	if (null != token) {
+//	    username = token.getName();
+//	}
 //    URL url;
 	//We enforce the bbox and datetime parameters only if we want to return the data and not only the metadata
 	//Enum: "png" "geotiff" "netcdf" "json" "covjson" "html" 
@@ -437,7 +451,13 @@ public ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parame
 		fileFormat = requestedFileFormat.get();
 	}
 	if ((bboxList.isEmpty() || temporalString.isEmpty()) && (fileFormat=="geotiff" || fileFormat=="netcdf")) {
-		return ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,"Please provide the bbox and datetime parameters, otherwise the file would be too large!");
+		return ApiUtil.errorResponse(HttpStatus.FORBIDDEN,"Please provide the bbox and datetime parameters, otherwise the file would be too large!");
+	}
+
+	// properties (bands) mapping
+	String[] properties = null;
+	if (requestedProperties.isPresent()){
+		properties = requestedProperties.get().toArray(String[]::new);
 	}
 	
 	// spatial and temporal extent parsing
@@ -448,16 +468,22 @@ public ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parame
     spatialExtent.put("south",bboxList.get().get(1));
     
     String[] temporalExtent = new String[2];
-    String startDate = new String();
-    String endDate = new String();
-
-    startDate = temporalString.get().split("/")[0];
-    endDate = temporalString.get().split("/")[1];
-    temporalExtent[0] = startDate;
-    if (endDate==".."){
+    String[] temporalExtentSplit = new String[2];
+//    String startDate = new String();
+//    String endDate = new String();
+    
+    temporalExtentSplit = temporalString.get().split("/");
+    if(temporalExtentSplit.length==1) {
+    	temporalExtent[0] = temporalExtentSplit[0];
     	temporalExtent[1] = null;
-    } else {
-    	temporalExtent[1] = endDate;
+    }
+    else {
+    	temporalExtent[0] = temporalExtentSplit[0];
+	    if (temporalExtentSplit[1]==".."){
+	    	temporalExtent[1] = null;
+	    } else {
+	    	temporalExtent[1] = temporalExtentSplit[1];
+	    }
     }
 
     //1. Mapping of Collection to CIS JSON METADATA SCHEMA, coverageByDomainAndRange
@@ -475,8 +501,12 @@ public ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parame
     loadArguments.put("id",collectionId);
     loadArguments.put("spatial_extent",spatialExtent);
     loadArguments.put("temporal_extent",temporalExtent);
-    loadArguments.put("bands",null);
-
+    if (properties!=null) {
+        loadArguments.put("bands",properties);
+    }
+    else {
+    	loadArguments.put("bands",null);
+    }
     loadNode.put("arguments",loadArguments);
     loadNode.put("process_id","load_collection");
 
@@ -496,34 +526,79 @@ public ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parame
 	process.setProcessGraph(loadSaveProcessGraph);
 	
     Job job = new Job();
+    BatchJobResult jobResult = new BatchJobResult();
     job.setProcess(process);
-	job.setTitle("OGC-Coverage-"+fileFormat);
+	job.setTitle("OGC-Coverage-"+fileFormat+"-"+OffsetDateTime.now().toString());
     ResponseEntity<?> response = jobsApiController.createJob(job, principal);
     
     job = (Job) response.getBody();
     response = jobsApiController.startJob(job.getId().toString());
-    for (int i = 0; i < 30; i++) {
+    boolean jobFinishedSuccessfully = false;
+    for (int i = 0; i < 150; i++) {
 	    try {
-	    	  Thread.sleep(10000);
+	    	  Thread.sleep(2000);
 	    	  ResponseEntity<?> jobDescription = jobsApiController.describeJob(job.getId().toString());
 	    	  job = (Job) jobDescription.getBody();
 	    	  log.debug(job.getStatus());
 	    	  if (job.getStatus()==JobStates.FINISHED) {
+	    		  jobFinishedSuccessfully = true;
+	    		  break;
+	    	  }
+	    	  else if (job.getStatus()==JobStates.ERROR) {
+	    		  jobFinishedSuccessfully = false;
 	    		  break;
 	    	  }
 	    	} catch (InterruptedException e) {
 	    	  Thread.currentThread().interrupt();
 	    	}
     }
-    response = jobsApiController.listResults(job.getId().toString());
-    BatchJobResult result = (BatchJobResult) response.getBody();
-	return new ResponseEntity<BatchJobResult>(result, HttpStatus.OK);
-	
-//	Collection currentCollection = collectionMap.get(collectionId);
-//	if (currentCollection != null) {
-//	    return new ResponseEntity<Collection>(currentCollection, HttpStatus.OK);
-//	}
-//	return new ResponseEntity<Collection>(HttpStatus.NOT_FOUND);
+    if (!jobFinishedSuccessfully) {
+    	return ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,"The request did not finished within the limit of 5 minutes or failed.");
+    }
+    
+    ResponseEntity<?> jobListResults = jobsApiController.listResults(job.getId().toString());
+	jobResult = (BatchJobResult) jobListResults.getBody();
+	Map<String, Asset> resultAssets = jobResult.getAssets();
+	String resultKey = new String();
+    for (Map.Entry<String, Asset> entry : resultAssets.entrySet()) {
+        System.out.println(entry.getKey() + ":" + entry.getValue());
+        if (entry.getKey().contains("result")){
+        	resultKey = entry.getKey();
+        }
+    }
+	Asset outputAsset = resultAssets.get(resultKey);
+	String outputFilePath = outputAsset.getHref();
+    try {
+    	log.debug("Result path "+outputFilePath);
+    	File outputFile = new File(outputFilePath);
+    	String mime = URLConnection.guessContentTypeFromName(outputFile.getName());
+    	if (mime == null) {
+    		try {
+    			mime = ConvenienceHelper.getMimeFromFilename(outputFile.getName());
+    		}
+    		catch (Exception e1){
+    			log.error(e1);
+    		}
+    	}
+    	log.debug("Guessed mime type: "+mime);
+
+    	URL url = new URL(outputFilePath);
+    	InputStream is = null;
+    	byte[] outputFileBytes = null;
+    	is = url.openStream();
+    	outputFileBytes = IOUtils.toByteArray(is);
+    	if (is != null) {
+    		is.close();
+    	}
+		if (mime == null) {
+			return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/octet-stream")).body(outputFileBytes);
+		}
+		return ResponseEntity.ok().contentType(MediaType.parseMediaType(mime)).body(outputFileBytes);
+    	} 
+    catch (IOException e) {
+    		log.error("Result file not found", e);
+    		return ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,"Result file not found.");
+    	}
     
 //    {
 //    	  "process_graph": {

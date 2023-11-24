@@ -75,7 +75,8 @@ public interface CollectionsApi {
     default ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId,
     	    @RequestParam(name = "bbox") Optional<List<Double>> bboxList,
     	    @RequestParam(name = "datetime") Optional<String> temporalString,
-    	    @RequestParam(name = "f") Optional<String> requestedFileFormat, 
+    	    @RequestParam(name = "f") Optional<String> requestedFileFormat,
+    	    @RequestParam(name = "properties") Optional<List<String>> requestedProperties,
     	    Principal principal){
         return new ResponseEntity<Collection>(HttpStatus.NOT_IMPLEMENTED);
     }
