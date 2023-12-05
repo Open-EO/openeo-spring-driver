@@ -8,7 +8,7 @@ import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.Size;
 
-import org.openeo.spring.loaders.CollectionTemporalExtentSerializer;
+import org.openeo.spring.json.TimeIntervalSerializer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -21,10 +21,10 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(description = "The *potential* temporal extent of the features in the collection.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-@JsonSerialize(using = CollectionTemporalExtentSerializer.class)
 public class CollectionTemporalExtent   {
   @JsonProperty("interval")
   @Valid
+  @JsonSerialize(contentUsing = TimeIntervalSerializer.class)
   private List<List<OffsetDateTime>> interval = null;
 
   public CollectionTemporalExtent interval(List<List<OffsetDateTime>> interval) {

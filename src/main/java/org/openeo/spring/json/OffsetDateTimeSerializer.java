@@ -1,4 +1,4 @@
-package org.openeo.spring.loaders;
+package org.openeo.spring.json;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -17,12 +17,11 @@ import com.fasterxml.jackson.databind.SerializerProvider;
  * 
  * @see <a href="https://github.com/radiantearth/stac-spec/blob/master/collection-spec/collection-spec.md#temporal-extent-object">STAC Collection: Temporal Extent Object</a>
  */
+// TODO can we drop OpenEODateSerializer ? Beware: it does not handle null timestamps
 public class OffsetDateTimeSerializer extends JsonSerializer<OffsetDateTime> {
     
     /** The format of the serialized timestamp. */
-    public static final DateTimeFormatter FORMATTER
-        = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-//    = DateTimeFormatter.RFC_1123_DATE_TIME;
+    public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
     
     @Override
     public void serialize(OffsetDateTime value, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) 
@@ -32,5 +31,10 @@ public class OffsetDateTimeSerializer extends JsonSerializer<OffsetDateTime> {
         } else {
             jsonGenerator.writeString(FORMATTER.format(value));
         }
+    }
+    
+    @Override
+    public Class<OffsetDateTime> handledType() {
+        return OffsetDateTime.class;
     }
 }

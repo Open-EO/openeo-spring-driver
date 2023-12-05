@@ -44,6 +44,7 @@ import org.json.JSONException;
 import org.openeo.spring.api.CollectionsApiController;
 import org.openeo.spring.api.DefaultApiController;
 import org.openeo.spring.api.LinkRelType;
+import org.openeo.spring.json.OffsetDateTimeSerializer;
 import org.openeo.spring.loaders.CRSUtils.AxisMappingStrategy;
 import org.openeo.spring.loaders.CRSUtils.CSAxisOrientation;
 import org.openeo.spring.loaders.CRSUtils.CsType;
