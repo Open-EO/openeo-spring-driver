@@ -31,6 +31,10 @@ public class TestConformance {
                 jsonPath("$.conformsTo[0]").value(Common.CORE.getUri().toString()),
                 jsonPath("$.conformsTo[1]").value(Common.COLLECTIONS.getUri().toString()),
                 jsonPath("$.conformsTo[2]").value(Coverages.CORE.getUri().toString()),
-                jsonPath("$.conformsTo[3]").value(Coverages.SUBSETTING.getUri().toString()));
+                jsonPath("$.conformsTo[3]").value(Coverages.BBOX.getUri().toString()),
+                jsonPath("$.conformsTo[4]").value(Coverages.DATETIME.getUri().toString()),
+                jsonPath("$.conformsTo[5]").value(Coverages.GeoTIFF.getUri().toString()),
+                jsonPath("$.conformsTo[6]").value(Coverages.netCDF.getUri().toString()));
+//                jsonPath("$.conformsTo[3]").value(Coverages.SUBSETTING.getUri().toString()));
     }
 }
