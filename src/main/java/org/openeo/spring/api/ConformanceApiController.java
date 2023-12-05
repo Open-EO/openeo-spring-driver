@@ -33,10 +33,13 @@ public class ConformanceApiController implements ConformanceApi {
                     Common.CORE,
                     Common.COLLECTIONS,
                     Coverages.CORE,
-                    Coverages.SUBSETTING
+                    Coverages.BBOX,
+                    Coverages.DATETIME,
+                    Coverages.GeoTIFF,
+                    Coverages.netCDF
+//                    Coverages.SUBSETTING,
 //                    Coverages.CIS_JSON ?
-//                    Coverages.GeoTIFF ?
-//                    Coverages.netCDF ?
+
                     );
     
     private final NativeWebRequest request;

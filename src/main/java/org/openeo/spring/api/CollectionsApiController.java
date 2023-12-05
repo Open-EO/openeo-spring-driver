@@ -14,6 +14,8 @@ import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -421,18 +423,22 @@ public class CollectionsApiController implements CollectionsApi {
         @ApiResponse(responseCode = "200", description = "JSON object with the full collection metadata."),
         @ApiResponse(responseCode = "400", description = "The request can't be fulfilled due to an error on client-side, i.e. the request is invalid. The client should not repeat the request without modifications.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6). This request MUST respond with HTTP status codes 401 if authorization is required or 403 if the authorization failed or access is forbidden in general to the authenticated user. HTTP status code 404 should be used if the value of a path parameter is invalid.  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)"),
         @ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
-@GetMapping(value = "/collections/{collection_id}/coverage", produces = { "application/json" })
+@GetMapping(value = "/collections/{collection_id}/coverage", produces = { "*" })
 @Override
 public ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parameter(name = "Collection identifier",required=true) @PathVariable("collection_id") String collectionId,
+	    @RequestParam(name = "subset") Optional<String> subsetList,
 	    @RequestParam(name = "bbox") Optional<List<Double>> bboxList,
 	    @RequestParam(name = "datetime") Optional<String> temporalString, 
-	    @RequestParam(name = "f") Optional<String> requestedFileFormat, 
+	    @RequestParam(name = "f") Optional<String> requestedFileFormat,
 	    @RequestParam(name = "properties") Optional<List<String>> requestedProperties, 
 	    Principal principal){
-//	subset=Lon(9.8382568359375,11.2554931640625),Lat(43.5882568359375,45.0054931640625),time(%22023-10-01T0:00:00Z%22)
 	if (principal == null) {
-		return ApiUtil.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,"Please authenticate!");
+		return ApiUtil.errorResponse(HttpStatus.FORBIDDEN,"Please authenticate!");
 	}
+
+    // TODO: scale-axis -> spatial dimension -> map to openEO resample_spatial. Temporal and other -> return NOT_IMPLEMENTED
+    // TODO: if only one slice provided (subset or datetime), translate into reduce_dimension + mean.
+    
 //	String username = new String();
 	try{
 		principal.getName();
@@ -444,21 +450,59 @@ public ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parame
 //	    username = token.getName();
 //	}
 //    URL url;
+
+	// Parse requested media type from request header
+	String requestedFileFormatHeader = null;
+	if (getRequest().isPresent()){
+		Iterator<String> headerNames = request.getHeaderNames();
+		if (headerNames.hasNext()) {
+			String header = null;
+			for (Iterator<String> iter = headerNames; iter.hasNext();) {
+			    header =  iter.next();
+			    log.debug("Header Name:" + header + "   " + "Header Value:" + request.getHeader(header));
+			    if (header.toString().equals("accept")) {
+			    	if (request.getHeader(header).toString().contains("netcdf")) {
+			    		requestedFileFormatHeader = "netcdf";
+			    	}
+			    	else if (request.getHeader(header).toString().contains("tif")) {
+			    		requestedFileFormatHeader = "geotiff";
+			    	}
+			    }
+			}
+		}
+	}
+	
 	//We enforce the bbox and datetime parameters only if we want to return the data and not only the metadata
 	//Enum: "png" "geotiff" "netcdf" "json" "covjson" "html" 
 	String fileFormat = "netcdf";
 	if (requestedFileFormat.isPresent()){
 		fileFormat = requestedFileFormat.get();
 	}
+	// The file format from the request header has higher priority
+	if (requestedFileFormatHeader != null) {
+		fileFormat = requestedFileFormatHeader;
+	}
+	
+	// Return an error if bbox or datetime are specified together as subset
+//	if ((bboxList.isPresent() || temporalString.isPresent()) && (subsetList.isPresent())) {
+//		return ApiUtil.errorResponse(HttpStatus.FORBIDDEN,"Please provide either bbox and datetime parameters, or subset. Can't parse both at the same time!");
+//	}
+	if (subsetList.isPresent()) {
+		return ApiUtil.errorResponse(HttpStatus.FORBIDDEN,"Subset parameter not yet supported!");
+	}
+	// Return an error if no spatial and temporal subsets are specified
 	if ((bboxList.isEmpty() || temporalString.isEmpty()) && (fileFormat=="geotiff" || fileFormat=="netcdf")) {
 		return ApiUtil.errorResponse(HttpStatus.FORBIDDEN,"Please provide the bbox and datetime parameters, otherwise the file would be too large!");
 	}
 
 	// properties (bands) mapping
+	// TODO: properties can be integers. I need to map them to their label
 	String[] properties = null;
 	if (requestedProperties.isPresent()){
 		properties = requestedProperties.get().toArray(String[]::new);
 	}
+//	subset=Lon(9.8382568359375,11.2554931640625),Lat(43.5882568359375,45.0054931640625),time(%22023-10-01T0:00:00Z%22)
+
 	
 	// spatial and temporal extent parsing
     Map<String,Double> spatialExtent = new LinkedHashMap<>();
@@ -467,10 +511,45 @@ public ResponseEntity<?> getCoverage(@Pattern(regexp="^[\\w\\-\\.~/]+$") @Parame
     spatialExtent.put("north",bboxList.get().get(3));
     spatialExtent.put("south",bboxList.get().get(1));
     
+    // check that the provided spatial extent is available in the collection, otherwise return an error
+	Collection collection = collectionMap.get(collectionId);
+	
+	double westlower = collection.getExtent().getSpatial().getBbox().get(0).get(0).doubleValue();
+	double eastupper = collection.getExtent().getSpatial().getBbox().get(0).get(2).doubleValue();
+	double southlower = collection.getExtent().getSpatial().getBbox().get(0).get(1).doubleValue();
+	double northupper = collection.getExtent().getSpatial().getBbox().get(0).get(3).doubleValue();
+
+	boolean westOutOfBounds = false;
+	boolean eastOutOfBounds = false;
+	boolean northOutOfBounds = false;
+	boolean southOutOfBounds = false;
+
+	if (spatialExtent.get("west") < westlower) {
+		westOutOfBounds = true;
+	}
+	if (spatialExtent.get("east") < eastupper) {
+		eastOutOfBounds = true;
+	}
+	if (spatialExtent.get("north") < northupper) {
+		northOutOfBounds = true;
+	}
+	if (spatialExtent.get("south") < southlower) {
+		southOutOfBounds = true;
+	}
+
+	if (westOutOfBounds && eastOutOfBounds) {
+		return ApiUtil.errorResponse(HttpStatus.FORBIDDEN,"The provided spatial extent is out of bounds for the current collection!");
+	}
+	if (northOutOfBounds && southOutOfBounds) {
+		return ApiUtil.errorResponse(HttpStatus.FORBIDDEN,"The provided spatial extent is out of bounds for the current collection!");
+	}
+
     String[] temporalExtent = new String[2];
     String[] temporalExtentSplit = new String[2];
 //    String startDate = new String();
 //    String endDate = new String();
+    
+    // datetime parameter specs: https://docs.ogc.org/DRAFTS/20-024.html#datetime-parameter-requirements
     
     temporalExtentSplit = temporalString.get().split("/");
     if(temporalExtentSplit.length==1) {

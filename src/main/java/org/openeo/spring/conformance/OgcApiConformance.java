@@ -45,6 +45,8 @@ public interface OgcApiConformance {
         CORE("http://www.opengis.net/spec/ogcapi-coverages-1/1.0/conf/core"),
         SCALING("http://www.opengis.net/spec/ogcapi-coverages-1/1.0/conf/scaling"),
         SUBSETTING("http://www.opengis.net/spec/ogcapi-coverages-1/1.0/conf/subsetting"),
+        BBOX("http://www.opengis.net/spec/ogcapi-coverages-1/0.0/conf/coverage-bbox"),
+        DATETIME("http://www.opengis.net/spec/ogcapi-coverages-1/0.0/conf/coverage-datetime"),
         FIELD_SELECTION("http://www.opengis.net/spec/ogcapi-coverages-1/1.0/conf/fieldselection"),
         CRS("http://www.opengis.net/spec/ogcapi-coverages-1/1.0/conf/crs"),
         COVERAGE_TILES("http://www.opengis.net/spec/ogcapi-coverages-1/1.0/conf/tiles"),
