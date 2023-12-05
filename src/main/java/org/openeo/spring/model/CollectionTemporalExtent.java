@@ -8,7 +8,10 @@ import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.Size;
 
+import org.openeo.spring.json.TimeIntervalSerializer;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -21,6 +24,7 @@ import io.swagger.annotations.ApiModelProperty;
 public class CollectionTemporalExtent   {
   @JsonProperty("interval")
   @Valid
+  @JsonSerialize(contentUsing = TimeIntervalSerializer.class)
   private List<List<OffsetDateTime>> interval = null;
 
   public CollectionTemporalExtent interval(List<List<OffsetDateTime>> interval) {
