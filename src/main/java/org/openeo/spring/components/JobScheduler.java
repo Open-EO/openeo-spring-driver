@@ -56,6 +56,7 @@ import org.openeo.wcps.events.UDFEvent;
 import org.openeo.wcps.events.UDFEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
@@ -698,6 +699,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
         return response;
     }
 	
+    /**
+     * TODO
+     * @param job
+     */
 	private void executeODC(Job job) {
 
 		BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
@@ -722,14 +727,36 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 
 			try {
 				HttpResponse<String> response = send_odc_request(odcEndpoint, process.toString());
-				JSONObject responseJson = new JSONObject(response.body());
-				String outputFilename = responseJson.get("output").toString(); // ODC returns a json with format {"output":"/path/to/outputfile"}
-				dataMimeType = ConvenienceHelper.getMimeFromFilename(outputFilename);
+				HttpStatus respStatus = HttpStatus.valueOf(response.statusCode());
+				if (respStatus.is2xxSuccessful()) {
+				    try {
+				        JSONObject responseJson = new JSONObject(response.body());
+				        String outputFilename = responseJson.get("output").toString(); // ODC returns a json with format {"output":"/path/to/outputfile"}
+				        dataMimeType = ConvenienceHelper.getMimeFromFilename(outputFilename);
+				    } catch (JSONException je) {
+				        addStackTraceAndErrorToLog(je);
+				        Error error = new Error();
+				        error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+				        error.setMessage("ODC response not formatted as valid JSON.");
+				        log.error(error.getMessage());
+				        job.setStatus(JobStates.ERROR);
+				        jobDAO.update(job);
+				        return;
+				    }
+				} else {
+                    Error error = new Error();
+                    error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                    error.setMessage(response.body());
+                    log.error("Error from ODC backend: {}", error.getMessage());
+                    job.setStatus(JobStates.ERROR);
+                    jobDAO.update(job);
+                    return;
+				}
 			}
 			catch (ConnectException e) {
 				addStackTraceAndErrorToLog(e);
 				Error error = new Error();
-				error.setCode("500");
+				error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
 				error.setMessage("Not possible to establish connection with ODC endpoint.");
 				log.error(error.getMessage());
 				job.setStatus(JobStates.ERROR);
@@ -740,7 +767,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				addStackTraceAndErrorToLog(e);
 				log.error(e);
 				Error error = new Error();
-				error.setCode("500");
+				error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
 				error.setMessage("The job has been stop or an error occurred.");
 				log.error(error.getMessage());
 				// Change the status only if it is not "Canceled" which mean that it has been stopped on purpose
@@ -865,7 +892,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		} catch (Exception e) {
 			addStackTraceAndErrorToLog(e);
 			Error error = new Error();
-			error.setCode("500");
+			error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
 			error.setMessage("Not possible to establish connection with ODC Endpoint!");
 			log.error(error.getMessage());
 			job.setStatus(JobStates.ERROR);
