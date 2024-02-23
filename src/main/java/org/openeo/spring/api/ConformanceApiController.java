@@ -37,8 +37,8 @@ public class ConformanceApiController implements ConformanceApi {
                     Coverages.DATETIME,
                     Coverages.GeoTIFF,
                     Coverages.netCDF,
-                    Coverages.FIELD_SELECTION
-//                    Coverages.SUBSETTING
+                    Coverages.FIELD_SELECTION,
+                    Coverages.SUBSETTING
 //                    Coverages.CIS_JSON ?
 
                     );
