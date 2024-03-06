@@ -160,6 +160,12 @@ discovery.seed_hosts: ["192.168.1.100", "192.168.1.150", "node2"]
 cluster.initial_master_nodes: ["node1"]
 ```
 
+Restart elasticsearch:\
+```bash
+sudo systemctl restart elasticsearch.service
+```
+Restart must go fine, otherwise check typo errors in YML file for troubleshooting
+
 ### Installing logstash 
 
 IMPORTANT: at the moment this Logstash setup doesn't allow HTTPS mode and SSL certificates
@@ -186,6 +192,7 @@ This plugin is mandatory to have the configuration below working
 ### Editing logstash conf
 \
 Edit /etc/logstash/conf.d/logstash.conf as follows:
+You have to create this file inside conf.d folder, usually it isn't included by default
 
 ```
 input{
@@ -277,9 +284,11 @@ output {
       # set proper IP if the ES node is not on the same machine as Logstash' 
       hosts => ["http://localhost:9200"]
       user => "elastic"
+      #Password is the one for 'elastic' user you saved on setup wizard while installing ES
       password => "elasticsearch-password"
 
-      ssl => true
+      ssl => false
+      # Change to True if HTTPS with SSL enabled
       ssl_certificate_verification => false
       ## FIXME implement
       #cacert => "/path/to/ca.crt"
@@ -292,14 +301,15 @@ stdout { codec => rubydebug }
 }
 ```
 
+Restart logstash:\
+```bash
+sudo systemctl restart logstash.service
+```
+Restart must go fine, otherwise check typo errors in conf file for troubleshooting
 
 ## Adding node2 (optional)
 
-STOP ES
-
-If you need to distrubute calc capacity ............ (sistemare paragrafetto introduttivo)
-
-### installing and configuring elasticsearch
+### Installing and configuring elasticsearch
 
 Stop the Elasticsearch service if already installed and active, otherwise, if not installed:
 
@@ -322,11 +332,12 @@ cluster.initial_master_nodes: ["node1"]
 
 ```
 
-RESTART ES and check health (TESTARE AL VOLO I DUE NODI)
-
 If you need more nodes, you can repeat this procedure
 
-# checking ELK installation 
+At this point RESTART ES and check health  (see section below)
+
+
+# Checking ELK installation 
 ### cluster health
 wget, curl or navigate on https://<es-host>:9200/_cat/health, to get some info about (in plain text) cluster status and check if everything works fine on the cluster.
 
@@ -336,7 +347,7 @@ wget, curl or navigate on https://<es-host>:9200/_cat/health, to get some info a
 Test if ES and LS are working. Restart their respective system services, if necessary:
 
 
-### On Client Host (where spring and OCD resides)
+### On Client Host (where spring and ODC resides)
 
 #### Installing FileBeat
 Filebeat is mandatory to be used in the same machines as the logs resides, send logs to logstash
@@ -385,6 +396,16 @@ filebeat.inputs:
 output.logstash:
   hosts: ["X.X.X.X:5044"] #sobstitute X with real ip bytes
 ```
+
+Remove 'output.elasticsearch' property, if present, because we're using the logstash one
+
+Restart filebeat:\
+```bash
+sudo systemctl restart filebeat.service
+```
+Restart must go fine, otherwise check typo errors in YML file for troubleshooting
+
+
 
 ## Testing ELK log ingestion
 
