@@ -3,27 +3,54 @@ The ELK Stack (E stands for elasticsearch, L for logstash and K for Kibana, the 
 Elasticsearch is accessible and queryable via HTTP APIs and both results and query are formatted as JSON documents.\
 Since ES is a search engine, every JSON document returned is better know as "hit"
 
-# Our environment
-For our OpenEO componentes (such as spring driver and ODC driver) we need to implement a specific version of ELK with Filebeat in order to ingest logfiles into Elasticsearch.\
-FileBeat has to be installed on client machines (that usually generate logs).\
-Logstash has better to be properly configured in the same machine as the ELK master node, in order to receive and process log entries recived from FileBeat via TCP or UDP according to specific grok regex specifications that will parse and ingest into ElasticSearch every according on our log formats
+# Current example environment
+
+This documentation provides the basis for setting up a multiple-node or single-node elk cluster (extendible by your choice with additional nodes)
+
+To ingest logs from our OpenEO componentes (such as spring driver and ODC driver) we need to implement a specific ELK stack configuretion.\
+FileBeat has to be installed on client machines that usually generate logs.\
+Logstash has better to be configured in the same machine as the ELK master node, in order to receive and process log entries.
+
+Log entries are recived almost instantly line by line on LogStash from FileBeat via TCP or UDP.
+
+According to grok regex specifications defined on Logstash Configuration file, Logastash will parse and ingest every entry into ElasticSearch.
+
+Elasticsearch stores entries as JSON documents called hits, who are organized in indices.
+
+Elasticsearch is a NoSQL search engine that is designed to return results and aggregated data from large amounts of results efficiently. It uses a scoring algorithm to classify the results based on their relevance to the search query performed. Additionally, Elasticsearch is optimized for parallel processing, meaning it can best leverage the resources of a distributed cluster to accelerate data search and analysis.
 
 ## Network and nodes
-In our specific case, we are configuring an ELK stack made up by two distributed nodes: \
-eosao13 (10.8.244.14): hosts major services and operates as the “master” for the elasticsearch services\
-eosao14 (10.8.244.15): hosts only elasticsearch as a secondary node 
+In our specific example, we are configuring an ELK stack made up by one (or two) distributed nodes: \
+node1 (IP 192.168.X.X): hosts major services (elasticsearch and logstash) and operates as the “master” for the elasticsearch services\
+node2 (IP 192.168.Y.Y) (optional, according to your needs): hosts only elasticsearch as a secondary node 
 
-Elasticsearch, due to our security policy, operates only via HTTPS (and with respectives SSL certificates too)
+Elasticsearch, due to security policies, better operates via HTTPS (and its SSL certificates), but we can also use HTTP for test purposes or if our environment in higly safe (if you are fully certain that it cannot pose a risk to the security of your systems)
+
+NOTE: IP and hostnames used here are examples. choose IP addresses and node names according to your conventions and based on the IP addressing plan of your network
 
 # Installation and configurations
+## Log examples
+We are sending two examples of logs from the respective files (one is a log4j multiline json and the other is a python logging file, respectively) through this ELK stack example configuration
 
-We are sending openEO spring driver and ODC driver logs (log4j multiline json and python logging respectively) through our ELK stack 
+### Multilne JSON
+```json
+{"@timestamp":"2024-03-05T23:01:43.235Z", "log.level":"ERROR", "message":"JWT token exception caught: JWT expired at 2024-02-28T23:22:32Z. Current time: 2024-03-05T23:01:43Z, a difference of 517151230 milliseconds.  Allowed clock skew: 0 milliseconds.", "ecs.version": "1.2.0","service.name":"test_service","service.node.name":"test_node","event.dataset":"test_dataset","process.thread.name":"https-jsse-nio-8443-exec-9","log.logger":"org.openeo.spring.components.ExceptionTranslator"}
+```
 
-Filebeat is configured to send logs to logstash via UPD port. FileBeat is listening on specified files for new raw log entries (each new line appended). FileBeat will then send them to LogStash on eosao13.
+### Python logging format
+```log
+2023-10-23 14:18:29,282 551a37d4-0df9-40b2-b375-6dddff9be748 [INFO] Obtaining job id from graph: 551a37d4-0df9-40b2-b375-6dddff9be748
+```
 
 
+Filebeat is configured to send logs to logstash via UPD port. FileBeat is listening on specified files for new raw log entries (each new line appended). FileBeat will then send them to LogStash on node1.
 
-## On eosao13
+We are going to install Elasticsearch version 8.12.2, filebeat version no. 8.12.2, logstash version no 8.12.2, make sure to install this version
+
+Setup correctly working and tested on Ubuntu 22.04.3 LTS
+
+## On node1 (master)
+Consider this node as the master node,
 
 ### Installing and configuring elasticsearch
 
@@ -57,22 +84,41 @@ Install Elasticsearch
 sudo apt install elasticsearch
 ```
 
+Enable System Service
+```bash
+sudo systemctl enable elasticsearch.service
+```
+
+Save elastic user password:\
+during install wizard, password for default user ('elastic'), will be prompted on CLI. 
+Take care of the password by saving it
+
 Start Elasticsearch Service
 ```bash
 sudo service elasticsearch start
 ```
 
-Generating p12 certificates
+### Generating p12 certificates
+SKIP THIS PART IF YOU JUST WANT TO INSTALL IN HTTP MODE
 
-1.  while on / usr / share / elasticsearch folder, launch:
+1.  go to elasticsearch binaries folder (```/usr/share/ elasticsearch```) and use dedicated tools to generate CA and certificate (launching elasticsearch-certutil will lead to a CLI wizard):
 ```bash
-elasticsearch-certutil ca
-elasticsearch-certutil cert --ca elastic-stack-ca.p12
+cd /usr/share/elasticsearch/bin
+./elasticsearch-certutil ca
+# Generate certificate for transport layer
+./elasticsearch-certutil cert --ca </path/to>/elastic-stack-ca.p12
+# Generate certificate for HTTPS 
+./elasticsearch-certutil cert --ca </path/to>/elastic-stack-ca.p12
 ```
+IMPORTANT: 
+- while generating ca and certificate using CLI wizard, make sure to output them in ```/etc/elasticsearch/certs/```, moving or deleting the old ones before (you can enter a full path of output file in the wizard, it will be asked to create 'certs' directory if it doesn't exists)
+- strongly adviced to use the default name 'elastic_certificates.p12' for transport layer certificate (as the wizard suggests), 'https.p12' for HTTPS certificate and 'elastic-stack-ca.p12' for CA, especially during test purposes
+- ensure that file permissions (r/w) are properly set and certificate are owned by elasticsearch:elasticsearch
 
-2. edit / etc / elasticsearch / elasticsearch.yml conf file as follows:
+## Elasticsearch YAML conf file 
+Set ```/etc/elasticsearch/elasticsearch.yml``` (or elasticsearch.yml under your custom ES folder) as follows:
 ```
-# Impostazioni di rete
+# Network settings
 network.host: 0.0.0.0
 http.port: 9200
 transport.port: 9300
@@ -82,35 +128,59 @@ http.host: 0.0.0.0
 path.data: /var/lib/elasticsearch
 path.logs: /var/log/elasticsearch
 
-# Configurazione del cluster
-cluster.name: openeo
-node.name: eosao13
+# Cluster settings
+cluster.name: test-cluster # choose your name
+node.name: node1 # Choose your name
 
-# Configurazione SSL
-xpack.security.enabled: true
-xpack.security.transport.ssl.enabled: true
+# SSL Configuration
+xpack.security.enabled: true  # False for HTTP
+xpack.security.transport.ssl.enabled: true  # False for HTTP
+
+# Start commenting (line by line, if you need HTTP)
 xpack.security.transport.ssl.verification_mode: certificate
 xpack.security.transport.ssl.keystore.path: /etc/elasticsearch/certs/elastic-stack-ca.p12
+xpack.security.transport.ssl.keystore.password: <pwd> # property no needed if blank passowrd
 xpack.security.transport.ssl.truststore.path: /etc/elasticsearch/certs/elastic-stack-ca.p12
-xpack.security.http.ssl.enabled: true
+xpack.security.transport.ssl.truststore.password: <pwd> # property no needed if blank passowrd
+# End commenting (only for HTTP)
+
+xpack.security.http.ssl.enabled: true # False for HTTP
+# Start commenting (line by line, if you need HTTP)
 xpack.security.http.ssl.keystore.path: /etc/elasticsearch/certs/elastic-stack-ca.p12
 xpack.security.http.ssl.truststore.path: /etc/elasticsearch/certs/elastic-stack-ca.p12
+# End commenting (only for HTTP)
 
-# Altre configurazioni consigliate
-discovery.seed_hosts: ["10.8.244.14", "10.8.244.15", "eosao14"]
-cluster.initial_master_nodes: ["eosao13"]
+# Other recommended configurations
+# not necessary if single-node
+# add as many nodes as your nodes are
+# add both ip address and node hostname
+discovery.seed_hosts: ["192.168.1.100", "192.168.1.150", "node2"] 
+
+#Add only master node hostname
+cluster.initial_master_nodes: ["node1"]
 ```
 
 ### Installing logstash 
 
-
+IMPORTANT: at the moment this Logstash setup doesn't allow HTTPS mode and SSL certificates
 ```bash
 sudo apt-get update && sudo apt-get install logstash
+```
+
+Enable System Service
+```bash
+sudo systemctl enable logstash.service
 ```
 
 Start Logstash Service
 ```bash
 sudo service logstash start
+```
+
+### Installing multiline filter plugin 
+This plugin is mandatory to have the configuration below working 
+```bash
+/usr/share/logstash/bin/logstash-plugin install logstash-filter-multiline
 ```
 
 ### Editing logstash conf
@@ -203,9 +273,11 @@ output {
   if [type] == "beats" {
     elasticsearch {
       index => "openeo_test"
-      hosts => ["https://localhost:9200"]
+      #if HTTPS mode => https
+      # set proper IP if the ES node is not on the same machine as Logstash' 
+      hosts => ["http://localhost:9200"]
       user => "elastic"
-      password => "e4PNwff4FgPHh+ksWpB9"
+      password => "elasticsearch-password"
 
       ssl => true
       ssl_certificate_verification => false
@@ -221,51 +293,45 @@ stdout { codec => rubydebug }
 ```
 
 
-## On eosao14
+## Adding node2 (optional)
+
+STOP ES
+
+If you need to distrubute calc capacity ............ (sistemare paragrafetto introduttivo)
 
 ### installing and configuring elasticsearch
 
 Stop the Elasticsearch service if already installed and active, otherwise, if not installed:
 
-Repeat same steps as for eosao 13 and then 
-edit e / etc / elasticsearch / elasticsearch.yml as follows:
+Repeat same steps as for node1 and then
+
+in the ```/etc/elasticsearch/elasticsearch.yml``` make sure to have set:
+
+On cluster settings:
 ```
-# Network Settings
-network.host: 0.0.0.0
-http.port: 9200
-transport.port: 9300
-http.host: 0.0.0.0
+# Cluster settings
+cluster.name: test-cluster
+node.name: node2
+```
 
-# Paths
-path.data: /var/lib/elasticsearch
-path.logs: /var/log/elasticsearch
-
-# Cluster config
-cluster.name: openeo
-node.name: eosao14
-
-# SSL config
-xpack.security.enabled: true
-xpack.security.transport.ssl.enabled: true
-xpack.security.transport.ssl.verification_mode: certificate
-xpack.security.transport.ssl.keystore.path: etc/elasticsearch/certs/elastic-stack-ca.p12
-xpack.security.transport.ssl.truststore.path: /etc/elasticsearch/certs/elastic-stack-ca.p12
-xpack.security.http.ssl.enabled: true
-xpack.security.http.ssl.keystore.path: /etc/elasticsearch/certs/elastic-stack-ca.p12
-xpack.security.http.ssl.truststore.path: /etc/elasticsearch/certs/elastic-stack-ca.p12
-
+On other configs:
+```
 # Other configs
-discovery.seed_hosts: ["10.8.244.14", "10.8.244.15", "eosao13", "eosao14"]
-cluster.initial_master_nodes: ["eosao13"]
+discovery.seed_hosts: ["192.168.1.1", "192.168.1.150", "node1", "node2"]
+cluster.initial_master_nodes: ["node1"]
 
 ```
+
+RESTART ES and check health (TESTARE AL VOLO I DUE NODI)
+
+If you need more nodes, you can repeat this procedure
 
 # checking ELK installation 
 ### cluster health
 wget, curl or navigate on https://<es-host>:9200/_cat/health, to get some info about (in plain text) cluster status and check if everything works fine on the cluster.
 
 
-### On both eosao13 and -14
+### On both node1 and node2
 
 Test if ES and LS are working. Restart their respective system services, if necessary:
 
@@ -275,11 +341,15 @@ Test if ES and LS are working. Restart their respective system services, if nece
 #### Installing FileBeat
 Filebeat is mandatory to be used in the same machines as the logs resides, send logs to logstash
 
+IMPORTANT: You can have your logging machine without any ELK component but filebeat
+
 ```bash
 sudo apt-get update && sudo apt-get install filebeat
 ```
+
+Enable System Service
 ```bash
-sudo systemctl enable filebeat
+sudo systemctl enable filebeat.service
 ```
 
 
@@ -319,8 +389,8 @@ output.logstash:
 ## Testing ELK log ingestion
 
 Having all ELK components running and properly configured, you can easily test if log ingestion work by:
-- assuring the component (spring driver, OCD driver) is running and is generating log entries on the file you specified
-- by easily search display your index's hits with https://eosao-elk-host:9200/indexname/_search
+- assuring the component (spring driver, ODC driver) is running and is generating log entries on the file you specified
+- by easily search display your index's hits with https://any-elk-active-node:9200/indexname/_search
 
 ## further notes & suggestion
 
@@ -328,5 +398,3 @@ Having all ELK components running and properly configured, you can easily test i
 - Kibana uses the same Elasticsearch SSL certs, easily configurable on kibana conf file (see official doc)
 - Keep your ELK passwords safe and be sure to annotate safely your p12 certificates' password (if you lose a p12 certificate password you have to regenerate it and reconfigure the whole ELK stack; while recovering ELK password such ElasticSearch HTTPAuth password is easier)
 - By ingesting data into your ELK a new index, according your conf files, will be created if it this doesn't already exists
-
-
