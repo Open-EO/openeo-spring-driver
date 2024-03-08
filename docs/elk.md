@@ -23,13 +23,13 @@
 
 # Introduction
 
-The **ELK Stack** (E stands for *elasticsearch*, L for *logstash* and K for *Kibana*, the three main components alongisde with *Filebeat*), is a powerful data processing and visualization solution.\
+The **ELK Stack** (E stands for *elasticsearch*, L for *logstash* and K for *Kibana*, the three main components alongisde with *Filebeat*), is a powerful data processing and visualization solution.
 
-Elasticsearch is a NoSQL engine that which is designed to return and search single, aggregated or processed results from large amounts of data efficiently. It uses a scoring algorithm to classify the results based on their relevance to the search query performed. Additionally, Elasticsearch is optimized for parallel processing, meaning it can best leverage the resources of a distributed cluster to accelerate data search and analysis. which provides search engine capabilities on its storage\
+Elasticsearch is a NoSQL engine that which is designed to return and search single, aggregated or processed results from large amounts of data efficiently. It uses a scoring algorithm to classify the results based on their relevance to the search query performed. Additionally, Elasticsearch is optimized for parallel processing, meaning it can best leverage the resources of a distributed cluster to accelerate data search and analysis. which provides search engine capabilities on its storage
 
-Logstash is for data transformation\
+Logstash is for data transformation
 
-Filebeat is for data collection\
+Filebeat is for data collection
 
 Kibana is for data visualization and analisys
 
@@ -122,8 +122,7 @@ Enable System Service
 sudo systemctl enable elasticsearch.service
 ```
 
-Save elastic user password:\
-during install wizard, password for default user ('elastic'), will be prompted on CLI. 
+Save elastic user password: during install wizard, password for default user ('elastic'), will be prompted on CLI. 
 Take care of the password by saving it
 
 Start Elasticsearch Service
@@ -194,7 +193,7 @@ discovery.seed_hosts: ["192.168.1.100", "192.168.1.150", "node2"]
 cluster.initial_master_nodes: ["node1"]
 ```
 
-Restart elasticsearch:\
+Restart elasticsearch:
 ```bash
 sudo systemctl restart elasticsearch.service
 ```
@@ -335,7 +334,7 @@ stdout { codec => rubydebug }
 }
 ```
 
-Restart logstash:\
+Restart logstash:
 ```bash
 sudo systemctl restart logstash.service
 ```
@@ -426,7 +425,7 @@ output.logstash:
 
 Remove 'output.elasticsearch' property, if present, because we're using the logstash one
 
-Restart filebeat:\
+Restart filebeat:
 ```bash
 sudo systemctl restart filebeat.service
 ```
