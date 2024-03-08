@@ -1,13 +1,45 @@
 # Quick introduction to the ELK stack
-The ELK Stack (E stands for elasticsearch, L for logstash and K for Kibana, the three main components), is a powerful data processing and visualization solution. It includes Elasticsearch for data storage and search, Logstash for data transformation, Filebeat for data collection, and Kibana for data visualization. This stack is widely used for real-time log and event data analysis.\
+
+* [Introduction](#introduction)
+  * [Network and nodes](#network-and-nodes)
+* [Installation and configuration](#installation-and-configuration)
+  * [Log examples](#log-examples)
+    * [Multiline JSON](#multiline-json)
+    * [Python logging](#python-logging)
+  * [node1 (master)](#node1-master)
+    * [Installing and configuring elasticsearch](#installing-and-configuring-elasticsearch)
+      * [Generating p12 certificates](#generating-p12-certificates)
+      * [Elasticsearch conf](#elasticsearch-conf)
+    * [Installing logstash](#installing-logstash)
+      * [Multiline filter plugin](#multiline-filter-plugin)
+      * [Logstash conf](#logstash-conf)
+  * [node2 (optional)](#node2-optional)
+    * [Installing and configuring elasticsearch](#installing-and-configuring-elasticsearch)
+* [Checking ELK stack](#checking-elk-stack)
+  * [Cluster health](#cluster-health)
+  * [Check if ES is collecting log entries](#check-if-es-is-collecting-log-entries)
+  * [Further notes & suggestions](#further-notes--suggestions)
+* [Credits and References](#credits-and-references)
+
+# Introduction
+
+The **ELK Stack** (E stands for *elasticsearch*, L for *logstash* and K for *Kibana*, the three main components alongisde with *Filebeat*), is a powerful data processing and visualization solution.\
+
+Elasticsearch is a NoSQL engine that which is designed to return and search single, aggregated or processed results from large amounts of data efficiently. It uses a scoring algorithm to classify the results based on their relevance to the search query performed. Additionally, Elasticsearch is optimized for parallel processing, meaning it can best leverage the resources of a distributed cluster to accelerate data search and analysis. which provides search engine capabilities on its storage\
+
+Logstash is for data transformation\
+
+Filebeat is for data collection\
+
+Kibana is for data visualization and analisys
+
+This stack is, among many other uses, widely used for real-time log and event data analysis.\
 Elasticsearch is accessible and queryable via HTTP APIs and both results and query are formatted as JSON documents.\
 Since ES is a search engine, every JSON document returned is better know as "hit"
 
-# Current example environment
+This doc provides the basis for setting up a multiple-node or single-node elk cluster (extendible by your choice with additional nodes)
 
-This documentation provides the basis for setting up a multiple-node or single-node elk cluster (extendible by your choice with additional nodes)
-
-To ingest logs from our OpenEO componentes (such as spring driver and ODC driver) we need to implement a specific ELK stack configuretion.\
+To ingest logs from our OpenEO componentes (such as spring driver and ODC driver) we need to implement a specific ELK stack configuration.\
 FileBeat has to be installed on client machines that usually generate logs.\
 Logstash has better to be configured in the same machine as the ELK master node, in order to receive and process log entries.
 
@@ -17,10 +49,11 @@ According to grok regex specifications defined on Logstash Configuration file, L
 
 Elasticsearch stores entries as JSON documents called hits, who are organized in indices.
 
-Elasticsearch is a NoSQL search engine that is designed to return results and aggregated data from large amounts of results efficiently. It uses a scoring algorithm to classify the results based on their relevance to the search query performed. Additionally, Elasticsearch is optimized for parallel processing, meaning it can best leverage the resources of a distributed cluster to accelerate data search and analysis.
+
 
 ## Network and nodes
 In our specific example, we are configuring an ELK stack made up by one (or two) distributed nodes: \
+You can choose whether to configure a single-node ES installation or a cluster, according to your needs
 node1 (IP 192.168.X.X): hosts major services (elasticsearch and logstash) and operates as the “master” for the elasticsearch services\
 node2 (IP 192.168.Y.Y) (optional, according to your needs): hosts only elasticsearch as a secondary node 
 
@@ -28,16 +61,16 @@ Elasticsearch, due to security policies, better operates via HTTPS (and its SSL 
 
 NOTE: IP and hostnames used here are examples. choose IP addresses and node names according to your conventions and based on the IP addressing plan of your network
 
-# Installation and configurations
+# Installation and configuration
 ## Log examples
 We are sending two examples of logs from the respective files (one is a log4j multiline json and the other is a python logging file, respectively) through this ELK stack example configuration
 
-### Multilne JSON
+### Multiline JSON
 ```json
 {"@timestamp":"2024-03-05T23:01:43.235Z", "log.level":"ERROR", "message":"JWT token exception caught: JWT expired at 2024-02-28T23:22:32Z. Current time: 2024-03-05T23:01:43Z, a difference of 517151230 milliseconds.  Allowed clock skew: 0 milliseconds.", "ecs.version": "1.2.0","service.name":"test_service","service.node.name":"test_node","event.dataset":"test_dataset","process.thread.name":"https-jsse-nio-8443-exec-9","log.logger":"org.openeo.spring.components.ExceptionTranslator"}
 ```
 
-### Python logging format
+### Python logging
 ```log
 2023-10-23 14:18:29,282 551a37d4-0df9-40b2-b375-6dddff9be748 [INFO] Obtaining job id from graph: 551a37d4-0df9-40b2-b375-6dddff9be748
 ```
@@ -49,7 +82,7 @@ We are going to install Elasticsearch version 8.12.2, filebeat version no. 8.12.
 
 Setup correctly working and tested on Ubuntu 22.04.3 LTS
 
-## On node1 (master)
+## node1 (master)
 Consider this node as the master node,
 
 ### Installing and configuring elasticsearch
@@ -98,8 +131,9 @@ Start Elasticsearch Service
 sudo service elasticsearch start
 ```
 
-### Generating p12 certificates
-SKIP THIS PART IF YOU JUST WANT TO INSTALL IN HTTP MODE
+#### Generating p12 certificates
+**Skip this part if you just want to let ELK modules work in HTTP mode**\
+**Recommended for now (HTTPS doc is incmplete)**
 
 1.  go to elasticsearch binaries folder (```/usr/share/ elasticsearch```) and use dedicated tools to generate CA and certificate (launching elasticsearch-certutil will lead to a CLI wizard):
 ```bash
@@ -115,7 +149,7 @@ IMPORTANT:
 - strongly adviced to use the default name 'elastic_certificates.p12' for transport layer certificate (as the wizard suggests), 'https.p12' for HTTPS certificate and 'elastic-stack-ca.p12' for CA, especially during test purposes
 - ensure that file permissions (r/w) are properly set and certificate are owned by elasticsearch:elasticsearch
 
-## Elasticsearch YAML conf file 
+#### Elasticsearch conf 
 Set ```/etc/elasticsearch/elasticsearch.yml``` (or elasticsearch.yml under your custom ES folder) as follows:
 ```
 # Network settings
@@ -168,7 +202,7 @@ Restart must go fine, otherwise check typo errors in YML file for troubleshootin
 
 ### Installing logstash 
 
-IMPORTANT: at the moment this Logstash setup doesn't allow HTTPS mode and SSL certificates
+**IMPORTANT**: as mentioned, at the moment this Logstash setup doesn't allow HTTPS mode and SSL certificates
 ```bash
 sudo apt-get update && sudo apt-get install logstash
 ```
@@ -183,13 +217,13 @@ Start Logstash Service
 sudo service logstash start
 ```
 
-### Installing multiline filter plugin 
+#### Multiline filter plugin 
 This plugin is mandatory to have the configuration below working 
 ```bash
 /usr/share/logstash/bin/logstash-plugin install logstash-filter-multiline
 ```
 
-### Editing logstash conf
+#### Logstash conf
 \
 Edit /etc/logstash/conf.d/logstash.conf as follows:
 You have to create this file inside conf.d folder, usually it isn't included by default
@@ -222,7 +256,7 @@ filter {
     timezone => "Europe/Rome"
     #target_timezone => "Etc/GMT"
   }
-  
+
   mutate {  
     gsub => ["time", " ", "T"]
     gsub => ["time", ",", "."]
@@ -247,7 +281,7 @@ filter {
           "[@timestamp]" => "time"
           "[message]" => "msg"
           "[jobid]" => "job_id"
-          
+
           add_field => { "caller" => "openeo_spring_driver" }
         }
       }
@@ -259,7 +293,7 @@ filter {
           "[log.level]" => "level"
           "[@timestamp]" => "time"
           "[message]" => "msg"
-          
+
           add_field => { "caller" => "openeo_spring_driver" }
         }
       }
@@ -272,7 +306,7 @@ filter {
         what => "previous"
       }
     }
- 
+
   }
 }
 
@@ -307,7 +341,7 @@ sudo systemctl restart logstash.service
 ```
 Restart must go fine, otherwise check typo errors in conf file for troubleshooting
 
-## Adding node2 (optional)
+## node2 (optional)
 
 ### Installing and configuring elasticsearch
 
@@ -337,22 +371,12 @@ If you need more nodes, you can repeat this procedure
 At this point RESTART ES and check health  (see section below)
 
 
-# Checking ELK installation 
-### cluster health
-wget, curl or navigate on https://<es-host>:9200/_cat/health, to get some info about (in plain text) cluster status and check if everything works fine on the cluster.
+
+# Installing FileBeat
+Filebeat is mandatory to be used in machines where logs are accessible by a local path, send logs to logstash
 
 
-### On both node1 and node2
-
-Test if ES and LS are working. Restart their respective system services, if necessary:
-
-
-### On Client Host (where spring and ODC resides)
-
-#### Installing FileBeat
-Filebeat is mandatory to be used in the same machines as the logs resides, send logs to logstash
-
-IMPORTANT: You can have your logging machine without any ELK component but filebeat
+IMPORTANT: You can have your logging machine without any ELK component but filebeat. Especially if you installed a multi node cluster, is strongly recommended to reserve specific machines for the cluster.
 
 ```bash
 sudo apt-get update && sudo apt-get install filebeat
@@ -364,16 +388,18 @@ sudo systemctl enable filebeat.service
 ```
 
 
-### Add the proper log configs on /etc/filebeat/filebeat.yml
-Based on your specific machine, through FB documentation, edit your default filebeat.yml file as follows:
+## Filebeat conf
+Edit /etc/filebeat/filebeat.yml as follows
+Based on your specific log paths, edit these sections of filebeat.yml conf file as follows:
 
 ```yaml
+# editing filebeat inputs
 filebeat.inputs:
 
 # odc-driver input
 - type: log
   id: openeo-odc # openeo-test-01
-  
+
   enabled: true
 
   paths:
@@ -393,6 +419,7 @@ filebeat.inputs:
 ```
 
 ```yaml
+#editing logstash output
 output.logstash:
   hosts: ["X.X.X.X:5044"] #sobstitute X with real ip bytes
 ```
@@ -406,16 +433,33 @@ sudo systemctl restart filebeat.service
 Restart must go fine, otherwise check typo errors in YML file for troubleshooting
 
 
+# Checking ELK stack 
+## Cluster health
+wget, curl or navigate on http(s)://<your-es-host>:9200/_cat/health, to get some info about (in plain text) cluster status and check if everything works fine on the cluster.
 
-## Testing ELK log ingestion
 
-Having all ELK components running and properly configured, you can easily test if log ingestion work by:
+On both node1 and node2
+
+Test if ES and LS are working. Restart their respective system services, if necessary:
+
+## Check if ES is collecting log entries
+
+Having all ELK components running and properly configured, you can easily test if log ingestion works by:
 - assuring the component (spring driver, ODC driver) is running and is generating log entries on the file you specified
 - by easily search display your index's hits with https://any-elk-active-node:9200/indexname/_search
+If the index doesn't exists, elasticsearch will return an error response code.
 
-## further notes & suggestion
+## Further notes & suggestions
 
-- Kibana is the ELK default dashboard and user interface where you can view, graph, analyze and graphycally edit your ES data; If you want to use this tool to get your tests and test queries faster and easier, you can follow official documentation on https://www.elastic.co/guide/index.html to install kibana and connect it to ELK stack
+- Kibana is the ELK default dashboard and user interface where you can view, graph, analyze and graphycally edit your ES data.
+If you want to use this recommended tool to get your tests and test queries faster and easier, you can follow official documentation on https://www.elastic.co/guide/index.html to install kibana and connect it to ELK stack
 - Kibana uses the same Elasticsearch SSL certs, easily configurable on kibana conf file (see official doc)
 - Keep your ELK passwords safe and be sure to annotate safely your p12 certificates' password (if you lose a p12 certificate password you have to regenerate it and reconfigure the whole ELK stack; while recovering ELK password such ElasticSearch HTTPAuth password is easier)
 - By ingesting data into your ELK a new index, according your conf files, will be created if it this doesn't already exists
+
+# Credits and References
+
+- References for elasticsearch and elastic stack: [elastic.co](https://www.elastic.co)
+* [OpenEO](https://openeo.org/)
+* OpenEO ODC Driver (Eurac Research): [OpenEO ODC driver on GitHub](https://github.com/SARScripts/openeo_odc_driver/)
+* OpenEO Spring Driver (Eurac Research): [OpenEO Spring driver on GitHub](https://github.com/Open-EO/openeo-spring-driver/)
