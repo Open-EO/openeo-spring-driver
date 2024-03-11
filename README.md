@@ -169,3 +169,5 @@ All logging can be controlled through **log4j2**.
 For tweaking of log level and file output modify
 `log4j2.xml` in *./src/main/resources*.
 
+The latest server rolllog is stored in the `openeo_$VERSION.log`, which is rolled after reaching 250MB of size, storing the compressed rolled logs in monthly subfolders *YYYY-MM/*. The root log folder can be set via the `OPENEO_LOGS_DIR` environment variable (default to *./logs/*).
+
