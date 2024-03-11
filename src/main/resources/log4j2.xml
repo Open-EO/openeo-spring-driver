@@ -2,7 +2,7 @@
 <Configuration>
         <Appenders>
         <RollingFile name="ROLLFILE" fileName="${env:OPENEO_LOGS_DIR:-logs}/openeo_1.2.0.log" append="true"
-                     filePattern="${env:OPENEO_LOGS_DIR:-logs}/$${date:yyyy-MM}/openeo_1.1.0-%d{MM-dd-yyyy}-%i.log.gz">
+                     filePattern="${env:OPENEO_LOGS_DIR:-logs}/$${date:yyyy-MM}/openeo_1.2.0-%d{MM-dd-yyyy}-%i.log.gz">
                     <EcsLayout serviceName="openeo" serviceNodeName="eurac_op" stackTraceAsArray="true">
                         <KeyValuePair key="jobid" value="$${ctx:jobid}"/>
                             <KeyValuePair key="userid" value="$${ctx:userid}"/>
