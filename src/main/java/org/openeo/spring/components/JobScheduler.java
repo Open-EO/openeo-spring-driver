@@ -57,6 +57,8 @@ import org.openeo.wcps.events.UDFEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
@@ -728,11 +730,37 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			try {
 				HttpResponse<String> response = send_odc_request(odcEndpoint, process.toString());
 				HttpStatus respStatus = HttpStatus.valueOf(response.statusCode());
+				
+//				ResponseEntity spring_response = new ResponseEntity<>(response.body(), HttpStatus.OK);
+				
 				if (respStatus.is2xxSuccessful()) {
 				    try {
 				        JSONObject responseJson = new JSONObject(response.body());
-				        String outputFilename = responseJson.get("output").toString(); // ODC returns a json with format {"output":"/path/to/outputfile"}
-				        dataMimeType = ConvenienceHelper.getMimeFromFilename(outputFilename);
+						log.debug(responseJson);
+						if (responseJson.has("stac_version")) {
+							
+							
+							
+							batchJobResult = new ObjectMapper().readValue(responseJson.toString(), BatchJobResult.class);
+							
+//							batchJobResult = (BatchJobResult) responseJson;
+							batchJobResult.setId(job.getId());
+							log.debug(batchJobResult.toString());
+							resultDAO.save(batchJobResult);
+							log.debug("Result Stored in DB");
+
+							job.setStatus(JobStates.FINISHED);
+							job.setUpdated(OffsetDateTime.now());
+							job.setProgress(new BigDecimal(100));
+							jobDAO.update(job);
+							log.debug("The following job was set to status finished: \n" + job.toString());
+							return;
+						}
+//						else if (responseJson.has("output")) {
+						else {
+							String outputFilename = responseJson.get("output").toString(); // ODC returns a json with format {"output":"/path/to/outputfile"} or STAC Collection json document
+				        	dataMimeType = ConvenienceHelper.getMimeFromFilename(outputFilename);
+						}
 				    } catch (JSONException je) {
 				        addStackTraceAndErrorToLog(je);
 				        Error error = new Error();
@@ -746,7 +774,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 				} else {
                     Error error = new Error();
                     error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-                    error.setMessage(response.body());
+                    error.setMessage(response.body().toString());
                     log.error("Error from ODC backend: {}", error.getMessage());
                     job.setStatus(JobStates.ERROR);
                     jobDAO.update(job);

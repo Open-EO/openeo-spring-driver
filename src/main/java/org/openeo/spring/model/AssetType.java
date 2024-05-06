@@ -1,11 +1,12 @@
 package org.openeo.spring.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonValue;
-
 public enum AssetType  {
 	
-	FEATURE("Feature");
+//	FEATURE("Feature");
+	COLLECTION("Collection");
 
 	private String value;
 

@@ -30,6 +30,7 @@ import javax.validation.constraints.NotNull;
 
 import org.openeo.spring.json.AssetsSerializer;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -41,6 +42,7 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Entity
 @Table(name = "job_results")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BatchJobResult implements Serializable {
 
 	private static final long serialVersionUID = -879934306104454215L;
@@ -60,7 +62,7 @@ public class BatchJobResult implements Serializable {
 	@JsonProperty("type")
 	@Enumerated
 	@Column(name = "asset_type")
-	private AssetType type = AssetType.FEATURE;
+	private AssetType type = AssetType.COLLECTION;
 
 	@JsonProperty("bbox")
 	@Valid
