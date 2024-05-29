@@ -1,12 +1,16 @@
 package org.openeo.spring.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonValue;
+
+/**
+ * Types of a STAC asset.
+ */
 public enum AssetType  {
 	
-//	FEATURE("Feature");
-	COLLECTION("Collection");
+	FEATURE("Feature"),
+	COLLECTION("Collection"),
+	CATALOG("Catalog");
 
 	private String value;
 

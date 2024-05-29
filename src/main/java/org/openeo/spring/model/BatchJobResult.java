@@ -1,7 +1,5 @@
 package org.openeo.spring.model;
 
-import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,42 +8,41 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
-import javax.persistence.Entity;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKey;
+import javax.persistence.MappedSuperclass;
 import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.JoinColumn;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import org.json.JSONObject;
 import org.openeo.spring.json.AssetsSerializer;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.swagger.annotations.ApiModelProperty;
 
 /**
- * BatchJobResult
+ * Abstract BatchJobResult.
+ * @see <a href="https://api.openeo.org/#tag/Batch-Jobs/operation/list-results">List batch job results</a>
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-@Entity
-@Table(name = "job_results")
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class BatchJobResult implements Serializable {
-
-	private static final long serialVersionUID = -879934306104454215L;
+// TODO FIXME instead of polymorphic BatchJobResult, rely on existing Feature/Collection model classes
+@MappedSuperclass
+-> see javadoc of MappedSuperclass
+public abstract class BatchJobResult {
 
 	@JsonProperty("stac_version")
 	private String stacVersion;
@@ -57,26 +54,12 @@ public class BatchJobResult implements Serializable {
 	
 	@Id
 	@JsonProperty("id")
-	private UUID id;
+	private String id;
 
 	@JsonProperty("type")
 	@Enumerated
 	@Column(name = "asset_type")
-	private AssetType type = AssetType.COLLECTION;
-
-	@JsonProperty("bbox")
-	@Valid
-	@Embedded
-	private List<BigDecimal> bbox = null;
-
-	@JsonProperty("geometry")
-	@Embedded
-	private GeoJsonGeometry geometry = null;
-
-	@JsonProperty("properties")
-	@Valid
-	@Transient
-	private Map<String, Object> properties = new HashMap<>();
+	private AssetType type;
 
 	@JsonProperty("assets")
 	@JsonSerialize(using = AssetsSerializer.class)
@@ -91,6 +74,72 @@ public class BatchJobResult implements Serializable {
 	@Valid
 	@Embedded
 	private List<Link> links = new ArrayList<>();
+	
+	/**
+	 * Factory of concrete objects based on type.
+	 *
+	 * @throws JsonProcessingException 
+	 * @throws JsonMappingException 
+	 */
+	@SuppressWarnings("unchecked")
+    public static final <T extends BatchJobResult> T factory(String resultJson) throws JsonMappingException, JsonProcessingException {
+	    T result;
+	    JSONObject jsonObj = new JSONObject(resultJson);
+	    
+	    if (!jsonObj.has(TYPE_KEY)) {
+	        throw new RuntimeException("Invalid job result json: no 'type' element found.");
+	    }
+	    
+	    // fetch type (feature or collection)
+	    String resultTypeStr = jsonObj.getString(TYPE_KEY);
+	    AssetType resultType = AssetType.valueOf(resultTypeStr.toUpperCase());
+	    
+	    if (null == resultType) {
+	        // TODO other type of exception: this is a client error
+	        throw new RuntimeException("Unknown job type: " + resultTypeStr);
+	    }
+
+	    switch (resultType) {
+	    case FEATURE:
+	        result = (T) reify(resultJson, BatchJobResultFeature.class);
+	        break;
+	    case COLLECTION:
+	        result = (T) reify(resultJson, BatchJobResultCollection.class);
+	        break;
+	    default:
+	        throw new RuntimeException("Unhandled result type:" + resultType);
+	    }
+	    return result;
+	}
+	
+	/** Overload of {@link BatchJobResult#factory(String)}. */
+	public static final <T extends BatchJobResult> T factory(JSONObject jsonObj) throws JsonMappingException, JsonProcessingException {
+	    return factory(jsonObj.toString());
+	}
+	
+	/**
+	 * Factory of empty (concrete) job result instances.
+	 */
+	@SuppressWarnings("unchecked")
+    public static final <T extends BatchJobResult> T ofType(AssetType type) {
+	    T obj;
+	    
+	    switch (type) {
+        case FEATURE:
+            obj = (T) new BatchJobResultFeature();
+            break;
+        case COLLECTION:
+            obj = (T) new BatchJobResultCollection();
+            break;
+        default:
+            throw new RuntimeException("Unhandled result type:" + type);
+        }
+	    
+	    return obj;
+	}
+	/*
+	 * getters/setters
+	 */
 
 	public BatchJobResult stacVersion(String stacVersion) {
 		this.stacVersion = stacVersion;
@@ -151,7 +200,7 @@ public class BatchJobResult implements Serializable {
 		this.stacExtensions = stacExtensions;
 	}
 
-	public BatchJobResult id(UUID id) {
+	public BatchJobResult id(String id) {
 		this.id = id;
 		return this;
 	}
@@ -164,11 +213,11 @@ public class BatchJobResult implements Serializable {
 	 */
 	@ApiModelProperty(example = "a3cca2b2aa1e3b5b", required = true, value = "Unique identifier of the batch job, generated by the back-end during creation. MUST match the specified pattern.")
 	@NotNull
-	public UUID getId() {
+	public String getId() {
 		return id;
 	}
 
-	public void setId(UUID id) {
+	public void setId(String id) {
 		this.id = id;
 	}
 
@@ -191,96 +240,6 @@ public class BatchJobResult implements Serializable {
 
 	public void setType(AssetType type) {
 		this.type = type;
-	}
-
-	public BatchJobResult bbox(List<BigDecimal> bbox) {
-		this.bbox = bbox;
-		return this;
-	}
-
-	public BatchJobResult addBboxItem(BigDecimal bboxItem) {
-		if (this.bbox == null) {
-			this.bbox = new ArrayList<>();
-		}
-		this.bbox.add(bboxItem);
-		return this;
-	}
-
-	/**
-	 * Potential *spatial extent* covered by the data. The bounding box is provided
-	 * as four or six numbers. Six numbers are specified, if the coordinate
-	 * reference system includes a vertical axis (height or depth). The order of the
-	 * elements in the array: - West (lower left corner, coordinate axis 1) - South
-	 * (lower left corner, coordinate axis 2) - Base (optional, lower left corner,
-	 * coordinate axis 3) - East (upper right corner, coordinate axis 1) - North
-	 * (upper right corner, coordinate axis 2) - Height (optional, upper right
-	 * corner, coordinate axis 3) The coordinate reference system of the values is
-	 * WGS84 longitude/latitude. Specifying the `bbox` is strongly RECOMMENDED for
-	 * STAC compliance, but can be omitted if the result is unlocated and the
-	 * `geometry` is set to `null`.
-	 * 
-	 * @return bbox
-	 */
-	@ApiModelProperty(example = "[-180,-90,180,90]", value = "Potential *spatial extent* covered by the data.  The bounding box is provided as four or six numbers. Six numbers are specified, if the coordinate reference system includes a vertical axis (height or depth). The order of the elements in the array:  - West (lower left corner, coordinate axis 1) - South (lower left corner, coordinate axis 2) - Base (optional, lower left corner, coordinate axis 3) - East (upper right corner, coordinate axis 1) - North (upper right corner, coordinate axis 2) - Height (optional, upper right corner, coordinate axis 3)  The coordinate reference system of the values is WGS84 longitude/latitude.  Specifying the `bbox` is strongly RECOMMENDED for STAC compliance, but can be omitted if the result is unlocated and the `geometry` is set to `null`.")
-
-	@Valid
-
-	public List<BigDecimal> getBbox() {
-		return bbox;
-	}
-
-	public void setBbox(List<BigDecimal> bbox) {
-		this.bbox = bbox;
-	}
-
-	public BatchJobResult geometry(GeoJsonGeometry geometry) {
-		this.geometry = geometry;
-		return this;
-	}
-
-	/**
-	 * Defines the full footprint of the asset represented by this item as GeoJSON
-	 * Geometry. Results without a known location can set this value to `null`.
-	 * 
-	 * @return geometry
-	 */
-	@ApiModelProperty(example = "{\"type\":\"Polygon\",\"coordinates\":[[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]]]}", required = true, value = "Defines the full footprint of the asset represented by this item as GeoJSON Geometry.  Results without a known location can set this value to `null`.")
-
-	@Valid
-
-	public GeoJsonGeometry getGeometry() {
-		return geometry;
-	}
-
-	public void setGeometry(GeoJsonGeometry geometry) {
-		this.geometry = geometry;
-	}
-
-	public BatchJobResult properties(Map<String, Object> properties) {
-		this.properties = properties;
-		return this;
-	}
-
-	public BatchJobResult putPropertiesItem(String key, Object propertiesItem) {
-		this.properties.put(key, propertiesItem);
-		return this;
-	}
-
-	/**
-	 * MAY contain any additional properties, e.g. other STAC Item properties,
-	 * properties from STAC extensions or custom properties.
-	 * 
-	 * @return properties
-	 */
-	@ApiModelProperty(required = true, value = "MAY contain any additional properties, e.g. other STAC Item properties, properties from STAC extensions or custom properties.")
-	@NotNull
-
-	public Map<String, Object> getProperties() {
-		return properties;
-	}
-
-	public void setProperties(Map<String, Object> properties) {
-		this.properties = properties;
 	}
 
 	public BatchJobResult assets(Map<String, Asset> assets) {
@@ -360,44 +319,39 @@ public class BatchJobResult implements Serializable {
 		return Objects.equals(this.stacVersion, batchJobResult.stacVersion)
 				&& Objects.equals(this.stacExtensions, batchJobResult.stacExtensions)
 				&& Objects.equals(this.id, batchJobResult.id) && Objects.equals(this.type, batchJobResult.type)
-				&& Objects.equals(this.bbox, batchJobResult.bbox)
-				&& Objects.equals(this.geometry, batchJobResult.geometry)
-				&& Objects.equals(this.properties, batchJobResult.properties)
 				&& Objects.equals(this.assets, batchJobResult.assets)
 				&& Objects.equals(this.links, batchJobResult.links);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(stacVersion, stacExtensions, id, type, bbox, geometry, properties, assets, links);
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("class BatchJobResult {\n");
-
-		sb.append("    stacVersion: ").append(toIndentedString(stacVersion)).append("\n");
-		sb.append("    stacExtensions: ").append(toIndentedString(stacExtensions)).append("\n");
-		sb.append("    id: ").append(toIndentedString(id)).append("\n");
-		sb.append("    type: ").append(toIndentedString(type)).append("\n");
-		sb.append("    bbox: ").append(toIndentedString(bbox)).append("\n");
-		sb.append("    geometry: ").append(toIndentedString(geometry)).append("\n");
-		sb.append("    properties: ").append(toIndentedString(properties)).append("\n");
-		sb.append("    assets: ").append(toIndentedString(assets)).append("\n");
-		sb.append("    links: ").append(toIndentedString(links)).append("\n");
-		sb.append("}");
-		return sb.toString();
+		return Objects.hash(stacVersion, stacExtensions, id, type, assets, links);
 	}
 
 	/**
 	 * Convert the given object to string with each line indented by 4 spaces
 	 * (except the first line).
 	 */
-	private String toIndentedString(java.lang.Object o) {
+	protected String toIndentedString(java.lang.Object o) {
 		if (o == null) {
 			return "null";
 		}
 		return o.toString().replace("\n", "\n    ");
 	}
+	
+	/**
+	 * Maps a JSON text to the given Java object type.
+	 * @throws JsonProcessingException 
+	 * @throws JsonMappingException 
+	 */
+	private static final <T extends BatchJobResult> T reify(String jsonText, Class<T> clazz) throws JsonMappingException, JsonProcessingException {
+	    T obj = JOM.readValue(jsonText, clazz);
+	    return obj;
+	}
+	
+	/** Internal JSON object factory. */ 
+	private static final ObjectMapper JOM = new ObjectMapper();
+	
+	/** The jey for the result type in the JSON schema. */
+	private static final String TYPE_KEY = "type";
 }

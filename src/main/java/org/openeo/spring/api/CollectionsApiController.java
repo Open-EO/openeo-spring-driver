@@ -41,6 +41,7 @@ import org.openeo.spring.loaders.ODCCollectionsLoader;
 import org.openeo.spring.loaders.STACFileCollectionsLoader;
 import org.openeo.spring.loaders.WCSCollectionsLoader;
 import org.openeo.spring.model.Asset;
+import org.openeo.spring.model.AssetType;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.Collections;
@@ -654,7 +655,7 @@ public class CollectionsApiController implements CollectionsApi {
         process.setProcessGraph(loadSaveProcessGraph);
 
         Job job = new Job();
-        BatchJobResult jobResult = new BatchJobResult();
+        BatchJobResult jobResult = BatchJobResult.ofType(AssetType.FEATURE);
         job.setProcess(process);
         job.setTitle(String.format("OGC-Coverage-%s-%s", fileFormat, OffsetDateTime.now()));
         ResponseEntity<?> response = jobsApiController.createJob(job, principal);

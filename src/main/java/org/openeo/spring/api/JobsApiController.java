@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -159,10 +160,10 @@ public class JobsApiController implements JobsApi {
 
 	JobDAO jobDAO;
 
-	BatchJobResultDAO resultDAO;
+	BatchJobResultDAO<? extends BatchJobResult> resultDAO;
 
 	@Autowired
-	public void setDao(JobDAO injectedJObDAO, BatchJobResultDAO injectResultDao) {
+	public <T extends BatchJobResult & Serializable> void setDao(JobDAO injectedJObDAO, BatchJobResultDAO<T> injectResultDao) {
 		jobDAO = injectedJObDAO;
 		resultDAO = injectResultDao;
 	}
@@ -170,7 +171,6 @@ public class JobsApiController implements JobsApi {
 	@org.springframework.beans.factory.annotation.Autowired
 	public JobsApiController(NativeWebRequest request) {
 		this.request = request;
-
 	}
 
 	@PostConstruct
@@ -681,7 +681,7 @@ public class JobsApiController implements JobsApi {
 					jobResults.delete();
 					log.debug("All persistent files have been successfully deleted for job with id: " + jobId);
 				}
-				resultDAO.delete(jobResult);
+				resultDAO.deleteById(UUID.fromString(jobResult.getId()));
 				log.debug("The job result {} was successfully deleted.", jobId);
 			}
 			jobDAO.delete(job);
@@ -1092,7 +1092,7 @@ public class JobsApiController implements JobsApi {
 			job.setStatus(JobStates.QUEUED);
 			job.setUpdated(OffsetDateTime.now());
 			jobDAO.update(job);
-			this.fireJobQueuedEvent(job.getId());
+			this.fireJobQueuedEvent(UUID.fromString(job.getId()));
 			ThreadContext.clearMap();
 			return new ResponseEntity<Job>(HttpStatus.ACCEPTED);
 		} else {
@@ -1149,7 +1149,8 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> stopJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
 		ThreadContext.put("jobid", jobId);
-		Job job = jobDAO.findOne(UUID.fromString(jobId));
+		UUID jobUUID = UUID.fromString(jobId);
+		Job job = jobDAO.findOne(jobUUID);
 		if (job != null) {
 			if(job.getEngine()==EngineTypes.WCPS){
 			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.NOT_IMPLEMENTED,
@@ -1162,7 +1163,7 @@ public class JobsApiController implements JobsApi {
 						job.setStatus(JobStates.CANCELED);
 						job.setUpdated(OffsetDateTime.now());
 						jobDAO.update(job);
-						this.fireJobStoppedEvent(job.getId());
+						this.fireJobStoppedEvent(jobUUID);
 						ThreadContext.clearMap();
 						return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 					}
@@ -1170,7 +1171,7 @@ public class JobsApiController implements JobsApi {
 					job.setStatus(JobStates.CREATED);
 					job.setUpdated(OffsetDateTime.now());
 					jobDAO.update(job);
-					this.fireJobStoppedEvent(job.getId());
+					this.fireJobStoppedEvent(jobUUID);
 					ThreadContext.clearMap();
 					return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 				}

@@ -1,0 +1,98 @@
+{
+  "stac_version": "1.0.0",
+  "id": "a3cca2b2aa1e3b5b",
+  "title": "NDVI based on Sentinel 2",
+  "description": "Deriving minimum NDVI measurements over pixel time series of Sentinel 2",
+  "license": "Apache-2.0",
+  "providers": [
+    {
+      "name": "Example Cloud Corp.",
+      "description": "No further processing applied.",
+      "roles": [
+        "producer",
+        "licensor",
+        "host"
+      ],
+      "url": "https://cloud.example"
+    }
+  ],
+  "extent": {
+    "temporal": {
+      "interval": [
+        [
+          "2019-08-24T14:15:22Z",
+          "2019-08-24T14:15:22Z"
+        ]
+      ]
+    },
+    "spatial": {
+      "bbox": [
+        [
+          -180,
+          -90,
+          180,
+          90
+        ]
+      ]
+    }
+  },
+  "assets": {
+    "preview.png": {
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/preview.png",
+      "type": "image/png",
+      "title": "Thumbnail",
+      "roles": [
+        "thumbnail"
+      ]
+    },
+    "process.json": {
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/process.json",
+      "type": "application/json",
+      "title": "Original Process",
+      "roles": [
+        "process",
+        "reproduction"
+      ]
+    },
+    "1.tif": {
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/1.tif",
+      "type": "image/tiff; application=geotiff",
+      "roles": [
+        "data"
+      ]
+    },
+    "2.tif": {
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/2.tif",
+      "type": "image/tiff; application=geotiff",
+      "roles": [
+        "data"
+      ]
+    },
+    "inspire.xml": {
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/inspire.xml",
+      "type": "application/xml",
+      "title": "INSPIRE metadata",
+      "description": "INSPIRE compliant XML metadata",
+      "roles": [
+        "metadata"
+      ]
+    }
+  },
+  "links": [
+    {
+      "rel": "canonical",
+      "type": "application/json",
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/collection.json"
+    },
+    {
+      "rel": "item",
+      "type": "application/geo+json",
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/item_1.json"
+    },
+    {
+      "rel": "item",
+      "type": "application/geo+json",
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/item_2.json"
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "stac_version": "1.0.0",
+  "stac_extensions": [
+    "https://openeo.example/stac/custom-extemsion/v1.0.0/schema.json"
+  ],
+  "id": "a3cca2b2aa1e3b5b",
+  "type": "Feature",
+  "bbox": [
+    -180,
+    -90,
+    180,
+    90
+  ],
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          -180,
+          -90
+        ],
+        [
+          180,
+          -90
+        ],
+        [
+          180,
+          90
+        ],
+        [
+          -180,
+          90
+        ],
+        [
+          -180,
+          -90
+        ]
+      ]
+    ]
+  },
+  "properties": {
+    "datetime": "2019-08-24T14:15:22Z",
+    "start_datetime": "2019-08-24T14:15:22Z",
+    "end_datetime": "2019-08-24T14:15:22Z",
+    "title": "NDVI based on Sentinel 2",
+    "description": "Deriving minimum NDVI measurements over pixel time series of Sentinel 2",
+    "license": "Apache-2.0",
+    "providers": [
+      {
+        "name": "Example Cloud Corp.",
+        "description": "No further processing applied.",
+        "roles": [
+          "producer",
+          "licensor",
+          "host"
+        ],
+        "url": "https://cloud.example"
+      }
+    ],
+    "created": "2017-01-01T09:32:12Z",
+    "updated": "2017-01-01T09:36:18Z",
+    "expires": "2020-11-01T00:00:00Z",
+    "openeo:status": "running"
+  },
+  "assets": {
+    "preview.png": {
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/preview.png",
+      "type": "image/png",
+      "title": "Thumbnail",
+      "roles": [
+        "thumbnail"
+      ]
+    },
+    "process.json": {
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/process.json",
+      "type": "application/json",
+      "title": "Original Process",
+      "roles": [
+        "process",
+        "reproduction"
+      ]
+    },
+    "1.tif": {
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/1.tif",
+      "type": "image/tiff; application=geotiff",
+      "title": "Band 1",
+      "roles": [
+        "data"
+      ]
+    },
+    "2.tif": {
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/2.tif",
+      "type": "image/tiff; application=geotiff",
+      "title": "Band 2",
+      "roles": [
+        "data"
+      ]
+    },
+    "inspire.xml": {
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/inspire.xml",
+      "type": "application/xml",
+      "title": "INSPIRE metadata",
+      "description": "INSPIRE compliant XML metadata",
+      "roles": [
+        "metadata"
+      ]
+    }
+  },
+  "links": [
+    {
+      "rel": "canonical",
+      "type": "application/geo+json",
+      "href": "https://openeo.example/api/v1/download/583fba8b2ce583fba8b2ce/item.json"
+    }
+  ]
+}
