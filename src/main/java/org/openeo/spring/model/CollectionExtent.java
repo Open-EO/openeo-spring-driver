@@ -2,6 +2,8 @@ package org.openeo.spring.model;
 
 import java.util.Objects;
 
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -13,13 +15,17 @@ import io.swagger.annotations.ApiModelProperty;
 /**
  * The extent of the features in the collection. Additional members MAY be added to represent other extents, for example, thermal or pressure ranges.
  */
+@Embeddable
 @ApiModel(description = "The extent of the features in the collection. Additional members MAY be added to represent other extents, for example, thermal or pressure ranges.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class CollectionExtent   {
+    
   @JsonProperty("spatial")
+  @Embedded
   private CollectionSpatialExtent spatial;
 
   @JsonProperty("temporal")
+  @Embedded
   private CollectionTemporalExtent temporal;
 
   public CollectionExtent spatial(CollectionSpatialExtent spatial) {

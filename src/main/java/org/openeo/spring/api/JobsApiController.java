@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -49,7 +48,9 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import org.openeo.spring.bearer.ITokenService;
 import org.openeo.spring.bearer.TokenUtil;
 import org.openeo.spring.components.JobScheduler;
+import org.openeo.spring.dao.BatchJobResultCollectionDAO;
 import org.openeo.spring.dao.BatchJobResultDAO;
+import org.openeo.spring.dao.BatchJobResultFeatureDAO;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.keycloak.legacy.AuthzService;
 import org.openeo.spring.model.BatchJobEstimate;
@@ -163,11 +164,16 @@ public class JobsApiController implements JobsApi {
 	BatchJobResultDAO<? extends BatchJobResult> resultDAO;
 
 	@Autowired
-	public <T extends BatchJobResult & Serializable> void setDao(JobDAO injectedJObDAO, BatchJobResultDAO<T> injectResultDao) {
-		jobDAO = injectedJObDAO;
-		resultDAO = injectResultDao;
+	public void setDaoFeature(JobDAO injectedJObDAO, BatchJobResultFeatureDAO injectResultDao) {
+	    jobDAO = injectedJObDAO;
+	    resultDAO = injectResultDao;
 	}
-
+	@Autowired
+	public void setDaoCollection(JobDAO injectedJObDAO, BatchJobResultCollectionDAO injectResultDao) {
+	    jobDAO = injectedJObDAO;
+	    resultDAO = injectResultDao;
+	}
+	
 	@org.springframework.beans.factory.annotation.Autowired
 	public JobsApiController(NativeWebRequest request) {
 		this.request = request;

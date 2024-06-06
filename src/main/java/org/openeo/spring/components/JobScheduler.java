@@ -84,9 +84,15 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	BatchJobResultDAO<? extends BatchJobResult> resultDAO;
 
 	@Autowired
-	public void setDao(JobDAO injectedJObDAO, BatchJobResultDAO<? extends BatchJobResult> injectResultDao) {
+	public void setDaoFeature(JobDAO injectedJObDAO, BatchJobResultFeatureDAO injectResultDao) {
 		jobDAO = injectedJObDAO;
 		resultDAO = injectResultDao;
+	}
+	
+	@Autowired
+	public void setDaoCollection(JobDAO injectedJObDAO, BatchJobResultCollectionDAO injectResultDao) {
+	    jobDAO = injectedJObDAO;
+	    resultDAO = injectResultDao;
 	}
 
 	@Autowired

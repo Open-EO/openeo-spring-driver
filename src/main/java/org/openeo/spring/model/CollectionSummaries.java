@@ -1,10 +1,13 @@
 package org.openeo.spring.model;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 
-import javax.persistence.Embeddable;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embedded;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -22,9 +25,11 @@ import io.swagger.annotations.ApiModelProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CollectionSummaries   {
 	@JsonProperty("constellation")
+	@Embedded
 	private List<String> constellation;
 
 	@JsonProperty("platform")
+	@Embedded
 	private List<String> platform;
 	
 	@JsonProperty("rows")
@@ -34,21 +39,35 @@ public class CollectionSummaries   {
 	private Integer columns;
 
 	@JsonProperty("instruments")
+	@Embedded
 	private List<String> instruments;
 
 	@JsonProperty("eo:cloud cover")
+	@Embedded
+	@AttributeOverrides({
+	    @AttributeOverride( name = "min", column = @Column(name = "cloudcover_min")),
+	    @AttributeOverride( name = "max", column = @Column(name = "cloudcover_max"))
+	})
 	private CollectionSummaryStats cloudCover;
 
 	@JsonProperty("sat:orbit_state")
+	@Embedded
 	private List<String> orbitState;
 
 	@JsonProperty("gsd")
+	@Embedded
 	private List<Double> gsd;
 
 	@JsonProperty("proj:epsg")
+	@Embedded
+	@AttributeOverrides({
+	    @AttributeOverride( name = "min", column = @Column(name = "epsg_min")),
+	    @AttributeOverride( name = "max", column = @Column(name = "epsg_max"))
+	})
 	private CollectionSummaryStats epsg;
 
 	@JsonProperty("eo:bands")
+	@ElementCollection
 	private List<BandSummary> bands;
 
 	public CollectionSummaries constellation(List<String> constellation) {

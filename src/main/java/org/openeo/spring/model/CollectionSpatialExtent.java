@@ -5,10 +5,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
 import javax.validation.Valid;
 import javax.validation.constraints.Size;
 
+import org.openeo.spring.json.ExtentSerializer;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -16,11 +21,14 @@ import io.swagger.annotations.ApiModelProperty;
 /**
  * The *potential* spatial extent of the features in the collection.
  */
+@Embeddable
 @ApiModel(description = "The *potential* spatial extent of the features in the collection.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class CollectionSpatialExtent   {
   @JsonProperty("bbox")
   @Valid
+  @Embedded
+  @JsonSerialize(contentUsing = ExtentSerializer.class)
   private List<List<BigDecimal>> bbox = null;
 
   public CollectionSpatialExtent bbox(List<List<BigDecimal>> bbox) {

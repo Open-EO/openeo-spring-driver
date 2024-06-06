@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -15,10 +17,12 @@ import io.swagger.annotations.ApiModelProperty;
 /**
  * DimensionBands
  */
+@Embeddable
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class DimensionBands extends Dimension  {
   @JsonProperty("values")
   @Valid
+  @Embedded
   private List<String> values = new ArrayList<>();
 
   public DimensionBands values(List<String> values) {

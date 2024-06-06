@@ -5,10 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import javax.persistence.Embedded;
 import javax.validation.Valid;
 import javax.validation.constraints.Size;
-
-import org.openapitools.jackson.nullable.JsonNullable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -21,10 +20,12 @@ import io.swagger.annotations.ApiModelProperty;
 public class DimensionOther extends Dimension implements HasUnit {
   @JsonProperty("extent")
   @Valid
+  @Embedded
   private List<BigDecimal> extent = null;
 
   @JsonProperty("values")
   @Valid
+  @Embedded
   private List<String> values = null;
 
   @JsonProperty("step")

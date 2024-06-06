@@ -7,8 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.persistence.MapKey;
-import javax.persistence.Table;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -20,12 +21,11 @@ import io.swagger.annotations.ApiModelProperty;
  * BatchJobResult for items of type "Collection".
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-//@Entity
-@Table(name = "job_results_collection")
+@Entity
 //@JsonIgnoreProperties(ignoreUnknown = true)
 public class BatchJobResultCollection extends BatchJobResult implements Serializable {
 
-	private static final long serialVersionUID = -879934306104454217L;
+    private static final long serialVersionUID = -879934306104454217L;
 
     {
         // init section
@@ -40,6 +40,7 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
 
     @JsonProperty("keywords")
     @Valid
+    @Embedded
     private List<String> keywords = null;
 
     @JsonProperty("version")
@@ -56,27 +57,28 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
 
     @JsonProperty("providers")
     @Valid
+    @Embedded
     private List<Providers> providers = null;
 
     @JsonProperty("extent")
+    @Embedded
     private CollectionExtent extent;
 
     @JsonProperty("links")
+    @ElementCollection
     @Valid
+    @Embedded
     private List<Link> links = new ArrayList<>();
 
     @JsonProperty("cube:dimensions")
+    @ElementCollection
     @Valid
-//    @JsonSerialize(using = AssetsSerializer.class)
-//    @OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.EAGER)
-//    @JoinTable(name = "result_asset_mapping", 
-//      joinColumns = {@JoinColumn(name = "result_id", referencedColumnName = "id")},
-//      inverseJoinColumns = {@JoinColumn(name = "asset_id", referencedColumnName = "href")})
-    @MapKey(name = "href")
-    private Map<String, Dimension> cubeColonDimensions = null;
+    @Embedded
+    private List<Dimension> cubeColonDimensions = null;
 
     @JsonProperty("summaries")
     @Valid
+    @Embedded
     private CollectionSummaries summaries = null;
 
     @JsonProperty("assets")
@@ -319,16 +321,16 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
       this.links = links;
     }
 
-    public BatchJobResultCollection cubeColonDimensions(Map<String, Dimension> cubeColonDimensions) {
+    public BatchJobResultCollection cubeColonDimensions(List<Dimension> cubeColonDimensions) {
       this.cubeColonDimensions = cubeColonDimensions;
       return this;
     }
 
     public BatchJobResultCollection putCubeColonDimensionsItem(String key, Dimension cubeColonDimensionsItem) {
       if (this.cubeColonDimensions == null) {
-        this.cubeColonDimensions = new HashMap<>();
+        this.cubeColonDimensions = new ArrayList<>();
       }
-      this.cubeColonDimensions.put(key, cubeColonDimensionsItem);
+      this.cubeColonDimensions.add(cubeColonDimensionsItem);
       return this;
     }
 
@@ -340,11 +342,11 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
 
     @Valid
 
-    public Map<String, Dimension> getCubeColonDimensions() {
+    public List<Dimension> getCubeColonDimensions() {
       return cubeColonDimensions;
     }
 
-    public void setCubeColonDimensions(Map<String, Dimension> cubeColonDimensions) {
+    public void setCubeColonDimensions(List<Dimension> cubeColonDimensions) {
       this.cubeColonDimensions = cubeColonDimensions;
     }
 

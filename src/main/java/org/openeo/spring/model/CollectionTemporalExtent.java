@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
 import javax.validation.Valid;
 import javax.validation.constraints.Size;
 
@@ -19,11 +21,13 @@ import io.swagger.annotations.ApiModelProperty;
 /**
  * The *potential* temporal extent of the features in the collection.
  */
+@Embeddable
 @ApiModel(description = "The *potential* temporal extent of the features in the collection.")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 public class CollectionTemporalExtent   {
   @JsonProperty("interval")
   @Valid
+  @Embedded
   @JsonSerialize(contentUsing = TimeIntervalSerializer.class)
   private List<List<OffsetDateTime>> interval = null;
 

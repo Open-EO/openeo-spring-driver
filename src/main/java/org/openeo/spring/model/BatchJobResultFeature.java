@@ -10,7 +10,6 @@ import java.util.Objects;
 
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
-import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -24,7 +23,6 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Entity
-@Table(name = "job_results_feature")
 //@JsonIgnoreProperties(ignoreUnknown = true)
 public class BatchJobResultFeature extends BatchJobResult implements Serializable {
 
@@ -47,7 +45,7 @@ public class BatchJobResultFeature extends BatchJobResult implements Serializabl
 	@JsonProperty("properties")
 	@Valid
 	@Transient
-	private Map < String, Object> properties = new HashMap<>();
+	private Map <String, Object> properties = new HashMap<>();
 
     @Override
     public void setType(AssetType type) {
