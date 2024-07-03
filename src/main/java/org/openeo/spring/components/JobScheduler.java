@@ -70,6 +70,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @Component
 @EnableAsync(proxyTargetClass=true)
@@ -887,6 +888,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	    String processFileName = "process.json";
 	    String processFilePath = tmpDir + job.getId() + "/" + processFileName;
 	    ObjectMapper mapper = new ObjectMapper();
+	    mapper.registerModule(new JavaTimeModule());
 	    try {
 	        mapper.writeValue(new File(processFilePath), job.getProcess());
 	    } catch (JsonGenerationException e) {
