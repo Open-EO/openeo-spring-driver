@@ -408,7 +408,8 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 					URL urlUDF = new URL(wcpsEndpoint + "?SERVICE=WCS" + "&VERSION=2.0.1" + "&REQUEST=ProcessCoverages"
 							+ "&QUERY=" + URLEncoder.encode(wcpsFactory.getWCPSString(), "UTF-8").replace("+", "%20"));
 					executeWCPS(urlUDF, job, wcpsFactory);
-					deleteUDFCube(UUID.fromString(job.getId()));
+//					deleteUDFCube(UUID.fromString(job.getId()));
+					deleteUDFCube(job.getId());
 
 				} catch (UnsupportedEncodingException e) {
 					log.error("An error occured when encoding response of udf service endpoint " + e.getMessage());
@@ -517,7 +518,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
      */
 	private Error executeWCPS(URL url, Job job, WCPSQueryFactory wcpsQuery) {
 
-		BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
+		BatchJobResult batchJobResult = resultDAO.findOne(job.getId().toString());
 
 		//Skip computing if result is already available.
 		if(batchJobResult != null) {
@@ -599,7 +600,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		BatchJobResultFeature batchJobResultF = (BatchJobResultFeature) batchJobResult;
         BatchJobResultFeatureDAO bDao = new BatchJobResultFeatureDAO();
 
-        batchJobResultF.setId(job.getId());
+        batchJobResultF.setId(job.getId().toString());
         batchJobResultF.bbox(null);
         batchJobResultF.setStacVersion(STAC_VERSION);
         batchJobResultF.setGeometry(null);
@@ -725,11 +726,11 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
      */
 	private void executeODC(Job job) {
 
-	    BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
+	    BatchJobResult batchJobResult = resultDAO.findOne(job.getId().toString());
 
 	    //Skip computing if result is already available.
 	    if(batchJobResult != null) {
-	        log.info("Result already avaialble for job {}", job.getId());
+	        log.info("Result already available for job {}", job.getId());
 	        return;
 	    }
 
@@ -764,7 +765,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	                    // downcast
 	                    BatchJobResultCollection batchJobResultColl = (BatchJobResultCollection) batchJobResult;
 	                    BatchJobResultCollectionDAO bDao = new BatchJobResultCollectionDAO();
-	                    batchJobResultColl.setId(job.getId());
+	                    batchJobResultColl.setId(job.getId().toString());
 	                    log.debug(batchJobResultColl.toString());
 	                    
 	                    bDao.save(batchJobResultColl);
@@ -866,7 +867,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
         BatchJobResultFeature batchJobResultF = (BatchJobResultFeature) batchJobResult;
         BatchJobResultFeatureDAO bDao = new BatchJobResultFeatureDAO();
         
-        batchJobResultF.setId(job.getId());
+        batchJobResultF.setId(job.getId().toString());
         batchJobResultF.bbox(null);
         batchJobResultF.setStacVersion(STAC_VERSION);
         batchJobResultF.setGeometry(null);

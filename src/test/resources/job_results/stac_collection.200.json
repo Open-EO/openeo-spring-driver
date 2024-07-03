@@ -1,5 +1,6 @@
 {
   "stac_version": "1.0.0",
+  "type": "Collection",
   "id": "a3cca2b2aa1e3b5b",
   "title": "NDVI based on Sentinel 2",
   "description": "Deriving minimum NDVI measurements over pixel time series of Sentinel 2",
