@@ -672,9 +672,9 @@ public class JobsApiController implements JobsApi {
 	@RequestMapping(value = "/jobs/{job_id}", produces = { "application/json" }, method = RequestMethod.DELETE)
 	public ResponseEntity<?> deleteJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
-		Job job = jobDAO.findOne(UUID.fromString(jobId));
+		Job job = jobDAO.findOne(jobId);
 		if (job != null) {
-			BatchJobResult jobResult = resultDAO.findOne(UUID.fromString(jobId));
+			BatchJobResult jobResult = resultDAO.findOne(jobId);
 			if(jobResult != null) {
 				log.debug("The job result {} was detected.", jobId);
 				File jobResults = new File(tmpDir + jobId);
@@ -741,7 +741,7 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> describeJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
 		ThreadContext.put("jobid", jobId);
-		Job job = jobDAO.findOne(UUID.fromString(jobId));
+		Job job = jobDAO.findOne(jobId);
 		if (job != null) {
 			log.debug("The job " + jobId + " was successfully requested.");
 			log.trace(job.toString());
@@ -964,7 +964,7 @@ public class JobsApiController implements JobsApi {
 			"application/geo+json" }, method = RequestMethod.GET)
 	public ResponseEntity<?> listResults(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
-		BatchJobResult result = resultDAO.findOne(UUID.fromString(jobId));
+		BatchJobResult result = resultDAO.findOne(jobId);
 		if (result != null) {
 			log.trace(result.toString());
 			return new ResponseEntity<BatchJobResult>(result, HttpStatus.OK);
@@ -1072,7 +1072,7 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> startJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
 		ThreadContext.put("jobid", jobId);
-		Job job = jobDAO.findOne(UUID.fromString(jobId));
+		Job job = jobDAO.findOne(jobId);
 		if (job != null) {
 			if (job.getStatus() == JobStates.FINISHED) {
 			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
@@ -1241,7 +1241,7 @@ public class JobsApiController implements JobsApi {
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId,
 			@Parameter(description = "", required = true) @Valid @RequestBody Job updateBatchJobRequest) {
 		ThreadContext.put("jobid", jobId);
-		Job job = jobDAO.findOne(UUID.fromString(jobId));
+		Job job = jobDAO.findOne(jobId);
 		if (job != null) {
 			if (job.getStatus()==JobStates.QUEUED || job.getStatus()==JobStates.RUNNING) {
 			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.FORBIDDEN,
