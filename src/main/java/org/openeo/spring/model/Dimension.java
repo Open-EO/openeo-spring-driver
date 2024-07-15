@@ -2,15 +2,18 @@ package org.openeo.spring.model;
 
 import java.util.Objects;
 
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
+import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -22,9 +25,10 @@ import io.swagger.annotations.ApiModelProperty;
 /**
  * Dimension
  */
-@Embeddable
+@Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", visible = true)
 @JsonSubTypes({
     @JsonSubTypes.Type(value = DimensionSpatial.class, name = "spatial"),
@@ -32,9 +36,9 @@ import io.swagger.annotations.ApiModelProperty;
     @JsonSubTypes.Type(value = DimensionBands.class, name = "bands"),
     @JsonSubTypes.Type(value = DimensionOther.class, name = "other"),
 })
-@AttributeOverrides({
-    @AttributeOverride( name = "type", column = @Column(name = "dimension_type"))
-})
+//@AttributeOverrides({
+//    @AttributeOverride( name = "type", column = @Column(name = "dimension_type"))
+//})
 public class Dimension {
     /**
      * Type of the dimension.
@@ -72,9 +76,13 @@ public class Dimension {
         }
     }
 
+    @Id
+    @JsonIgnore
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private long id;
+    
     @JsonProperty("type")
     @Enumerated(EnumType.STRING)
-    @Column(name = "dimension_type")
     private TypeEnum type;
 
     @JsonProperty("description")
@@ -85,6 +93,14 @@ public class Dimension {
         return this;
     }
 
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+    
     /**
      * Type of the dimension.
      * @return type

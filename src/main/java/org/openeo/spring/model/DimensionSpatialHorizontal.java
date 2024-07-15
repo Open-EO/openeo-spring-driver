@@ -2,10 +2,13 @@ package org.openeo.spring.model;
 
 import java.util.Objects;
 
+import javax.persistence.Entity;
+
 /**
  * DimensionSpatialHorizontal
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
+@Entity
 public class DimensionSpatialHorizontal extends DimensionSpatial  {
 
   @Override

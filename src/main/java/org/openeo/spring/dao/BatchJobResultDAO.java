@@ -19,6 +19,9 @@ public abstract class BatchJobResultDAO<T extends BatchJobResult & Serializable>
 		setEntityClass(type);
 	}
 	
+	/** Capture conversion helper. */
+	abstract public void saveCapture(Object entity);
+	
 	@Override
 	// capture conversion
 	public void save(T entity) {

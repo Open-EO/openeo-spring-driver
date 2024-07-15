@@ -1,5 +1,6 @@
 package org.openeo.spring.model;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,8 +11,9 @@ import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
-import javax.persistence.Embedded;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
@@ -20,19 +22,20 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
-import javax.persistence.MapKey;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.json.JSONObject;
-import org.openeo.spring.json.AssetsSerializer;
+import org.openeo.spring.json.OffsetDateTimeSerializer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.swagger.annotations.ApiModelProperty;
 
@@ -41,7 +44,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @see <a href="https://api.openeo.org/#tag/Batch-Jobs/operation/list-results">List batch job results</a>
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-// TODO FIXME instead of polymorphic BatchJobResult, rely on existing Feature/Collection model classes
+// TODO FIXME instead of polmorphic BatchJobResult, rely on existing Feature/Collection model classes
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public abstract class BatchJobResult {
@@ -51,7 +54,9 @@ public abstract class BatchJobResult {
 
 	@JsonProperty("stac_extensions")
 	@Valid
-	@Embedded
+	@ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
+	@CollectionTable(name = "stac_extensions", joinColumns = @JoinColumn(name = "result_id"))
+	@Column(name = "uri")
 	private Set<String> stacExtensions = new HashSet<String>();
 	
 	@Id
@@ -64,17 +69,18 @@ public abstract class BatchJobResult {
 	private AssetType type;
 
 	@JsonProperty("assets")
-	@JsonSerialize(using = AssetsSerializer.class)
+//	@JsonSerialize(using = AssetsSerializer.class) // DROP THIS?
 	@OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.EAGER)
     @JoinTable(name = "result_asset_mapping", 
       joinColumns = {@JoinColumn(name = "result_id", referencedColumnName = "id")},
-      inverseJoinColumns = {@JoinColumn(name = "asset_id", referencedColumnName = "href")})
-    @MapKey(name = "href")
+      inverseJoinColumns = {@JoinColumn(name = "asset_id", referencedColumnName = "id")})
+	@MapKeyColumn(name = "asset_key")
 	private Map<String, Asset> assets = new HashMap<>();
 
 	@JsonProperty("links")
 	@Valid
-	@Embedded
+	@ElementCollection
+	@CollectionTable(name = "links", joinColumns = @JoinColumn(name = "result_id"))
 	private List<Link> links = new ArrayList<>();
 	
 	/**
@@ -265,11 +271,9 @@ public abstract class BatchJobResult {
 	 */
 	@ApiModelProperty(example = "{\"preview.png\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/preview.png\",\"type\":\"image/png\",\"title\":\"Thumbnail\",\"roles\":[\"thumbnail\"]},\"process.json\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/process.json\",\"type\":\"application/json\",\"title\":\"Original Process\",\"roles\":[\"process\",\"reproduction\"]},\"1.tif\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/1.tif\",\"type\":\"image/tiff; application=geotiff\",\"title\":\"Band 1\",\"roles\":[\"data\"]},\"2.tif\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/2.tif\",\"type\":\"image/tiff; application=geotiff\",\"title\":\"Band 2\",\"roles\":[\"data\"]},\"inspire.xml\":{\"href\":\"https://example.openeo.org/api/download/583fba8b2ce583fba8b2ce/inspire.xml\",\"type\":\"application/xml\",\"title\":\"INSPIRE metadata\",\"description\":\"INSPIRE compliant XML metadata\",\"roles\":[\"metadata\"]}}", required = true, value = "Dictionary of asset objects for data that can be downloaded, each with a unique key. The keys MAY be used by clients as file names.  It is RECOMMENDED to link to a copy of this STAC Item with relative links in the assets, which allows users to easily publish their processed data with a basic set of metadata.")
 	@NotNull
-
 	@Valid
-
 	public Map<String, Asset> getAssets() {
-		return assets;
+	    return assets;
 	}
 
 	public void setAssets(Map<String, Asset> assets) {
@@ -298,9 +302,7 @@ public abstract class BatchJobResult {
 	 */
 	@ApiModelProperty(required = true, value = "Links related to this batch job result, e.g. a link to an  invoice, additional log files or external documentation. The links MUST NOT contain links to the processed and downloadable data. Instead specify these in the `assets` property. Clients MUST NOT download the data referenced in the links by default. For relation types see the lists of [common relation types in openEO](#section/API-Principles/Web-Linking).")
 	@NotNull
-
 	@Valid
-
 	public List<Link> getLinks() {
 		return links;
 	}
@@ -352,7 +354,14 @@ public abstract class BatchJobResult {
 	}
 	
 	/** Internal JSON object factory. */ 
-	private static final ObjectMapper JOM = new ObjectMapper();
+	private static final ObjectMapper JOM = createJOM();
+    private static final ObjectMapper createJOM() {
+	    ObjectMapper jom = new ObjectMapper();
+	    jom.registerModule(new JavaTimeModule());        
+        jom.registerModule(new SimpleModule()
+                .addSerializer(OffsetDateTime.class, new OffsetDateTimeSerializer()));
+	    return jom;
+	}
 	
 	/** The jey for the result type in the JSON schema. */
 	private static final String TYPE_KEY = "type";

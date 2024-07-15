@@ -8,12 +8,16 @@ import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -24,12 +28,17 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Entity
 @Table(name = "asset")
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown = true) // [!] all proj:* properties not in POJO now
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class Asset implements Serializable {
 
 	private static final long serialVersionUID = 7914016373878205106L;
 	
 	@Id
+    @JsonIgnore
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private long id;
+	
 	@JsonProperty("href")
 	private String href;
 
@@ -48,6 +57,15 @@ public class Asset implements Serializable {
 	@Embedded
 	private List<String> roles = null;
 
+	
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+    
 	public Asset href(String href) {
 		this.href = href;
 		return this;
@@ -63,7 +81,6 @@ public class Asset implements Serializable {
 	 */
 	@ApiModelProperty(required = true, value = "URL to the downloadable asset. The URLs SHOULD be available without authentication so that external clients can download them easily. If the data is confidential, signed URLs SHOULD be used to protect against unauthorized access from third parties.")
 	@NotNull
-
 	public String getHref() {
 		return href;
 	}
@@ -83,7 +100,6 @@ public class Asset implements Serializable {
 	 * @return title
 	 */
 	@ApiModelProperty(value = "The displayed title for clients and users.")
-
 	public String getTitle() {
 		return title;
 	}
@@ -105,7 +121,6 @@ public class Asset implements Serializable {
 	 * @return description
 	 */
 	@ApiModelProperty(value = "Multi-line description to explain the asset.  [CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation.")
-
 	public String getDescription() {
 		return description;
 	}
@@ -125,7 +140,7 @@ public class Asset implements Serializable {
 	 * @return type
 	 */
 	@ApiModelProperty(example = "image/tiff; application=geotiff", value = "Media type of the asset.")
-
+	@NotNull
 	public String getType() {
 		return type;
 	}
@@ -160,7 +175,6 @@ public class Asset implements Serializable {
 	 * @return roles
 	 */
 	@ApiModelProperty(example = "[\"data\"]", value = "Purposes of the asset. Can be any value, but commonly used values are:  * `thumbnail`: A visualization of the data, usually a lower-resolution true color image in JPEG or PNG format. * `reproducibility`: Information how the data was produced and/or can be reproduced, e.g. the process graph used to compute the data in JSON format. * `data`: The computed data in the format specified by the user in the process graph (applicable in `GET /jobs/{job_id}/results` only). * `metadata`: Additional metadata available for the computed data.")
-
 	public List<String> getRoles() {
 		return roles;
 	}

@@ -7,12 +7,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -23,6 +33,7 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Entity
 //@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(Include.NON_EMPTY)
 public class BatchJobResultCollection extends BatchJobResult implements Serializable {
 
     private static final long serialVersionUID = -879934306104454217L;
@@ -40,7 +51,9 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
 
     @JsonProperty("keywords")
     @Valid
-    @Embedded
+    @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
+    @CollectionTable(name = "keywords", joinColumns = @JoinColumn(name = "collection_id"))
+    @Column(name = "keyword", nullable = false)
     private List<String> keywords = null;
 
     @JsonProperty("version")
@@ -52,38 +65,31 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
     @JsonProperty("license")
     private String license;
 
-    @JsonProperty("sci:citation")
+    @JsonProperty(value="sci:citation", required=false)
     private String citation;
 
     @JsonProperty("providers")
     @Valid
-    @Embedded
+    @OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY)
     private List<Providers> providers = null;
 
     @JsonProperty("extent")
-    @Embedded
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "extent_id", referencedColumnName = "id")
     private CollectionExtent extent;
 
-    @JsonProperty("links")
-    @ElementCollection
-    @Valid
-    @Embedded
-    private List<Link> links = new ArrayList<>();
-
     @JsonProperty("cube:dimensions")
-    @ElementCollection
     @Valid
-    @Embedded
-    private List<Dimension> cubeColonDimensions = null;
+    @OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY)
+    @JoinTable(name = "cube_dimensions_mapping",
+      joinColumns = {@JoinColumn(name = "result_id", referencedColumnName = "id")},
+      inverseJoinColumns = {@JoinColumn(name = "dimension_id", referencedColumnName = "id")})
+    private Map<String, Dimension> cubeColonDimensions = null;
 
     @JsonProperty("summaries")
     @Valid
     @Embedded
     private CollectionSummaries summaries = null;
-
-    @JsonProperty("assets")
-    @Valid
-    private Map<String, Asset> assets = null;
 
     @Override
     public void setType(AssetType type) {
@@ -103,8 +109,6 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
      * @return title
     */
     @ApiModelProperty(value = "A short descriptive one-line title for the collection.")
-
-
     public String getTitle() {
       return title;
     }
@@ -152,8 +156,6 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
      * @return keywords
     */
     @ApiModelProperty(value = "List of keywords describing the collection.")
-
-
     public List<String> getKeywords() {
       return keywords;
     }
@@ -172,8 +174,6 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
      * @return version
     */
     @ApiModelProperty(value = "Version of the collection.  This property REQUIRES to add `version` to the list of `stac_extensions`.")
-
-
     public String getVersion() {
       return version;
     }
@@ -230,8 +230,7 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
 
 
     @ApiModelProperty(example = "Copernicus Sentinel Data [2018]", required = false, value = "Citation of the data")
-    @NotNull
-
+//    @NotNull
     public String getCitation() {
         return citation;
     }
@@ -258,8 +257,6 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
      * @return providers
     */
     @ApiModelProperty(value = "A list of providers, which may include all organizations capturing or processing the data or the hosting provider. Providers should be listed in chronological order with the most recent provider being the last element of the list.")
-
-
     public List<Providers> getProviders() {
       return providers;
     }
@@ -290,47 +287,16 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
       this.extent = extent;
     }
 
-    @Override
-    public BatchJobResultCollection links(List<Link> links) {
-      this.links = links;
-      return this;
-    }
-
-    @Override
-    public BatchJobResultCollection addLinksItem(Link linksItem) {
-      this.links.add(linksItem);
-      return this;
-    }
-
-    /**
-     * Links related to this collection. Could reference to licensing information, other meta data formats with additional information or a preview image. It is RECOMMENDED to provide links with the following `rel` (relation) types: 1. `root` and `parent`: URL to the data discovery endpoint at `/collections`. 2. `license`: A link to the license(s) should be specified if the `license` field is set to `proprietary` or `various`. 3. `example`: Links to examples of processes that use this collection. 4. `derived_from`: Allows linking to the data this collection was derived from. 5. `cite-as`: [DOI](https://www.doi.org/) links should be added. DOIs can also be  listed in the STAC fields `sci:doi` and `sci:publications`, see the [STAC scientific extension](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions/scientific) for more details. 6. `latest-version`: If a collection has been marked as deprecated, a link should point to the latest version of the collection. The relation types `predecessor-version` (link to older version) and `successor-version` (link to newer version) can also be used to show the relation between versions. 7. `alternate`: An alternative representation of the collection. For example, this could be the collection available through another catalog service such as OGC CSW, a human-readable HTML version or a metadata document following another standard such as ISO 19115 or DCAT. For additional relation types see also the lists of [common relation types in openEO](#section/API-Principles/Web-Linking) and the STAC specification for Collections.
-     * @return links
-    */
-    @Override
-    @ApiModelProperty(required = true, value = "Links related to this collection. Could reference to licensing information, other meta data formats with additional information or a preview image. It is RECOMMENDED to provide links with the following `rel` (relation) types: 1. `root` and `parent`: URL to the data discovery endpoint at `/collections`. 2. `license`: A link to the license(s) should be specified if the `license` field is set to `proprietary` or `various`. 3. `example`: Links to examples of processes that use this collection. 4. `derived_from`: Allows linking to the data this collection was derived from. 5. `cite-as`: [DOI](https://www.doi.org/) links should be added. DOIs can also be  listed in the STAC fields `sci:doi` and `sci:publications`, see the [STAC scientific extension](https://github.com/radiantearth/stac-spec/tree/v0.9.0/extensions/scientific) for more details. 6. `latest-version`: If a collection has been marked as deprecated, a link should point to the latest version of the collection. The relation types `predecessor-version` (link to older version) and `successor-version` (link to newer version) can also be used to show the relation between versions. 7. `alternate`: An alternative representation of the collection. For example, this could be the collection available through another catalog service such as OGC CSW, a human-readable HTML version or a metadata document following another standard such as ISO 19115 or DCAT. For additional relation types see also the lists of [common relation types in openEO](#section/API-Principles/Web-Linking) and the STAC specification for Collections.")
-    @NotNull
-
-    @Valid
-
-    public List<Link> getLinks() {
-      return links;
-    }
-
-    @Override
-    public void setLinks(List<Link> links) {
-      this.links = links;
-    }
-
-    public BatchJobResultCollection cubeColonDimensions(List<Dimension> cubeColonDimensions) {
+    public BatchJobResultCollection cubeColonDimensions(Map<String, Dimension> cubeColonDimensions) {
       this.cubeColonDimensions = cubeColonDimensions;
       return this;
     }
 
     public BatchJobResultCollection putCubeColonDimensionsItem(String key, Dimension cubeColonDimensionsItem) {
       if (this.cubeColonDimensions == null) {
-        this.cubeColonDimensions = new ArrayList<>();
+        this.cubeColonDimensions = new HashMap<>();
       }
-      this.cubeColonDimensions.add(cubeColonDimensionsItem);
+      this.cubeColonDimensions.put(key, cubeColonDimensionsItem);
       return this;
     }
 
@@ -341,12 +307,15 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
     @ApiModelProperty(value = "Uniquely named dimensions of the data cube.  The keys of the object are the dimension names. For interoperability, it is RECOMMENDED to use the following dimension names if there is only a single dimension with the specified criteria:  * `x` for the dimension of type `spatial` with the axis set to `x` * `y` for the dimension of type `spatial` with the axis set to `y` * `z` for the dimension of type `spatial` with the axis set to `z` * `t` for the dimension of type `temporal` * `bands` for dimensions of type `bands`  This property REQUIRES to add `datacube` to the list of `stac_extensions`.")
 
     @Valid
-
-    public List<Dimension> getCubeColonDimensions() {
+    public Map<String, Dimension> getCubeColonDimensions() {
       return cubeColonDimensions;
     }
+    
+    public Dimension getCubeColonDimension(String key) {
+        return cubeColonDimensions.get(key);
+    }
 
-    public void setCubeColonDimensions(List<Dimension> cubeColonDimensions) {
+    public void setCubeColonDimensions(Map<String, Dimension> cubeColonDimensions) {
       this.cubeColonDimensions = cubeColonDimensions;
     }
 
@@ -380,40 +349,6 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
     }
 
     @Override
-    public BatchJobResultCollection assets(Map<String, Asset> assets) {
-      this.assets = assets;
-      return this;
-    }
-
-    @Override
-    public BatchJobResultCollection putAssetsItem(String key, Asset assetsItem) {
-      if (this.assets == null) {
-        this.assets = new HashMap<>();
-      }
-      this.assets.put(key, assetsItem);
-      return this;
-    }
-
-    /**
-     * Dictionary of asset objects for data that can be downloaded, each with a unique key. The keys MAY be used by clients as file names. Implementing this property REQUIRES to add `collection-assets` to the list of `stac_extensions`.
-     * @return assets
-    */
-    @Override
-    @ApiModelProperty(value = "Dictionary of asset objects for data that can be downloaded, each with a unique key. The keys MAY be used by clients as file names. Implementing this property REQUIRES to add `collection-assets` to the list of `stac_extensions`.")
-
-    @Valid
-
-    public Map<String, Asset> getAssets() {
-      return assets;
-    }
-
-    @Override
-    public void setAssets(Map<String, Asset> assets) {
-      this.assets = assets;
-    }
-
-
-    @Override
     public boolean equals(java.lang.Object o) {
       if (this == o) {
         return true;
@@ -433,15 +368,13 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
           Objects.equals(this.citation, collection.citation) &&
           Objects.equals(this.providers, collection.providers) &&
           Objects.equals(this.extent, collection.extent) &&
-          Objects.equals(this.links, collection.links) &&
           Objects.equals(this.cubeColonDimensions, collection.cubeColonDimensions) &&
-          Objects.equals(this.summaries, collection.summaries) &&
-          Objects.equals(this.assets, collection.assets);
+          Objects.equals(this.summaries, collection.summaries);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(super.hashCode(), title, description, keywords, version, deprecated, citation, license, providers, extent, links, cubeColonDimensions, summaries, assets);
+      return Objects.hash(super.hashCode(), title, description, keywords, version, deprecated, citation, license, providers, extent, cubeColonDimensions, summaries);
     }
 
     @Override
@@ -460,10 +393,10 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
       sb.append("    citation: ").append(toIndentedString(citation)).append("\n");
       sb.append("    providers: ").append(toIndentedString(providers)).append("\n");
       sb.append("    extent: ").append(toIndentedString(extent)).append("\n");
-      sb.append("    links: ").append(toIndentedString(links)).append("\n");
+      sb.append("    links: ").append(toIndentedString(getLinks())).append("\n");
       sb.append("    cubeColonDimensions: ").append(toIndentedString(cubeColonDimensions)).append("\n");
       sb.append("    summaries: ").append(toIndentedString(summaries)).append("\n");
-      sb.append("    assets: ").append(toIndentedString(assets)).append("\n");
+      sb.append("    assets: ").append(toIndentedString(getAssets())).append("\n");
       sb.append("}");
       return sb.toString();
     }

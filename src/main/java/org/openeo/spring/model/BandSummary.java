@@ -1,6 +1,5 @@
 package org.openeo.spring.model;
 
-import java.net.URI;
 import java.util.Objects;
 
 import javax.persistence.Embeddable;
@@ -24,17 +23,17 @@ public class BandSummary   {
   @JsonProperty("name")
   private String name;
 
-  @JsonProperty("common_name")
+  @JsonProperty(value="common_name", required=false)
   private String commonname;
 
-  @JsonProperty("description")
+  @JsonProperty(value="description", required=false)
   private String description;
 
-  @JsonProperty("center_wavelength")
-  private double centerwavelength;
+  @JsonProperty(value="center_wavelength", required=false)
+  private Double centerwavelength;
 
-  @JsonProperty("gsd")
-  private double gsd;
+  @JsonProperty(value="gsd", required=false)
+  private Double gsd;
 
   public BandSummary name(String name) {
     this.name = name;
@@ -47,8 +46,6 @@ public class BandSummary   {
   */
   @ApiModelProperty(example = "name", required = true, value = "Relationship between the current document and the linked document. SHOULD be a [registered link relation type](https://www.iana.org/assignments/link-relations/link-relations.xml) whenever feasible.")
   @NotNull
-
-
   public String getName() {
     return name;
   }
@@ -67,10 +64,8 @@ public class BandSummary   {
    * @return href
   */
   @ApiModelProperty(example = "Red", required = true, value = "The value MUST be a valid common name.")
-  @NotNull
-
+//  @NotNull
   @Valid
-
   public String getCommonname() {
     return commonname;
   }
@@ -97,17 +92,15 @@ public class BandSummary   {
    * @return type
   */
   @ApiModelProperty(example = "0.773", value = "The value MUST be a value that hints at the format used to represent data at the provided URI, preferably a media (MIME) type.")
-
-
-  public double getCenterwavelength() {
+  public Double getCenterwavelength() {
     return centerwavelength;
   }
 
-  public void setCenterwavelength(double centerwavelength) {
+  public void setCenterwavelength(Double centerwavelength) {
     this.centerwavelength = centerwavelength;
   }
 
-  public BandSummary gsd(double gsd) {
+  public BandSummary gsd(Double gsd) {
     this.gsd = gsd;
     return this;
   }
@@ -117,13 +110,11 @@ public class BandSummary   {
    * @return title
   */
   @ApiModelProperty(example = "10.11", value = "The value MUST be a valid Number.")
-
-
-  public double getGsd() {
+  public Double getGsd() {
     return gsd;
   }
 
-  public void setGsd(double gsd) {
+  public void setGsd(Double gsd) {
     this.gsd = gsd;
   }
 

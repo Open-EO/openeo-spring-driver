@@ -4,11 +4,11 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-import javax.transaction.Transactional;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import javax.transaction.Transactional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,12 +42,12 @@ public class AbstractDAO<T extends Serializable> {
 	
 	@Transactional
 	public T findOne(UUID id) {
-		return (T) getCurrentSession().get(entityClass, id);
+		return getCurrentSession().get(entityClass, id);
 	}
 	
 	@Transactional
 	public T findOne(String id) {
-		return (T) getCurrentSession().get(entityClass, id);
+		return getCurrentSession().get(entityClass, id);
 	}
 	
 	@Transactional
@@ -82,6 +82,12 @@ public class AbstractDAO<T extends Serializable> {
 	public void deleteById(UUID id) {
 		final T entity = findOne(id);
 		delete(entity);
+	}
+
+	@Transactional
+	public void deleteById(String id) {
+	    final T entity = findOne(id);
+	    delete(entity);
 	}
 	
 	protected final Session getCurrentSession() {
