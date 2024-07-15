@@ -25,11 +25,10 @@ public class AssetsSerializer extends StdSerializer<Map<String, Asset> >{
 	@Override
 	public void serialize(Map<String, Asset>  value, JsonGenerator gen, SerializerProvider provider) throws IOException {
 		gen.writeStartObject();
-//		gen.writeStringField("id", value.getId());
 		Iterator<Asset> values = value.values().iterator();
 		while(values.hasNext()) {
 			Asset current = values.next();
-			gen.writeObjectField(current.getTitle(), current);
+			gen.writeObjectField(current.getHref(), current);
 		}
 		gen.writeEndObject();
 	}

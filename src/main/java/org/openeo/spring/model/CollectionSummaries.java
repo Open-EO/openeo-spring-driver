@@ -7,6 +7,7 @@ import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
+import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -23,13 +24,14 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "A link to another resource on the web. Bases on [RFC 5899](https://tools.ietf.org/html/rfc5988).")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Embeddable
 public class CollectionSummaries   {
 	@JsonProperty("constellation")
-	@Embedded
+	@ElementCollection
 	private List<String> constellation;
 
 	@JsonProperty("platform")
-	@Embedded
+	@ElementCollection
 	private List<String> platform;
 	
 	@JsonProperty("rows")
@@ -39,7 +41,7 @@ public class CollectionSummaries   {
 	private Integer columns;
 
 	@JsonProperty("instruments")
-	@Embedded
+	@ElementCollection
 	private List<String> instruments;
 
 	@JsonProperty("eo:cloud cover")
@@ -55,7 +57,7 @@ public class CollectionSummaries   {
 	private List<String> orbitState;
 
 	@JsonProperty("gsd")
-	@Embedded
+	@ElementCollection
 	private List<Double> gsd;
 
 	@JsonProperty("proj:epsg")
@@ -80,10 +82,7 @@ public class CollectionSummaries   {
 	 * @return rel
 	 */
 	@ApiModelProperty(example = "related", required = true, value = "Relationship between the current document and the linked document. SHOULD be a [registered link relation type](https://www.iana.org/assignments/link-relations/link-relations.xml) whenever feasible.")
-	@NotNull
-
-	
-
+//	@NotNull
 	public List<String> getConstellation() {
 		return constellation;
 	}
@@ -102,18 +101,15 @@ public class CollectionSummaries   {
 	 * @return href
 	 */
 	@ApiModelProperty(example = "Sentinel-2", required = true, value = "The value MUST be a valid String.")
-	@NotNull
-
+//	@NotNull
 	@Valid
-
 	public List<String> getPlatform() {
 		return platform;
 	}
 
 	public void setPlatform(List<String> platform) {
 		this.platform = platform;
-	}
-	
+	}	
 	
 	public CollectionSummaries rows(Integer rows) {
 		this.rows = rows;
@@ -121,18 +117,15 @@ public class CollectionSummaries   {
 	}
 	
 	@ApiModelProperty(example = "22", required = true, value = "The value MUST be a valid Integer.")
-	@NotNull
-
+//	@NotNull
 	@Valid
-
 	public Integer getRows() {
 		return rows;
 	}
 
 	public void setRows(Integer rows) {
 		this.rows = rows;
-	}
-	
+	}	
 	
 	public CollectionSummaries columns(Integer columns) {
 		this.columns = columns;
@@ -140,18 +133,15 @@ public class CollectionSummaries   {
 	}
 	
 	@ApiModelProperty(example = "22", required = true, value = "The value MUST be a valid Integer.")
-	@NotNull
-
+//	@NotNull
 	@Valid
-
 	public Integer getColumns() {
 		return columns;
 	}
 
 	public void setColumns(Integer columns) {
 		this.columns = columns;
-	}
-	
+	}	
 
 	public CollectionSummaries cloudCover(CollectionSummaryStats cloudCover) {
 		this.cloudCover = cloudCover;
@@ -163,10 +153,8 @@ public class CollectionSummaries   {
 	 * @return href
 	 */
 	@ApiModelProperty(example = "https://example.openeo.org", required = true, value = "The value MUST be a valid URL.")
-	@NotNull
-
+//	@NotNull
 	@Valid
-
 	public CollectionSummaryStats getCloudCover() {
 		return cloudCover;
 	}
@@ -185,10 +173,8 @@ public class CollectionSummaries   {
 	 * @return href
 	 */
 	@ApiModelProperty(example = "https://example.openeo.org", required = true, value = "The value MUST be a valid URL.")
-	@NotNull
-
+//	@NotNull
 	@Valid
-
 	public CollectionSummaryStats getEpsg() {
 		return epsg;
 	}
@@ -207,10 +193,8 @@ public class CollectionSummaries   {
 	 * @return href
 	 */
 	@ApiModelProperty(example = "https://example.openeo.org", required = true, value = "The value MUST be a valid URL.")
-	@NotNull
-
+//	@NotNull
 	@Valid
-
 	public List<String> getOrbitState() {
 		return orbitState;
 	}
@@ -229,10 +213,8 @@ public class CollectionSummaries   {
 	 * @return href
 	 */
 	@ApiModelProperty(example = "https://example.openeo.org", required = true, value = "The value MUST be a valid URL.")
-	@NotNull
-
+//	@NotNull
 	@Valid
-
 	public List<Double> getGsd() {
 		return gsd;
 	}
@@ -251,10 +233,8 @@ public class CollectionSummaries   {
 	 * @return href
 	 */
 	@ApiModelProperty(example = "https://example.openeo.org", required = true, value = "The value MUST be a valid URL.")
-	@NotNull
-
+//	@NotNull
 	@Valid
-
 	public List<String> getInstruments() {
 		return instruments;
 	}
@@ -274,9 +254,7 @@ public class CollectionSummaries   {
 	 */
 	@ApiModelProperty(example = "https://example.openeo.org", required = true, value = "The value MUST be a valid URL.")
 	@NotNull
-
 	@Valid
-
 	public List<BandSummary> getBands() {
 		return bands;
 	}

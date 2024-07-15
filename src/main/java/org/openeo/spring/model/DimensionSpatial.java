@@ -5,11 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-
-import org.openapitools.jackson.nullable.JsonNullable;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -21,6 +22,7 @@ import io.swagger.annotations.ApiModelProperty;
  * DimensionSpatial
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
+@Entity
 public class DimensionSpatial extends Dimension implements HasUnit  {
   /**
    * Axis of the spatial dimension (`x`, `y` or `z`).
@@ -62,10 +64,13 @@ public class DimensionSpatial extends Dimension implements HasUnit  {
 
   @JsonProperty("extent")
   @Valid
+  @ElementCollection
   private List<BigDecimal> extent = null;
 
   @JsonProperty("values")
   @Valid
+  @ElementCollection
+  @Column(name = "dim_values", nullable = true)
   private List<BigDecimal> values = null;
 
   @JsonProperty("step")

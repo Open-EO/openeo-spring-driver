@@ -1,7 +1,6 @@
 package org.openeo.spring.model;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -488,9 +487,7 @@ public Collection stacVersion(String stacVersion) {
    * @return assets
   */
   @ApiModelProperty(value = "Dictionary of asset objects for data that can be downloaded, each with a unique key. The keys MAY be used by clients as file names. Implementing this property REQUIRES to add `collection-assets` to the list of `stac_extensions`.")
-
   @Valid
-
   public Map<String, Asset> getAssets() {
     return assets;
   }
