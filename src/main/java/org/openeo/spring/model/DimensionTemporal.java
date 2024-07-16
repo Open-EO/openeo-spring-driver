@@ -21,7 +21,7 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Entity
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 // TODO should this class be based on OffsetDateTime like CollectionTemporalExtent to 
 //      control its serialization format (OffsetDateTimeSerializer) and avoid inconsistencies?
 public class DimensionTemporal extends Dimension  {

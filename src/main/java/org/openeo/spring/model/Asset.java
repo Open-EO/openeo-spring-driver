@@ -8,12 +8,16 @@ import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -24,12 +28,17 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Entity
 @Table(name = "asset")
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown = true) // [!] all proj:* properties not in POJO now
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class Asset implements Serializable {
 
 	private static final long serialVersionUID = 7914016373878205106L;
 	
 	@Id
+    @JsonIgnore
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private long id;
+	
 	@JsonProperty("href")
 	private String href;
 
@@ -48,6 +57,15 @@ public class Asset implements Serializable {
 	@Embedded
 	private List<String> roles = null;
 
+	
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+    
 	public Asset href(String href) {
 		this.href = href;
 		return this;

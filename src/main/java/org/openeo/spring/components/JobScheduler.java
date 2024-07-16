@@ -765,7 +765,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	                    batchJobResultC = BatchJobResult.factory(responseJson);
 	                    batchJobResultC.setId(job.getId().toString());
 	                    log.debug(batchJobResultC.toString());
-	                    log.debug(responseJson);
+//	                    log.debug(responseJson);
 	                    resultDAOC.saveCapture(batchJobResultC);
 	                    log.debug("Result Stored in DB");
 

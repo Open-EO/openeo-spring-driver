@@ -17,9 +17,12 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -30,6 +33,7 @@ import io.swagger.annotations.ApiModelProperty;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @Entity
 //@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(Include.NON_EMPTY)
 public class BatchJobResultCollection extends BatchJobResult implements Serializable {
 
     private static final long serialVersionUID = -879934306104454217L;
@@ -71,7 +75,8 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
     private List<Providers> providers = null;
 
     @JsonProperty("extent")
-    @Embedded
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "extent_id", referencedColumnName = "id")
     private CollectionExtent extent;
 
     @JsonProperty("cube:dimensions")
@@ -80,7 +85,6 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
     @JoinTable(name = "cube_dimensions_mapping",
       joinColumns = {@JoinColumn(name = "result_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "dimension_id", referencedColumnName = "id")})
-//    @MapKey(name = "axis")
     private Map<String, Dimension> cubeColonDimensions = null;
 
     @JsonProperty("summaries")
@@ -106,8 +110,6 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
      * @return title
     */
     @ApiModelProperty(value = "A short descriptive one-line title for the collection.")
-
-
     public String getTitle() {
       return title;
     }

@@ -22,20 +22,18 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
-import javax.persistence.MapKey;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.json.JSONObject;
-import org.openeo.spring.json.AssetsSerializer;
 import org.openeo.spring.json.OffsetDateTimeSerializer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -71,12 +69,12 @@ public abstract class BatchJobResult {
 	private AssetType type;
 
 	@JsonProperty("assets")
-	@JsonSerialize(using = AssetsSerializer.class) // DROP THIS?
+//	@JsonSerialize(using = AssetsSerializer.class) // DROP THIS?
 	@OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.EAGER)
     @JoinTable(name = "result_asset_mapping", 
       joinColumns = {@JoinColumn(name = "result_id", referencedColumnName = "id")},
-      inverseJoinColumns = {@JoinColumn(name = "asset_id", referencedColumnName = "href")})
-    @MapKey(name = "href")
+      inverseJoinColumns = {@JoinColumn(name = "asset_id", referencedColumnName = "id")})
+	@MapKeyColumn(name = "asset_key")
 	private Map<String, Asset> assets = new HashMap<>();
 
 	@JsonProperty("links")

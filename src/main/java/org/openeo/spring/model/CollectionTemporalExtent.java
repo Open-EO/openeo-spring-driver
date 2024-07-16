@@ -5,11 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
 import javax.validation.Valid;
 import javax.validation.constraints.Size;
 
+import org.openeo.spring.jpa.TimeExtentConverter;
 import org.openeo.spring.json.TimeIntervalSerializer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -28,8 +30,11 @@ public class CollectionTemporalExtent   {
 
     @JsonProperty("interval")
     @Valid
-    @Embedded
     @JsonSerialize(contentUsing = TimeIntervalSerializer.class)
+//    @ElementCollection
+//    @CollectionTable(name = "intervals", joinColumns = @JoinColumn(name = "extent_id"))
+    @Convert(converter = TimeExtentConverter.class)
+    @Column(name = "time_interval") 
     private List<List<OffsetDateTime>> interval = null;
 
     public CollectionTemporalExtent interval(List<List<OffsetDateTime>> interval) {
@@ -50,7 +55,6 @@ public class CollectionTemporalExtent   {
      * @return interval
      */
     @ApiModelProperty(value = "One or more time intervals that describe the temporal extent of the dataset. The value `null` is supported and indicates an open time interval. In the Core only a single time interval is supported. Extensions may support multiple intervals. If multiple intervals are provided, the union of the intervals describes the temporal extent.")
-
     @Valid
     @Size(min=1) 
     public List<List<OffsetDateTime>> getInterval() {

@@ -5,11 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import javax.persistence.Convert;
 import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
 import javax.validation.Valid;
 import javax.validation.constraints.Size;
 
+import org.openeo.spring.jpa.ExtentConverter;
 import org.openeo.spring.json.ExtentSerializer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -29,10 +30,10 @@ public class CollectionSpatialExtent   {
     @JsonProperty("bbox")
     @JsonSerialize(contentUsing = ExtentSerializer.class)
     @Valid
-    @Embedded
 //    @ElementCollection
 //    @CollectionTable(name = "bboxes", joinColumns = @JoinColumn(name = "extent_id"))
-//    @Column(name = "bbox", nullable = false)
+//    @Embedded
+    @Convert(converter = ExtentConverter.class)
     private List<List<BigDecimal>> bbox = null;
     
     public CollectionSpatialExtent bbox(List<List<BigDecimal>> bbox) {
