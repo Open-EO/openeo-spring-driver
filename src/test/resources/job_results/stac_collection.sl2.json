@@ -1,0 +1,122 @@
+{
+  "stac_version": "1.0.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/raster/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/eo/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/projection/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "id": "54d5b80d-c01f-4c07-8fe9-3e81a5ba7590",
+  "type": "Collection",
+  "assets": {
+    "20220610102804_red": {
+      "href": "/data/odc-driver/54d5b80d-c01f-4c07-8fe9-3e81a5ba7590/20220610102804/red_20220610102804.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+    },
+    "20220602101758_red": {
+      "href": "/data/odc-driver/54d5b80d-c01f-4c07-8fe9-3e81a5ba7590/20220602101758/red_20220602101758.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+    },
+    "20220615102759_red": {
+      "href": "/data/odc-driver/54d5b80d-c01f-4c07-8fe9-3e81a5ba7590/20220615102759/red_20220615102759.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+    },
+    "20220607101807_red": {
+      "href": "/data/odc-driver/54d5b80d-c01f-4c07-8fe9-3e81a5ba7590/20220607101807/red_20220607101807.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+    },
+    "20220612101802_red": {
+      "href": "/data/odc-driver/54d5b80d-c01f-4c07-8fe9-3e81a5ba7590/20220612101802/red_20220612101802.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+    },
+    "20220605102756_red": {
+      "href": "/data/odc-driver/54d5b80d-c01f-4c07-8fe9-3e81a5ba7590/20220605102756/red_20220605102756.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+    }
+  },
+  "links": [
+    {
+      "rel": "items",
+      "href": "https://stac.eurac.edu/collections/54d5b80d-c01f-4c07-8fe9-3e81a5ba7590/items",
+      "type": "application/json"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac.eurac.edu",
+      "type": "application/json"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac.eurac.edu/collections/54d5b80d-c01f-4c07-8fe9-3e81a5ba7590",
+      "type": "application/json"
+    },
+    {
+      "rel": "root",
+      "href": "https://stac.eurac.edu",
+      "type": "application/json"
+    }
+  ],
+  "description": "openEO results for the job with id 54d5b80d-c01f-4c07-8fe9-3e81a5ba7590",
+  "deprecated": false,
+  "license": "proprietary",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          11.340403538938249,
+          46.487764781519516,
+          11.360481889402907,
+          46.49788033924242
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2022-06-02T10:17:58.886Z",
+          "2022-06-15T10:27:59.095Z"
+        ]
+      ]
+    }
+  },
+  "cube:dimensions": {
+    "x": {
+      "type": "spatial",
+      "axis": "x",
+      "extent": [
+        679625,
+        681125
+      ],
+      "reference_system": 32632
+    },
+    "y": {
+      "type": "spatial",
+      "axis": "y",
+      "extent": [
+        5150955,
+        5152025
+      ],
+      "reference_system": 32632
+    },
+    "time": {
+      "type": "temporal",
+      "extent": [
+        "2022-06-02T10:17:58.886000000",
+        "2022-06-15T10:27:59.095000000"
+      ]
+    },
+    "bands": {
+      "type": "bands",
+      "values": [
+        "red"
+      ]
+    }
+  },
+  "summaries": {
+    "eo:bands": [
+      {
+        "name": "red"
+      }
+    ]
+  }
+}

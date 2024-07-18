@@ -6,9 +6,7 @@ import java.util.List;
 import java.util.Objects;
 
 import javax.persistence.CollectionTable;
-import javax.persistence.Column;
 import javax.persistence.ElementCollection;
-import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -27,7 +25,6 @@ import io.swagger.annotations.ApiModelProperty;
 /**
  * A link to another resource on the web. Bases on [RFC 5899](https://tools.ietf.org/html/rfc5988).
  */
-@Embeddable
 @Entity
 @ApiModel(description = "A link to another resource on the web. Bases on [RFC 5899](https://tools.ietf.org/html/rfc5988).")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
@@ -36,7 +33,7 @@ public class Providers   {
     
     @Id
     @JsonIgnore
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
     @JsonProperty("name")
@@ -47,12 +44,19 @@ public class Providers   {
 
     @JsonProperty("roles")
     @ElementCollection
-    @CollectionTable(name = "providers_roles", joinColumns = @JoinColumn(name = "name"))
-    @Column(name = "roles")
+    @CollectionTable(name = "providers_roles", joinColumns = @JoinColumn(name = "provider_id"))
     private List<String> roles;
 
     @JsonProperty("description")
     private String description;
+    
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     public Providers name(String name) {
         this.name = name;

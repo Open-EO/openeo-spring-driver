@@ -43,6 +43,7 @@ import org.openeo.spring.dao.BatchJobResultDAO;
 import org.openeo.spring.dao.BatchJobResultFeatureDAO;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.Asset;
+import org.openeo.spring.model.AssetType;
 import org.openeo.spring.model.BatchJobResult;
 import org.openeo.spring.model.BatchJobResultFeature;
 import org.openeo.spring.model.EngineTypes;
@@ -815,8 +816,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	                    }
 
 	                    // downcast
-	                    BatchJobResultFeature batchJobResult = BatchJobResult.factory(responseJson);
-	                    
+	                    // automatically parse a feature: but actually we need to fetch the file content
+//	                    BatchJobResultFeature batchJobResult = BatchJobResult.factory(responseJson);
+	                    // so we do as done before: we manually create a STAC feature: 
+	                    BatchJobResultFeature batchJobResult = BatchJobResult.ofType(AssetType.FEATURE);
 	                    batchJobResult.setId(job.getId().toString());
 	                    batchJobResult.bbox(null);
 	                    batchJobResult.setStacVersion(STAC_VERSION);

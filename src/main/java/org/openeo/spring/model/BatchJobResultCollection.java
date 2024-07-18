@@ -70,8 +70,7 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
 
     @JsonProperty("providers")
     @Valid
-    @ElementCollection(targetClass = Providers.class, fetch = FetchType.LAZY)
-    @CollectionTable(name = "coll_providers", joinColumns = @JoinColumn(name = "collection_id"))
+    @OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY)
     private List<Providers> providers = null;
 
     @JsonProperty("extent")
