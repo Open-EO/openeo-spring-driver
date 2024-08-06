@@ -1,6 +1,6 @@
 package org.openeo.spring.model;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.hibernate.Session;
