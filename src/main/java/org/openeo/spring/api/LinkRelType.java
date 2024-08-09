@@ -8,7 +8,8 @@ package org.openeo.spring.api;
  */
 public enum LinkRelType {
     ABOUT,
-    LICENCE;
+    LICENCE,
+    VIA;
 
     @Override
     public String toString() {
