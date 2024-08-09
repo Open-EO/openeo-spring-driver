@@ -345,6 +345,8 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
      */
     private Collection parseCollection(String coverageID) {
 
+        log.debug("Fetching description of coverage '{}'", coverageID);
+        
         Collection collection = null;
 
         URL urlCollections;
@@ -380,7 +382,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
         Collection currentCollection = new Collection();
         currentCollection.setEngine(EngineTypes.WCPS);
 
-        log.trace("coverage info: {}", coverageID);
+        log.debug("coverage info: {}", coverageID);
 
         currentCollection.setId(coverageID);
         currentCollection.setStacVersion(STAC_VERSION);
@@ -933,7 +935,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
 
         // licence link
         // FIXME: <About_Link> of eg. ADO_SM_anomalies_ERA5 is not link, but a sentence containing links
-        String licenseLink = metadataElement.getChildText("License_Link", gmlNS);
+        String licenseLink = metadataElement.getChildText("License_Link", rasdamanNS);
         if (null != licenseLink) {
             Link link = new Link();
             try {
@@ -941,7 +943,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                 link.setRel(LinkRelType.LICENCE.toString());
                 link.setTitle("License Link");
 
-                String linkType = metadataElement.getChildText("License_Link_Type", gmlNS);
+                String linkType = metadataElement.getChildText("License_Link_Type", rasdamanNS);
                 if (null != linkType) {
                     link.setType(linkType);
                 }
@@ -954,7 +956,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
 
         // about link
         // FIXME
-        String aboutLink = metadataElement.getChildText("About_Link");
+        String aboutLink = metadataElement.getChildText("About_Link", rasdamanNS);
         if (null != aboutLink) {
             Link link = new Link();
             try {
@@ -962,9 +964,35 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                 link.setRel(LinkRelType.ABOUT.toString());
                 link.setTitle("About Link");
 
-                String linkType = metadataElement.getChildText("About_Link_Type", gmlNS);
+                String linkType = metadataElement.getChildText("About_Link_Type", rasdamanNS);
                 if (null != linkType) {
                     link.setType(linkType);
+                }
+
+                links.add(link);
+            } catch (URISyntaxException e) {
+                log.error("Error invalid licence of {}", coverageID, e);
+                return null;
+            }
+        }
+        
+        // via lins
+        String viaLink = metadataElement.getChildText("Via_Link", rasdamanNS);
+        if (null != viaLink) {
+            Link link = new Link();
+            try {
+                link.setHref(new URI(viaLink));
+                link.setRel(LinkRelType.VIA.toString());
+                link.setTitle("Via Link");
+                
+                String viaLinkTitle = metadataElement.getChildText("Via_Title", rasdamanNS);
+                if (null != viaLinkTitle) {
+                    link.setTitle(viaLinkTitle);
+                }
+                
+                String viaLinkType = metadataElement.getChildText("Via_Type", rasdamanNS);
+                if (null != viaLinkType) {
+                    link.setType(viaLinkType);
                 }
 
                 links.add(link);
