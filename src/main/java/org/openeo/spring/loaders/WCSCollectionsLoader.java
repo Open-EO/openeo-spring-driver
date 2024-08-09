@@ -1205,18 +1205,21 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
         if (null != instrument) {
             instruments.add(instrument);
         }
+        
+        Integer rows = null;
+        Integer columns = null;
 
-//  try {
-//      rows = Integer.parseInt(metadataElement.getChildText("Rows", gmlNS));
-//  }catch(Exception e) {
-//      log.warn("Error in parsing Rows:" + e.getMessage());
-//  }
-//
-//  try {
-//      columns = Integer.parseInt(metadataElement.getChildText("Columns", gmlNS));
-//  }catch(Exception e) {
-//      log.warn("Error in parsing Columns:" + e.getMessage());
-//  }
+        try {
+            rows = Integer.parseInt(metadataElement.getChildText("Rows", rasdamanNS));
+        }catch(Exception e) {
+            log.warn("Error in parsing Rows: {}", e.getMessage());
+        }
+
+        try {
+            columns = Integer.parseInt(metadataElement.getChildText("Columns", rasdamanNS));
+        }catch(Exception e) {
+            log.warn("Error in parsing Columns: {}", e.getMessage());
+        }
 
         /*
          * cloud coverage
@@ -1348,8 +1351,8 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
         summaries.setInstruments(instruments);
         summaries.setCloudCover(cloudCover);
         summaries.setGsd(gsd.stream().collect(Collectors.toList())); //Java 9: .toList());
-//      summaries.setRows(rows);
-//      summaries.setColumns(columns);
+        summaries.setRows(rows);
+        summaries.setColumns(columns);
 //      summaries.setEpsg(epsg);
         summaries.setBands(bandsSummaries);
         currentCollection.setSummaries(summaries);
