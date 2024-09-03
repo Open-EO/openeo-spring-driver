@@ -5,19 +5,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -40,6 +44,7 @@ public class Providers   {
     private String name;
 
     @JsonProperty("url")
+    @Column(nullable = true)
     private URI url;
 
     @JsonProperty("roles")
@@ -49,6 +54,11 @@ public class Providers   {
 
     @JsonProperty("description")
     private String description;
+    
+    @JsonUnwrapped
+    @OneToOne(cascade = CascadeType.ALL, optional = true)
+    @JoinColumn(name = "processing_id", referencedColumnName = "id", nullable = true)
+    private ProcessingExtension processing;
     
     public long getId() {
         return id;
@@ -69,8 +79,6 @@ public class Providers   {
      */
     @ApiModelProperty(example = "EURAC", required = true, value = "Relationship between the current document and the linked document. SHOULD be a [registered link relation type](https://www.iana.org/assignments/link-relations/link-relations.xml) whenever feasible.")
     @NotNull
-
-
     public String getName() {
         return name;
     }
@@ -89,10 +97,7 @@ public class Providers   {
      * @return href
      */
     @ApiModelProperty(example = "https://example.openeo.org", required = true, value = "The value MUST be a valid URL.")
-    @NotNull
-
     @Valid
-
     public URI getUrl() {
         return url;
     }
@@ -111,8 +116,6 @@ public class Providers   {
     }
 
     @ApiModelProperty(example = "[producer, host]", value = "The value MUST be a list of strings that gives the providers status.")
-
-
     public List<String> getRoles() {
         return roles;
     }
@@ -131,8 +134,6 @@ public class Providers   {
      * @return title
      */
     @ApiModelProperty(example = "openEO", value = "Used as a human-readable label for a link.")
-
-
     public String getDescription() {
         return description;
     }
@@ -140,7 +141,14 @@ public class Providers   {
     public void setDescription(String description) {
         this.description = description;
     }
+    
+    public ProcessingExtension getProcessingExtension() {
+        return processing;
+    }
 
+    public void setProcessingExtension(ProcessingExtension proc) {
+        this.processing = proc;
+    }
 
     @Override
     public boolean equals(java.lang.Object o) {
@@ -154,7 +162,8 @@ public class Providers   {
         return Objects.equals(this.name, providers.name) &&
                 Objects.equals(this.url, providers.url) &&
                 Objects.equals(this.roles, providers.roles) &&
-                Objects.equals(this.description, providers.description);
+                Objects.equals(this.description, providers.description) &&
+                Objects.equals(this.processing, providers.processing);
     }
 
     @Override
@@ -171,6 +180,7 @@ public class Providers   {
         sb.append("    url: ").append(toIndentedString(url)).append("\n");
         sb.append("    roles: ").append(toIndentedString(roles)).append("\n");
         sb.append("    description: ").append(toIndentedString(description)).append("\n");
+        sb.append("    [processing:extension]: ").append(toIndentedString(processing)).append("\n");
         sb.append("}");
         return sb.toString();
     }

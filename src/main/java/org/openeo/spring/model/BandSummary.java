@@ -18,7 +18,7 @@ import io.swagger.annotations.ApiModelProperty;
 @Embeddable
 @ApiModel(description = "A link to another resource on the web. Bases on [RFC 5899](https://tools.ietf.org/html/rfc5988).")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class BandSummary   {
   @JsonProperty("name")
   private String name;
@@ -117,7 +117,6 @@ public class BandSummary   {
   public void setGsd(Double gsd) {
     this.gsd = gsd;
   }
-
 
   @Override
   public boolean equals(java.lang.Object o) {

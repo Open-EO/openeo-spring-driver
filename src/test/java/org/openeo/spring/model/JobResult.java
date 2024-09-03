@@ -14,7 +14,8 @@ import java.util.stream.Collectors;
  */
 public enum JobResult {
     TEST_FEATURE("stac_feature.200.json"),
-    TEST_COLL("stac_collection.200.json");
+    TEST_COLL("stac_collection.200.json"),
+    TEST_COLL_PROC("stac_collection_processing.200.json");
 
     private /*static*/ final Path ROOT = Paths.get("src", "test", "resources", "job_results");
 

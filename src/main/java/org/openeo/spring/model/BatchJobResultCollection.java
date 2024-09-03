@@ -11,8 +11,8 @@ import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
-import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
@@ -67,6 +67,11 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
 
     @JsonProperty(value="sci:citation", required=false)
     private String citation;
+    
+    @Enumerated
+    @Column(nullable = true)
+    @JsonProperty(value="openeo:status", required=false)
+    private JobStates status;
 
     @JsonProperty("providers")
     @Valid
@@ -88,7 +93,8 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
 
     @JsonProperty("summaries")
     @Valid
-    @Embedded
+    @OneToOne(cascade = CascadeType.ALL, optional = true)
+    @JoinColumn(name = "summaries_id", referencedColumnName = "id", nullable = true)
     private CollectionSummaries summaries = null;
 
     @Override
@@ -276,9 +282,7 @@ public class BatchJobResultCollection extends BatchJobResult implements Serializ
     */
     @ApiModelProperty(required = true, value = "")
     @NotNull
-
     @Valid
-
     public CollectionExtent getExtent() {
       return extent;
     }

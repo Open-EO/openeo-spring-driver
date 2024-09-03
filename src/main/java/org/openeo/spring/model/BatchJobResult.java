@@ -69,7 +69,6 @@ public abstract class BatchJobResult {
 	private AssetType type;
 
 	@JsonProperty("assets")
-//	@JsonSerialize(using = AssetsSerializer.class) // DROP THIS?
 	@OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.EAGER)
     @JoinTable(name = "result_asset_mapping", 
       joinColumns = {@JoinColumn(name = "result_id", referencedColumnName = "id")},
@@ -79,8 +78,7 @@ public abstract class BatchJobResult {
 
 	@JsonProperty("links")
 	@Valid
-	@ElementCollection
-	@CollectionTable(name = "links", joinColumns = @JoinColumn(name = "result_id"))
+	@OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY)
 	private List<Link> links = new ArrayList<>();
 	
 	/**

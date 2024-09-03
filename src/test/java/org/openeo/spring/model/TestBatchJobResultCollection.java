@@ -1,7 +1,7 @@
 package org.openeo.spring.model;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -96,9 +96,23 @@ public class TestBatchJobResultCollection {
     @Test
     @Tag("IntegrationTest")
     @Transactional
-    public void testCollectionPersistence() 
+    public void testCollectionPersistence()
             throws JsonMappingException, JsonProcessingException {
-        String jsonText = JobResult.TEST_COLL.loadText();     
+        testCollectionPersistence(JobResult.TEST_COLL);
+    }
+    
+    @Test
+    @Tag("IntegrationTest")
+    @Transactional
+    public void testCollectionProcessingPersistence()
+            throws JsonMappingException, JsonProcessingException {
+        testCollectionPersistence(JobResult.TEST_COLL_PROC);
+    }
+    
+    /** Shared code for testing persistence of some job result. */
+    private void testCollectionPersistence(JobResult result)
+            throws JsonMappingException, JsonProcessingException {
+        String jsonText = result.loadText();     
         ObjectMapper OM = JSONMarshaller.MAPPER;
         BatchJobResultCollection coll = OM.readValue(jsonText, BatchJobResultCollection.class);
         

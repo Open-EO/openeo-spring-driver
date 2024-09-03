@@ -28,7 +28,7 @@ public class CollectionExtent   {
     
     @Id
     @JsonIgnore
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
     @JsonProperty("spatial")
@@ -58,9 +58,7 @@ public class CollectionExtent   {
      */
     @ApiModelProperty(required = true, value = "")
     @NotNull
-
     @Valid
-
     public CollectionSpatialExtent getSpatial() {
         return spatial;
     }
@@ -80,9 +78,7 @@ public class CollectionExtent   {
      */
     @ApiModelProperty(required = true, value = "")
     @NotNull
-
     @Valid
-
     public CollectionTemporalExtent getTemporal() {
         return temporal;
     }
@@ -90,7 +86,6 @@ public class CollectionExtent   {
     public void setTemporal(CollectionTemporalExtent temporal) {
         this.temporal = temporal;
     }
-
 
     @Override
     public boolean equals(java.lang.Object o) {
