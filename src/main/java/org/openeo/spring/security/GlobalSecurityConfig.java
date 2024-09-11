@@ -41,13 +41,16 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
     /** API resources that do not require authentication. */
     public static final String[] NOAUTH_API_RESOURCES = new String[] {
             "/",
-            "/conformance",
-            "/collections/**",
+            "/conformance/**",
+            "/collections",
+            "/collections/*",
             "/download/**",
             "/processes/**",
             "/favicon.ico",
-            "/file_formats",
+            "/file_formats/**",
             "/.well-known/openeo"};
+    // /aaa/*  will match /aaa/bbb etc
+    // /aaa/** will match /aaa, /aaa/ and any sub-directories, such as /aaa/bbb/ccc.
     
     public static final String BASIC_AUTH_API_RESOURCE = "/credentials/basic";
     public static final String OIDC_AUTH_API_RESOURCE = "/credentials/oidc";

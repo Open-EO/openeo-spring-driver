@@ -309,7 +309,7 @@ public class ResultApiController implements ResultApi {
 		String collectionID = new String();
 
 		List<JSONObject> loadCollectionNodes = jobScheduler.getProcessNode("load_collection",processGraphJSON);
-		List<JSONObject> loadResultNodes = jobScheduler.getProcessNode("load_result",processGraphJSON);
+		List<JSONObject> loadResultNodes = jobScheduler.getProcessNode("load_stac",processGraphJSON);
 
 		boolean containsSameEngineCollections = false;
 		EngineTypes selectedEngineType = null;
@@ -355,7 +355,7 @@ public class ResultApiController implements ResultApi {
 			selectedEngineType = EngineTypes.ODC_DASK;
 		}
 		else {
-			throw new Exception("The submitted job contains no load_collection nor load_result process!");
+			throw new Exception("The submitted job contains no load_collection nor load_stac process!");
 		}
 		return selectedEngineType;
 	}

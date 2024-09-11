@@ -84,6 +84,11 @@ public class Error {
 	public void setCode(String code) {
 		this.code = code;
 	}
+	
+	/** Overload */
+	public void setCode(int code) {
+	    this.code = String.valueOf(code);
+	}
 
 	public Error message(String message) {
 		this.message = message;

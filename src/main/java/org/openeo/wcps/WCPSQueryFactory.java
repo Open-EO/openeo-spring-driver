@@ -1,14 +1,10 @@
 package org.openeo.wcps;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -32,18 +28,13 @@ import org.jdom2.input.SAXBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import java.lang.Math;
-
-import org.openeo.wcps.domain.Aggregate;
-import org.openeo.wcps.domain.Filter;
+import org.openeo.spring.components.CollectionMap;
 import org.openeo.spring.model.Collection;
 import org.openeo.spring.model.Dimension;
 import org.openeo.spring.model.DimensionSpatial;
 import org.openeo.spring.model.DimensionTemporal;
-import org.openeo.spring.model.TemporalDimension;
-import org.openeo.wcps.WCPSReduceFunc;
-import org.openeo.spring.components.CollectionMap;
-import org.openeo.wcps.WCPSApplyFunc;
+import org.openeo.wcps.domain.Aggregate;
+import org.openeo.wcps.domain.Filter;
 
 public class WCPSQueryFactory {
 

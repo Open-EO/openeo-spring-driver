@@ -8,8 +8,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-import org.openapitools.jackson.nullable.JsonNullable;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -20,6 +18,8 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2020-07-02T08:45:00.334+02:00[Europe/Rome]")
 @JsonInclude(JsonInclude.Include.NON_NULL)
+// TODO should this class be based on OffsetDateTime like CollectionTemporalExtent to 
+//      control its serialization format (OffsetDateTimeSerializer) and avoid inconsistencies?
 public class DimensionTemporal extends Dimension  {
   @JsonProperty("values")
   @Valid
@@ -98,8 +98,7 @@ public class DimensionTemporal extends Dimension  {
   @ApiModelProperty(value = "The space between the temporal instances as [ISO 8601 duration](https://en.wikipedia.org/wiki/ISO_8601#Durations), e.g. `P1D`. Use `null` for irregularly spaced steps.")
 
 
-  public String get
-() {
+  public String getStep() {
     return step;
   }
 

@@ -13,6 +13,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +44,7 @@ import org.json.JSONException;
 import org.openeo.spring.api.CollectionsApiController;
 import org.openeo.spring.api.DefaultApiController;
 import org.openeo.spring.api.LinkRelType;
+import org.openeo.spring.json.OffsetDateTimeSerializer;
 import org.openeo.spring.loaders.CRSUtils.AxisMappingStrategy;
 import org.openeo.spring.loaders.CRSUtils.CSAxisOrientation;
 import org.openeo.spring.loaders.CRSUtils.CsType;
@@ -317,7 +319,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                         this.cache.getFilename());
                 File collectionsFile = new File(absPath);
 
-                JSONMarshaller.syncWiteToFile(collectionsList, collectionsFile);
+                JSONMarshaller.syncWriteToFile(collectionsList, collectionsFile);
                 log.info("WCS catalogue serialized: {}.", collectionsFile.getName());
 
             } catch (JsonGenerationException | JsonMappingException jse) {
@@ -902,11 +904,11 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                 String maxT = dim.getExtent().get(1);
 
                 List<OffsetDateTime> interval = new ArrayList<>();
+                DateTimeFormatter fmt = OffsetDateTimeSerializer.FORMATTER;
                 try {
                     //STAC requires format: https://www.rfc-editor.org/rfc/rfc3339#section-5.6
-                    //We use: java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.
-                    interval.add(OffsetDateTime.parse(minT));
-                    interval.add(OffsetDateTime.parse(maxT));
+                    interval.add(OffsetDateTime.parse(minT, fmt));
+                    interval.add(OffsetDateTime.parse(maxT, fmt));
 
                 } catch (DateTimeParseException e) {
                     log.warn("Error parsing time extent: {}:{}", minT, maxT);

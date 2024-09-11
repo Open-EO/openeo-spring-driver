@@ -9,17 +9,20 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.time.OffsetDateTime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.openeo.spring.json.OffsetDateTimeSerializer;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
@@ -42,8 +45,10 @@ public class JSONMarshaller {
     public static final ObjectMapper MAPPER = new ObjectMapper();
     static {
         MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
-        MAPPER.registerModule(new JavaTimeModule());
         MAPPER.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        MAPPER.registerModule(new JavaTimeModule());        
+        MAPPER.registerModule(new SimpleModule()
+                .addSerializer(OffsetDateTime.class, new OffsetDateTimeSerializer()));
     }
 
     /**
@@ -115,10 +120,10 @@ public class JSONMarshaller {
     /**
      * Override method with default indentation factor.
      * @throws IOException
-     * @see #syncWiteToFile(JSONObject, int)
+     * @see #syncWriteToFile(JSONObject, int)
      */
-    public static boolean syncWiteToFile(final JSONObject stacObj, File jsonOut) throws IOException {
-        return JSONMarshaller.syncWiteToFile(stacObj, jsonOut, DEFAULT_INDENT);
+    public static boolean syncWriteToFile(final JSONObject stacObj, File jsonOut) throws IOException {
+        return JSONMarshaller.syncWriteToFile(stacObj, jsonOut, DEFAULT_INDENT);
     }
 
     /**
@@ -126,11 +131,11 @@ public class JSONMarshaller {
      * @return {@code true} on successful JSON serialization, {@code false} otherwise.
      * @throws IOException
      */
-    // FIXME "merge" with #syncWiteToFile(final JSONObject stacObj, File jsonOut, int indent) ?
-    public static boolean syncWiteToFile(final Object obj, File jsonOut) throws IOException {
+    // FIXME "merge" with #syncWriteToFile(final JSONObject stacObj, File jsonOut, int indent) ?
+    public static boolean syncWriteToFile(final Object obj, File jsonOut) throws IOException {
         boolean ok = true;
         try {
-            MAPPER.writeValue(jsonOut, jsonOut);
+            MAPPER.writeValue(jsonOut, obj);
         } catch (JsonGenerationException | JsonMappingException e) {
             ok = false;
         }
@@ -145,7 +150,7 @@ public class JSONMarshaller {
      * @return {@code true} on success; {@code false} when serialization is not possible
      * @throws IOException in case the given target {@code jsonOut} file is not writable.
      */
-    public static boolean syncWiteToFile(final JSONObject stacObj, File jsonOut, int indent) throws IOException {
+    public static boolean syncWriteToFile(final JSONObject stacObj, File jsonOut, int indent) throws IOException {
 
         boolean ok = true;
 

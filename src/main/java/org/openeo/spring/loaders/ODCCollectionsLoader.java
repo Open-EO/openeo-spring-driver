@@ -90,7 +90,7 @@ public class ODCCollectionsLoader implements ICollectionsLoader {
                             this.cache.getFilename());
                     File collectionsFile = new File(absPath);
 
-                    JSONMarshaller.syncWiteToFile(odcSTACMetdata, collectionsFile);
+                    JSONMarshaller.syncWriteToFile(odcSTACMetdata, collectionsFile);
 
                 } catch (IOException e) {
                     log.error("Error while serializing ODC catalog to disk.", e);

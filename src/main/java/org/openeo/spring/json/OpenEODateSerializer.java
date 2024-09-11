@@ -27,7 +27,6 @@ public class OpenEODateSerializer extends StdSerializer<OffsetDateTime> {
 	@Override
 	public void serialize(OffsetDateTime value, JsonGenerator gen, SerializerProvider provider) throws IOException {
 		gen.writeString(formatter.format(value.atZoneSameInstant(ZoneOffset.UTC)));
-
 	}
 
 }

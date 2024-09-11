@@ -79,5 +79,37 @@ public class OpenAPI2SpringBoot implements CommandLineRunner {
     public Module jsonNullableModule() {
         return new JsonNullableModule();
     }
+    
+    /*
+     * TODO None of this is working to register a custom OffsetDateTime serializer inthe HTTP responses
+     * OK for file serialization (see odc_collections.json etc)
+     * Workaround for containers: @JsonSerialize annotation on the field with contentUsing
+     * @see https://www.baeldung.com/spring-boot-customize-jackson-objectmapper
+     */
 
+//    @Bean
+//    @Primary
+//    public ObjectMapper objectMapper() {
+//        JavaTimeModule module = new JavaTimeModule();
+//        module.addSerializer(new OffsetDateTimeSerializer());
+//        return new ObjectMapper()
+//          .setSerializationInclusion(JsonInclude.Include.ALWAYS)
+//          .registerModule(module);
+//    }
+    
+//    @Bean
+//    /** Control how timestamps are serialized to JSON. */
+//    public Jackson2ObjectMapperBuilder jackson2ObjectMapperBuilder() {
+//        return new Jackson2ObjectMapperBuilder().serializers(
+//                new OffsetDateTimeSerializer())
+//                .serializationInclusion(JsonInclude.Include.ALWAYS);
+//    }
+    
+//    @Bean
+//    public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
+//        Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder()
+//                .serializers(new OffsetDateTimeSerializer())
+//                .serializationInclusion(JsonInclude.Include.ALWAYS);
+//        return new MappingJackson2HttpMessageConverter(builder.build());
+//    }
 }
