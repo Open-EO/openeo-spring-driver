@@ -34,6 +34,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 import javax.swing.event.EventListenerList;
+import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
@@ -48,7 +49,9 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import org.openeo.spring.bearer.ITokenService;
 import org.openeo.spring.bearer.TokenUtil;
 import org.openeo.spring.components.JobScheduler;
+import org.openeo.spring.dao.BatchJobResultCollectionDAO;
 import org.openeo.spring.dao.BatchJobResultDAO;
+import org.openeo.spring.dao.BatchJobResultFeatureDAO;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.keycloak.legacy.AuthzService;
 import org.openeo.spring.model.BatchJobEstimate;
@@ -159,18 +162,22 @@ public class JobsApiController implements JobsApi {
 
 	JobDAO jobDAO;
 
-	BatchJobResultDAO resultDAO;
+	BatchJobResultDAO<? extends BatchJobResult> resultDAO;
 
 	@Autowired
-	public void setDao(JobDAO injectedJObDAO, BatchJobResultDAO injectResultDao) {
-		jobDAO = injectedJObDAO;
-		resultDAO = injectResultDao;
+	public void setDaoFeature(JobDAO injectedJObDAO, BatchJobResultFeatureDAO injectResultDao) {
+	    jobDAO = injectedJObDAO;
+	    resultDAO = injectResultDao;
 	}
-
+	@Autowired
+	public void setDaoCollection(JobDAO injectedJObDAO, BatchJobResultCollectionDAO injectResultDao) {
+	    jobDAO = injectedJObDAO;
+	    resultDAO = injectResultDao;
+	}
+	
 	@org.springframework.beans.factory.annotation.Autowired
 	public JobsApiController(NativeWebRequest request) {
 		this.request = request;
-
 	}
 
 	@PostConstruct
@@ -236,7 +243,9 @@ public class JobsApiController implements JobsApi {
 			
 		//TODO add validity check of the job using ValidationApiController
 //    	UUID jobID = UUID.randomUUID();
-//    	job.setId(jobID);
+//    	job.setId(jobID.toString());
+//		job.setId("06959adcd2a447c58c74374993a3eee9"); TEST
+		// -> Job::@Generated will generate one
 
 		ResponseEntity<?> response = null;
 		String warningMessage = null;
@@ -668,7 +677,7 @@ public class JobsApiController implements JobsApi {
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
 		Job job = jobDAO.findOne(UUID.fromString(jobId));
 		if (job != null) {
-			BatchJobResult jobResult = resultDAO.findOne(UUID.fromString(jobId));
+			BatchJobResult jobResult = resultDAO.findOne(jobId);
 			if(jobResult != null) {
 				log.debug("The job result {} was detected.", jobId);
 				File jobResults = new File(tmpDir + jobId);
@@ -681,7 +690,7 @@ public class JobsApiController implements JobsApi {
 					jobResults.delete();
 					log.debug("All persistent files have been successfully deleted for job with id: " + jobId);
 				}
-				resultDAO.delete(jobResult);
+				resultDAO.deleteById(jobResult.getId());
 				log.debug("The job result {} was successfully deleted.", jobId);
 			}
 			jobDAO.delete(job);
@@ -956,15 +965,16 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/jobs/{job_id}/results", produces = { "application/json",
 			"application/geo+json" }, method = RequestMethod.GET)
+	@Transactional
 	public ResponseEntity<?> listResults(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
-		BatchJobResult result = resultDAO.findOne(UUID.fromString(jobId));
+		BatchJobResult result = resultDAO.findOne(jobId);
 		if (result != null) {
-			log.trace(result.toString());
+			log.debug(result.toString());
 			return new ResponseEntity<BatchJobResult>(result, HttpStatus.OK);
 		} else {
 		    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.BAD_REQUEST,
-		            String.format("The requested job %s could not be found.", jobId));
+		            String.format("The result for job %s could not be found.", jobId));
 			return response;
 		}
 	}
@@ -1149,7 +1159,8 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<?> stopJob(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
 		ThreadContext.put("jobid", jobId);
-		Job job = jobDAO.findOne(UUID.fromString(jobId));
+		UUID jobUUID = UUID.fromString(jobId);
+		Job job = jobDAO.findOne(jobUUID);
 		if (job != null) {
 			if(job.getEngine()==EngineTypes.WCPS){
 			    ResponseEntity<Error> response = ApiUtil.errorResponse(HttpStatus.NOT_IMPLEMENTED,
@@ -1162,7 +1173,7 @@ public class JobsApiController implements JobsApi {
 						job.setStatus(JobStates.CANCELED);
 						job.setUpdated(OffsetDateTime.now());
 						jobDAO.update(job);
-						this.fireJobStoppedEvent(job.getId());
+						this.fireJobStoppedEvent(jobUUID);
 						ThreadContext.clearMap();
 						return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 					}
@@ -1170,7 +1181,7 @@ public class JobsApiController implements JobsApi {
 					job.setStatus(JobStates.CREATED);
 					job.setUpdated(OffsetDateTime.now());
 					jobDAO.update(job);
-					this.fireJobStoppedEvent(job.getId());
+					this.fireJobStoppedEvent(jobUUID);
 					ThreadContext.clearMap();
 					return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 				}

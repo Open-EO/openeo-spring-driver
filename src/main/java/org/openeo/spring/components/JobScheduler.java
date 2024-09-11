@@ -38,10 +38,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.openeo.spring.api.DefaultApiController;
+import org.openeo.spring.dao.BatchJobResultCollectionDAO;
 import org.openeo.spring.dao.BatchJobResultDAO;
+import org.openeo.spring.dao.BatchJobResultFeatureDAO;
 import org.openeo.spring.dao.JobDAO;
 import org.openeo.spring.model.Asset;
+import org.openeo.spring.model.AssetType;
 import org.openeo.spring.model.BatchJobResult;
+import org.openeo.spring.model.BatchJobResultFeature;
 import org.openeo.spring.model.EngineTypes;
 import org.openeo.spring.model.Error;
 import org.openeo.spring.model.Job;
@@ -66,6 +70,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @Component
 @EnableAsync(proxyTargetClass=true)
@@ -77,12 +82,19 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 	private static final Logger log = LogManager.getLogger(JobScheduler.class);
 
 	JobDAO jobDAO;
-	BatchJobResultDAO resultDAO;
+	BatchJobResultDAO<? extends BatchJobResult> resultDAOF;
+	BatchJobResultDAO<? extends BatchJobResult> resultDAOC;
 
 	@Autowired
-	public void setDao(JobDAO injectedJObDAO, BatchJobResultDAO injectResultDao) {
+	public void setDaoFeature(JobDAO injectedJObDAO, BatchJobResultFeatureDAO injectResultDao) {
 		jobDAO = injectedJObDAO;
-		resultDAO = injectResultDao;
+		resultDAOF = injectResultDao;
+	}
+	
+	@Autowired
+	public void setDaoCollection(JobDAO injectedJObDAO, BatchJobResultCollectionDAO injectResultDao) {
+	    jobDAO = injectedJObDAO;
+	    resultDAOC = injectResultDao;
 	}
 
 	@Autowired
@@ -501,15 +513,20 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		}
 	}
 
+    /**
+     * Executes a job managed by the rasdaman/WCPS backend. 
+     */
 	private Error executeWCPS(URL url, Job job, WCPSQueryFactory wcpsQuery) {
 
-		BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
+		BatchJobResult batchJobResult = resultDAOF.findOne(job.getId());
 
 		//Skip computing if result is already available.
 		if(batchJobResult != null) {
+		    log.info("Result already avaialble for job {}", job.getId());
 			return null;
-		}else {
-			batchJobResult = new BatchJobResult();
+		} else {
+		    // TODO always a STAC feature in this case?
+		    batchJobResult = new BatchJobResultFeature();
 		}
 
 		job.setUpdated(OffsetDateTime.now());
@@ -560,7 +577,6 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			return error;
 		}
 
-
 		try (BufferedInputStream in = new BufferedInputStream(connection.getInputStream());
 				FileOutputStream fileOutputStream = new FileOutputStream(jobResultPath + dataFileName)) {
 			byte dataBuffer[] = new byte[1024];
@@ -580,11 +596,14 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			//logErrorStream(e);
 			log.error(builder.toString());
 		}
+		
+		BatchJobResultFeature batchJobResultF = (BatchJobResultFeature) batchJobResult;
+        BatchJobResultFeatureDAO bDao = new BatchJobResultFeatureDAO();
 
-		batchJobResult.setId(job.getId());
-		batchJobResult.bbox(null);
-		batchJobResult.setStacVersion(STAC_VERSION);
-		batchJobResult.setGeometry(null);
+        batchJobResultF.setId(job.getId().toString());
+        batchJobResultF.bbox(null);
+        batchJobResultF.setStacVersion(STAC_VERSION);
+        batchJobResultF.setGeometry(null);
 		LinkedHashMap<String, Asset> assetMap = new LinkedHashMap<String, Asset>();
 
 		// Data Asset
@@ -675,9 +694,10 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 		processAsset.setRoles(processAssetRoles);
 		assetMap.put(processFileName, processAsset);
 
-		batchJobResult.setAssets(assetMap);
+		batchJobResultF.setAssets(assetMap);
 		log.debug(batchJobResult.toString());
-		resultDAO.save(batchJobResult);
+		bDao.save(batchJobResultF);
+//		resultDAO = bDao;
 		log.debug("Result Stored in DB");
 
 		job.setStatus(JobStates.FINISHED);
@@ -700,184 +720,220 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
     }
 	
     /**
-     * TODO
+     * Executes a job managed by the OpenDataCube (ODC) backend. 
+     * @param <T>
      * @param job
      */
+    // FIXME this function is a huge *mess*
 	private void executeODC(Job job) {
 
-		BatchJobResult batchJobResult = resultDAO.findOne(job.getId());
+	    BatchJobResult batchJobResultF = resultDAOF.findOne(job.getId().toString());
+	    BatchJobResult batchJobResultC = resultDAOC.findOne(job.getId().toString());
 
-		//Skip computing if result is already available.
-		if(batchJobResult != null) {
-			return;
-		}else {
-			batchJobResult = new BatchJobResult();
-		}
+	    //Skip computing if result is already available.
+	    if(batchJobResultF != null || batchJobResultC != null) {
+	        log.info("Result already available for job {}", job.getId());
+	        return;
+	    }
 
-			job.setUpdated(OffsetDateTime.now());
-			job.setStatus(JobStates.RUNNING);
-			
-			jobDAO.update(job);
-			JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
+	    job.setUpdated(OffsetDateTime.now());
+	    job.setStatus(JobStates.RUNNING);
 
-			JSONObject process = new JSONObject();
-			process.put("id", job.getId());
-			process.put("process_graph", processGraphJSON);
-			String dataMimeType = "application/octet-stream";
+	    jobDAO.update(job);
+	    JSONObject processGraphJSON = (JSONObject) job.getProcess().getProcessGraph();
 
-			try {
-				HttpResponse<String> response = send_odc_request(odcEndpoint, process.toString());
-				HttpStatus respStatus = HttpStatus.valueOf(response.statusCode());
-				if (respStatus.is2xxSuccessful()) {
-				    try {
-				        JSONObject responseJson = new JSONObject(response.body());
-				        String outputFilename = responseJson.get("output").toString(); // ODC returns a json with format {"output":"/path/to/outputfile"}
-				        dataMimeType = ConvenienceHelper.getMimeFromFilename(outputFilename);
-				    } catch (JSONException je) {
-				        addStackTraceAndErrorToLog(je);
-				        Error error = new Error();
-				        error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-				        error.setMessage("ODC response not formatted as valid JSON.");
-				        log.error(error.getMessage());
-				        job.setStatus(JobStates.ERROR);
-				        jobDAO.update(job);
-				        return;
-				    }
-				} else {
-                    Error error = new Error();
-                    error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-                    error.setMessage(response.body());
-                    log.error("Error from ODC backend: {}", error.getMessage());
-                    job.setStatus(JobStates.ERROR);
-                    jobDAO.update(job);
-                    return;
-				}
-			}
-			catch (ConnectException e) {
-				addStackTraceAndErrorToLog(e);
-				Error error = new Error();
-				error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-				error.setMessage("Not possible to establish connection with ODC endpoint.");
-				log.error(error.getMessage());
-				job.setStatus(JobStates.ERROR);
-				jobDAO.update(job);
-				return;
-			}
-			catch (Exception e) {
-				addStackTraceAndErrorToLog(e);
-				log.error(e);
-				Error error = new Error();
-				error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-				error.setMessage("The job has been stop or an error occurred.");
-				log.error(error.getMessage());
-				// Change the status only if it is not "Canceled" which mean that it has been stopped on purpose
-				Job currentJob = jobDAO.findOne(job.getId());
-				if (currentJob.getStatus()!=JobStates.CANCELED) {
-					currentJob.setStatus(JobStates.ERROR);
-					jobDAO.update(currentJob);
-				}
-				return;
-			}
-			
-			String jobResultPath = tmpDir + job.getId() + "/";
-			File jobResultDirectory = new File(jobResultPath);
-			if(!jobResultDirectory.exists()) {
-				jobResultDirectory.mkdir();
-			}
+	    JSONObject process = new JSONObject();
+	    process.put("id", job.getId());
+	    process.put("process_graph", processGraphJSON);
+	    String dataMimeType = "application/octet-stream";
 
-			String dataFormat = getSaveNodeFormat();
-			String dataFileName = "result";
-			if(dataFormat.equalsIgnoreCase("netcdf")) {
-				dataFileName = "result.nc";
-				}
-			else if(dataFormat.equalsIgnoreCase("gtiff") || dataFormat.equalsIgnoreCase("geotiff")) {
-				dataFileName = "result.tiff";
-				}
-			else if(dataFormat.equalsIgnoreCase("png")){
-				dataFileName = "result.png";
-				}
-			else if(dataFormat.equalsIgnoreCase("json")){
-				dataFileName = "result.json";
-				}
-			log.debug("The output file will be saved here: \n" + (jobResultPath + dataFileName).toString());
-			
-			boolean outputFileExists = new File(jobResultPath + dataFileName).isFile();
-			if (!outputFileExists){
-				String errorMessage = new String("Output file not found! Job id" + job.getId().toString());
-				addStackTraceAndErrorToLog(new Exception(errorMessage));
-				log.error(errorMessage);
-				job.setStatus(JobStates.ERROR);
-				jobDAO.update(job);
-				return;
-			}
+	    try {
+	        HttpResponse<String> response = send_odc_request(odcEndpoint, process.toString());
+	        HttpStatus respStatus = HttpStatus.valueOf(response.statusCode());
 
-			batchJobResult.setId(job.getId());
-			batchJobResult.bbox(null);
-			batchJobResult.setStacVersion(STAC_VERSION);
-			batchJobResult.setGeometry(null);
-			LinkedHashMap<String, Asset> assetMap = new LinkedHashMap<String, Asset>();
+	        //				ResponseEntity spring_response = new ResponseEntity<>(response.body(), HttpStatus.OK);
 
-			// Data Asset
-			Asset dataAsset = new Asset();
-			dataAsset.setHref(openEOPublicEndpoint + "/download/" + job.getId() + "/" + dataFileName);
-			log.debug("Mime type is: " + dataMimeType);
-			dataAsset.setType(dataMimeType);
-			dataAsset.setTitle(dataFileName);
-			List<String> dataAssetRoles = new ArrayList<String>();
-			dataAssetRoles.add("data");
-			dataAsset.setRoles(dataAssetRoles);
-			assetMap.put(dataFileName, dataAsset);
+	        if (respStatus.is2xxSuccessful()) {
+	            try {
+	                JSONObject responseJson = new JSONObject(response.body());
+	                log.debug(responseJson);
+	                
+	                // TODO response type should rely on "type",
+	                //      now it's mixed STAC and ODC backend driver custom json response.
+	                // FIXME The whole flow of this function is spaghetti hell.
+	                if (responseJson.has("stac_version")) { // [!] proxy heuristic to identify STAC Collection
+	                    // downcast
+	                    batchJobResultC = BatchJobResult.factory(responseJson);
+	                    batchJobResultC.setId(job.getId().toString());
+	                    log.debug(batchJobResultC.toString());
+//	                    log.debug(responseJson);
+	                    resultDAOC.saveCapture(batchJobResultC);
+	                    log.debug("Result Stored in DB");
 
-			// Process Asset
-			Asset processAsset = new Asset();
-			String processFileName = "process.json";
-			String processFilePath = tmpDir + job.getId() + "/" + processFileName;
-			ObjectMapper mapper = new ObjectMapper();
-			try {
-				mapper.writeValue(new File(processFilePath), job.getProcess());
-			} catch (JsonGenerationException e) {
-				log.error("An error occured when generating json of process: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			} catch (JsonMappingException e) {
-				log.error("An error occured when mapping process.class to json: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			} catch (IOException e) {
-				log.error("An error occured when writing process to file: " + e.getMessage());
-				StringBuilder builder = new StringBuilder();
-				for (StackTraceElement element : e.getStackTrace()) {
-					builder.append(element.toString() + "\n");
-				}
-				log.error(builder.toString());
-			}
-			processAsset.setHref(openEOPublicEndpoint + "/download/" + job.getId() + "/" + processFileName);
-			String processMimeType = "application/json";
-			log.debug("Mime type is: " + processMimeType);
-			processAsset.setType(processMimeType);
-			processAsset.setTitle(processFileName);
-			List<String> processAssetRoles = new ArrayList<String>();
-			processAssetRoles.add("process");
-			processAsset.setRoles(processAssetRoles);
-			assetMap.put(processFileName, processAsset);
+	                    job.setStatus(JobStates.FINISHED);
+	                    job.setUpdated(OffsetDateTime.now());
+	                    job.setProgress(new BigDecimal(100));
+	                    jobDAO.update(job);
+	                    log.debug("The following job was set to status finished: \n" + job.toString());
+	                    
+	                    return; // FIXME spaghetti
+	                }
+	                //						else if (responseJson.has("output")) {
+	                else { // -> old forwarded Feature
+	                    String outputFilename = responseJson.get("output").toString(); // ODC returns a json with format {"output":"/path/to/outputfile"} or STAC Collection json document
+	                    dataMimeType = ConvenienceHelper.getMimeFromFilename(outputFilename);
+	                    
+	                    String jobResultPath = tmpDir + job.getId() + "/";
+	                    File jobResultDirectory = new File(jobResultPath);
+	                    if(!jobResultDirectory.exists()) {
+	                        jobResultDirectory.mkdir();
+	                    }
 
-			batchJobResult.setAssets(assetMap);
-			log.debug(batchJobResult.toString());
-			resultDAO.save(batchJobResult);
-			log.debug("Result Stored in DB");
+	                    String dataFormat = getSaveNodeFormat();
+	                    String dataFileName = "result";
+	                    if(dataFormat.equalsIgnoreCase("netcdf")) {
+	                        dataFileName = "result.nc";
+	                    }
+	                    else if(dataFormat.equalsIgnoreCase("gtiff") || dataFormat.equalsIgnoreCase("geotiff")) {
+	                        dataFileName = "result.tiff";
+	                    }
+	                    else if(dataFormat.equalsIgnoreCase("png")){
+	                        dataFileName = "result.png";
+	                    }
+	                    else if(dataFormat.equalsIgnoreCase("json")){
+	                        dataFileName = "result.json";
+	                    }
+	                    log.debug("The output file will be saved here: \n" + (jobResultPath + dataFileName).toString());
 
-			job.setStatus(JobStates.FINISHED);
-			job.setUpdated(OffsetDateTime.now());
-			job.setProgress(new BigDecimal(100));
-			jobDAO.update(job);
-			log.debug("The following job was set to status finished: \n" + job.toString());
+	                    boolean outputFileExists = new File(jobResultPath + dataFileName).isFile();
+	                    if (!outputFileExists){
+	                        String errorMessage = new String("Output file not found! Job id" + job.getId().toString());
+	                        addStackTraceAndErrorToLog(new Exception(errorMessage));
+	                        log.error(errorMessage);
+	                        job.setStatus(JobStates.ERROR);
+	                        jobDAO.update(job);
+	                        return;
+	                    }
 
+	                    // downcast
+	                    // automatically parse a feature: but actually we need to fetch the file content
+//	                    BatchJobResultFeature batchJobResult = BatchJobResult.factory(responseJson);
+	                    // so we do as done before: we manually create a STAC feature: 
+	                    BatchJobResultFeature batchJobResult = BatchJobResult.ofType(AssetType.FEATURE);
+	                    batchJobResult.setId(job.getId().toString());
+	                    batchJobResult.bbox(null);
+	                    batchJobResult.setStacVersion(STAC_VERSION);
+	                    batchJobResult.setGeometry(null);
+	                    LinkedHashMap<String, Asset> assetMap = new LinkedHashMap<String, Asset>();
+
+	                    // Data Asset
+	                    Asset dataAsset = new Asset();
+	                    dataAsset.setHref(openEOPublicEndpoint + "/download/" + job.getId() + "/" + dataFileName);
+	                    log.debug("Mime type is: " + dataMimeType);
+	                    dataAsset.setType(dataMimeType);
+	                    dataAsset.setTitle(dataFileName);
+	                    List<String> dataAssetRoles = new ArrayList<>();
+	                    dataAssetRoles.add("data");
+	                    dataAsset.setRoles(dataAssetRoles);
+	                    assetMap.put(dataFileName, dataAsset);
+
+	                    // Process Asset
+	                    Asset processAsset = new Asset();
+	                    String processFileName = "process.json";
+	                    String processFilePath = tmpDir + job.getId() + "/" + processFileName;
+	                    ObjectMapper mapper = new ObjectMapper();
+	                    mapper.registerModule(new JavaTimeModule());
+	                    try {
+	                        mapper.writeValue(new File(processFilePath), job.getProcess());
+	                    } catch (JsonGenerationException e) {
+	                        log.error("An error occured when generating json of process: " + e.getMessage());
+	                        StringBuilder builder = new StringBuilder();
+	                        for (StackTraceElement element : e.getStackTrace()) {
+	                            builder.append(element.toString() + "\n");
+	                        }
+	                        log.error(builder.toString());
+	                    } catch (JsonMappingException e) {
+	                        log.error("An error occured when mapping process.class to json: " + e.getMessage());
+	                        StringBuilder builder = new StringBuilder();
+	                        for (StackTraceElement element : e.getStackTrace()) {
+	                            builder.append(element.toString() + "\n");
+	                        }
+	                        log.error(builder.toString());
+	                    } catch (IOException e) {
+	                        log.error("An error occured when writing process to file: " + e.getMessage());
+	                        StringBuilder builder = new StringBuilder();
+	                        for (StackTraceElement element : e.getStackTrace()) {
+	                            builder.append(element.toString() + "\n");
+	                        }
+	                        log.error(builder.toString());
+	                    }
+	                    processAsset.setHref(openEOPublicEndpoint + "/download/" + job.getId() + "/" + processFileName);
+	                    String processMimeType = "application/json";
+	                    log.debug("Mime type is: " + processMimeType);
+	                    processAsset.setType(processMimeType);
+	                    processAsset.setTitle(processFileName);
+	                    List<String> processAssetRoles = new ArrayList<String>();
+	                    processAssetRoles.add("process");
+	                    processAsset.setRoles(processAssetRoles);
+	                    assetMap.put(processFileName, processAsset);
+
+	                    batchJobResult.setAssets(assetMap);
+	                    log.debug(batchJobResult.toString());
+	                    resultDAOF.saveCapture(batchJobResult);
+	                    log.debug("Result Stored in DB");
+
+	                    job.setStatus(JobStates.FINISHED);
+	                    job.setUpdated(OffsetDateTime.now());
+	                    job.setProgress(new BigDecimal(100));
+	                    jobDAO.update(job);
+	                    log.debug("The following job was set to status finished: \n" + job.toString());
+	                }
+	            } catch (JSONException je) {
+	                addStackTraceAndErrorToLog(je);
+	                Error error = new Error();
+	                error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	                error.setMessage("ODC response not formatted as valid JSON.");
+	                log.error(error.getMessage());
+	                job.setStatus(JobStates.ERROR);
+	                jobDAO.update(job);
+	                return;
+	            }
+	        } else {
+	            Error error = new Error();
+	            error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	            error.setMessage(response.body().toString());
+	            log.error("Error from ODC backend: {}", error.getMessage());
+	            job.setStatus(JobStates.ERROR);
+	            jobDAO.update(job);
+	            return;
+	        }
+	    }
+	    catch (ConnectException e) {
+	        addStackTraceAndErrorToLog(e);
+	        Error error = new Error();
+	        error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	        error.setMessage("Not possible to establish connection with ODC endpoint.");
+	        log.error(error.getMessage());
+	        job.setStatus(JobStates.ERROR);
+	        jobDAO.update(job);
+	        return;
+	    }
+	    catch (Exception e) {
+	        addStackTraceAndErrorToLog(e);
+	        log.error(e);
+	        Error error = new Error();
+	        error.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	        error.setMessage("The job has been stop or an error occurred.");
+	        log.error(error.getMessage());
+	        // Change the status only if it is not "Canceled" which mean that it has been stopped on purpose
+	        Job currentJob = jobDAO.findOne(job.getId());
+	        if (currentJob.getStatus()!=JobStates.CANCELED) {
+	            currentJob.setStatus(JobStates.ERROR);
+	            jobDAO.update(currentJob);
+	        }
+	        return;
+	    }
+	    return;
 	}
 	
 	public void sendDelete(String URL, String jobId) {
@@ -898,7 +954,7 @@ public class JobScheduler implements JobEventListener, UDFEventListener {
 			job.setStatus(JobStates.ERROR);
 			jobDAO.update(job);
 			return;
-			}
+	    }
 		job.setStatus(JobStates.CANCELED);
 		job.setUpdated(OffsetDateTime.now());
 		jobDAO.update(job);

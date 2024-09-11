@@ -48,7 +48,8 @@ public class GlobalSecurityConfig implements EnvironmentPostProcessor {
             "/processes/**",
             "/favicon.ico",
             "/file_formats/**",
-            "/.well-known/openeo"};
+            "/.well-known/openeo",
+            "/h2-console/**"};
     // /aaa/*  will match /aaa/bbb etc
     // /aaa/** will match /aaa, /aaa/ and any sub-directories, such as /aaa/bbb/ccc.
     

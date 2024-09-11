@@ -1,0 +1,566 @@
+{
+    "assets": {
+        "openEO_2024-04-30Z.tif": {
+            "eo:bands": [
+                {
+                    "center_wavelength": 0.8328,
+                    "name": "B08"
+                },
+                {
+                    "center_wavelength": 0.6646,
+                    "name": "B04"
+                },
+                {
+                    "name": "NDVI"
+                }
+            ],
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results/assets/NWFkOThhZjAtZDQ2ZS00MDk0LTg0Y2EtZGJjM2FlMjllNmE5/0f116809f92429ff63efbe048c391002/openEO_2024-04-30Z.tif?expires=1725894492",
+            "proj:bbox": [
+                683380,
+                5151260,
+                684190,
+                5152410
+            ],
+            "proj:epsg": 32632,
+            "proj:shape": [
+                115,
+                81
+            ],
+            "raster:bands": [
+                {
+                    "name": "B08",
+                    "statistics": {
+                        "maximum": 5392,
+                        "mean": 3447.0499194847,
+                        "minimum": 1194,
+                        "stddev": 833.34794059902,
+                        "valid_percent": 100
+                    }
+                },
+                {
+                    "name": "B04",
+                    "statistics": {
+                        "maximum": 3816,
+                        "mean": 1288.1799248524,
+                        "minimum": 612,
+                        "stddev": 363.82572147036,
+                        "valid_percent": 100
+                    }
+                },
+                {
+                    "name": "NDVI",
+                    "statistics": {
+                        "maximum": 0.75504523515701,
+                        "mean": 0.44333599991984,
+                        "minimum": -0.016765819862485,
+                        "stddev": 0.16363861091301,
+                        "valid_percent": 100
+                    }
+                }
+            ],
+            "roles": [
+                "data"
+            ],
+            "title": "openEO_2024-04-30Z.tif",
+            "type": "image/tiff; application=geotiff"
+        },
+        "openEO_2024-05-02Z.tif": {
+            "eo:bands": [
+                {
+                    "center_wavelength": 0.8328,
+                    "name": "B08"
+                },
+                {
+                    "center_wavelength": 0.6646,
+                    "name": "B04"
+                },
+                {
+                    "name": "NDVI"
+                }
+            ],
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results/assets/NWFkOThhZjAtZDQ2ZS00MDk0LTg0Y2EtZGJjM2FlMjllNmE5/e0db69a88e27ca72625eb5142bd95c9e/openEO_2024-05-02Z.tif?expires=1725894492",
+            "proj:bbox": [
+                683380,
+                5151260,
+                684190,
+                5152410
+            ],
+            "proj:epsg": 32632,
+            "proj:shape": [
+                115,
+                81
+            ],
+            "raster:bands": [
+                {
+                    "name": "B08",
+                    "statistics": {
+                        "maximum": 7456,
+                        "mean": 5838.8208266237,
+                        "minimum": 4020,
+                        "stddev": 733.45655705752,
+                        "valid_percent": 100
+                    }
+                },
+                {
+                    "name": "B04",
+                    "statistics": {
+                        "maximum": 6704,
+                        "mean": 4886.3976382179,
+                        "minimum": 3006,
+                        "stddev": 838.82075643264,
+                        "valid_percent": 100
+                    }
+                },
+                {
+                    "name": "NDVI",
+                    "statistics": {
+                        "maximum": 0.24360586702824,
+                        "mean": 0.092119287470105,
+                        "minimum": 0.0048527983017266,
+                        "stddev": 0.034413470900582,
+                        "valid_percent": 100
+                    }
+                }
+            ],
+            "roles": [
+                "data"
+            ],
+            "title": "openEO_2024-05-02Z.tif",
+            "type": "image/tiff; application=geotiff"
+        },
+        "openEO_2024-05-05Z.tif": {
+            "eo:bands": [
+                {
+                    "center_wavelength": 0.8328,
+                    "name": "B08"
+                },
+                {
+                    "center_wavelength": 0.6646,
+                    "name": "B04"
+                },
+                {
+                    "name": "NDVI"
+                }
+            ],
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results/assets/NWFkOThhZjAtZDQ2ZS00MDk0LTg0Y2EtZGJjM2FlMjllNmE5/40b03214f7b602c836fdd32e16747a26/openEO_2024-05-05Z.tif?expires=1725894492",
+            "proj:bbox": [
+                683380,
+                5151260,
+                684190,
+                5152410
+            ],
+            "proj:epsg": 32632,
+            "proj:shape": [
+                115,
+                81
+            ],
+            "raster:bands": [
+                {
+                    "name": "B08",
+                    "statistics": {
+                        "maximum": 7592,
+                        "mean": 3180.3073537305,
+                        "minimum": 305,
+                        "stddev": 1096.7048091613,
+                        "valid_percent": 100
+                    }
+                },
+                {
+                    "name": "B04",
+                    "statistics": {
+                        "maximum": 5168,
+                        "mean": 735.50531400966,
+                        "minimum": 178,
+                        "stddev": 442.62561560122,
+                        "valid_percent": 100
+                    }
+                },
+                {
+                    "name": "NDVI",
+                    "statistics": {
+                        "maximum": 0.91579759120941,
+                        "mean": 0.58738796953257,
+                        "minimum": -0.39004814624786,
+                        "stddev": 0.27073271100251,
+                        "valid_percent": 100
+                    }
+                }
+            ],
+            "roles": [
+                "data"
+            ],
+            "title": "openEO_2024-05-05Z.tif",
+            "type": "image/tiff; application=geotiff"
+        },
+        "openEO_2024-05-07Z.tif": {
+            "eo:bands": [
+                {
+                    "center_wavelength": 0.8328,
+                    "name": "B08"
+                },
+                {
+                    "center_wavelength": 0.6646,
+                    "name": "B04"
+                },
+                {
+                    "name": "NDVI"
+                }
+            ],
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results/assets/NWFkOThhZjAtZDQ2ZS00MDk0LTg0Y2EtZGJjM2FlMjllNmE5/e62b20066ff888088bdac4649cca0a71/openEO_2024-05-07Z.tif?expires=1725894492",
+            "proj:bbox": [
+                683380,
+                5151260,
+                684190,
+                5152410
+            ],
+            "proj:epsg": 32632,
+            "proj:shape": [
+                115,
+                81
+            ],
+            "raster:bands": [
+                {
+                    "name": "B08",
+                    "statistics": {
+                        "maximum": 6372,
+                        "mean": 5423.8922168545,
+                        "minimum": 4692,
+                        "stddev": 370.46686591708,
+                        "valid_percent": 100
+                    }
+                },
+                {
+                    "name": "B04",
+                    "statistics": {
+                        "maximum": 5508,
+                        "mean": 4492.1361245303,
+                        "minimum": 3764,
+                        "stddev": 383.63260339128,
+                        "valid_percent": 100
+                    }
+                },
+                {
+                    "name": "NDVI",
+                    "statistics": {
+                        "maximum": 0.14881439507008,
+                        "mean": 0.094586416154148,
+                        "minimum": 0.025759322568774,
+                        "stddev": 0.016598873758367,
+                        "valid_percent": 100
+                    }
+                }
+            ],
+            "roles": [
+                "data"
+            ],
+            "title": "openEO_2024-05-07Z.tif",
+            "type": "image/tiff; application=geotiff"
+        },
+        "openEO_2024-05-10Z.tif": {
+            "eo:bands": [
+                {
+                    "center_wavelength": 0.8328,
+                    "name": "B08"
+                },
+                {
+                    "center_wavelength": 0.6646,
+                    "name": "B04"
+                },
+                {
+                    "name": "NDVI"
+                }
+            ],
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results/assets/NWFkOThhZjAtZDQ2ZS00MDk0LTg0Y2EtZGJjM2FlMjllNmE5/6d15423f882a3cdf758452a228c0cf42/openEO_2024-05-10Z.tif?expires=1725894492",
+            "proj:bbox": [
+                683380,
+                5151260,
+                684190,
+                5152410
+            ],
+            "proj:epsg": 32632,
+            "proj:shape": [
+                115,
+                81
+            ],
+            "raster:bands": [
+                {
+                    "name": "B08",
+                    "statistics": {
+                        "maximum": 4264,
+                        "mean": 2963.7962426194,
+                        "minimum": 1582,
+                        "stddev": 522.83993000412,
+                        "valid_percent": 100
+                    }
+                },
+                {
+                    "name": "B04",
+                    "statistics": {
+                        "maximum": 2710,
+                        "mean": 984.23875469673,
+                        "minimum": 624,
+                        "stddev": 214.24383222571,
+                        "valid_percent": 100
+                    }
+                },
+                {
+                    "name": "NDVI",
+                    "statistics": {
+                        "maximum": 0.7148602604866,
+                        "mean": 0.49171174935881,
+                        "minimum": 0.085461355745792,
+                        "stddev": 0.13674615124384,
+                        "valid_percent": 100
+                    }
+                }
+            ],
+            "roles": [
+                "data"
+            ],
+            "title": "openEO_2024-05-10Z.tif",
+            "type": "image/tiff; application=geotiff"
+        }
+    },
+    "description": "Results for batch job j-240806b0429044aa975027bd02e9a226",
+    "extent": {
+        "spatial": {
+            "bbox": [
+                [
+                    11.39,
+                    46.49,
+                    11.4,
+                    46.5
+                ]
+            ]
+        },
+        "temporal": {
+            "interval": [
+                [
+                    "2024-04-30T00:00:00Z",
+                    "2024-05-15T00:00:00Z"
+                ]
+            ]
+        }
+    },
+    "id": "j-240806b0429044aa975027bd02e9a226",
+    "license": "proprietary",
+    "links": [
+        {
+            "href": "/eodata/Sentinel-2/MSI/L2A/2024/05/10/S2A_MSIL2A_20240510T102021_N0510_R065_T32TPS_20240510T142253.SAFE",
+            "rel": "derived_from",
+            "title": "Derived from /eodata/Sentinel-2/MSI/L2A/2024/05/10/S2A_MSIL2A_20240510T102021_N0510_R065_T32TPS_20240510T142253.SAFE",
+            "type": "application/json"
+        },
+        {
+            "href": "/eodata/Sentinel-2/MSI/L2A/2024/04/30/S2A_MSIL2A_20240430T102021_N0510_R065_T32TPS_20240430T143850.SAFE",
+            "rel": "derived_from",
+            "title": "Derived from /eodata/Sentinel-2/MSI/L2A/2024/04/30/S2A_MSIL2A_20240430T102021_N0510_R065_T32TPS_20240430T143850.SAFE",
+            "type": "application/json"
+        },
+        {
+            "href": "/eodata/Sentinel-2/MSI/L2A/2024/05/05/S2B_MSIL2A_20240505T101559_N0510_R065_T32TPS_20240505T130406.SAFE",
+            "rel": "derived_from",
+            "title": "Derived from /eodata/Sentinel-2/MSI/L2A/2024/05/05/S2B_MSIL2A_20240505T101559_N0510_R065_T32TPS_20240505T130406.SAFE",
+            "type": "application/json"
+        },
+        {
+            "href": "/eodata/Sentinel-2/MSI/L2A/2024/05/02/S2B_MSIL2A_20240502T100559_N0510_R022_T32TPS_20240502T125411.SAFE",
+            "rel": "derived_from",
+            "title": "Derived from /eodata/Sentinel-2/MSI/L2A/2024/05/02/S2B_MSIL2A_20240502T100559_N0510_R022_T32TPS_20240502T125411.SAFE",
+            "type": "application/json"
+        },
+        {
+            "href": "/eodata/Sentinel-2/MSI/L2A/2024/05/07/S2A_MSIL2A_20240507T100601_N0510_R022_T32TPS_20240507T143953.SAFE",
+            "rel": "derived_from",
+            "title": "Derived from /eodata/Sentinel-2/MSI/L2A/2024/05/07/S2A_MSIL2A_20240507T100601_N0510_R022_T32TPS_20240507T143953.SAFE",
+            "type": "application/json"
+        },
+        {
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results",
+            "rel": "self",
+            "type": "application/json"
+        },
+        {
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results/NWFkOThhZjAtZDQ2ZS00MDk0LTg0Y2EtZGJjM2FlMjllNmE5/0b1a6c4358dde9552c1ebbacddfafa80?expires=1725894492",
+            "rel": "canonical",
+            "type": "application/json"
+        },
+        {
+            "href": "http://ceos.org/ard/files/PFS/SR/v5.0/CARD4L_Product_Family_Specification_Surface_Reflectance-v5.0.pdf",
+            "rel": "card4l-document",
+            "type": "application/pdf"
+        },
+        {
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results/items/NWFkOThhZjAtZDQ2ZS00MDk0LTg0Y2EtZGJjM2FlMjllNmE5/0f116809f92429ff63efbe048c391002/openEO_2024-04-30Z.tif?expires=1725894492",
+            "rel": "item",
+            "type": "application/geo+json"
+        },
+        {
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results/items/NWFkOThhZjAtZDQ2ZS00MDk0LTg0Y2EtZGJjM2FlMjllNmE5/40b03214f7b602c836fdd32e16747a26/openEO_2024-05-05Z.tif?expires=1725894492",
+            "rel": "item",
+            "type": "application/geo+json"
+        },
+        {
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results/items/NWFkOThhZjAtZDQ2ZS00MDk0LTg0Y2EtZGJjM2FlMjllNmE5/6d15423f882a3cdf758452a228c0cf42/openEO_2024-05-10Z.tif?expires=1725894492",
+            "rel": "item",
+            "type": "application/geo+json"
+        },
+        {
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results/items/NWFkOThhZjAtZDQ2ZS00MDk0LTg0Y2EtZGJjM2FlMjllNmE5/e0db69a88e27ca72625eb5142bd95c9e/openEO_2024-05-02Z.tif?expires=1725894492",
+            "rel": "item",
+            "type": "application/geo+json"
+        },
+        {
+            "href": "https://openeo.dataspace.copernicus.eu/openeo/1.2/jobs/j-240806b0429044aa975027bd02e9a226/results/items/NWFkOThhZjAtZDQ2ZS00MDk0LTg0Y2EtZGJjM2FlMjllNmE5/e62b20066ff888088bdac4649cca0a71/openEO_2024-05-07Z.tif?expires=1725894492",
+            "rel": "item",
+            "type": "application/geo+json"
+        }
+    ],
+    "openeo:status": "finished",
+    "providers": [
+        {
+            "description": "This data was processed on an openEO backend maintained by VITO.",
+            "name": "VITO",
+            "processing:expression": {
+                "expression": {
+                    "adddimension1": {
+                        "arguments": {
+                            "data": {
+                                "from_node": "reducedimension1"
+                            },
+                            "label": "NDVI",
+                            "name": "bands",
+                            "type": "bands"
+                        },
+                        "process_id": "add_dimension"
+                    },
+                    "loadcollection1": {
+                        "arguments": {
+                            "bands": [
+                                "B08",
+                                "B04"
+                            ],
+                            "id": "SENTINEL2_L2A",
+                            "spatial_extent": {
+                                "east": 11.4,
+                                "north": 46.5,
+                                "south": 46.49,
+                                "west": 11.39
+                            },
+                            "temporal_extent": [
+                                "2024-04-30",
+                                "2024-05-15"
+                            ]
+                        },
+                        "process_id": "load_collection"
+                    },
+                    "mergecubes1": {
+                        "arguments": {
+                            "cube1": {
+                                "from_node": "loadcollection1"
+                            },
+                            "cube2": {
+                                "from_node": "adddimension1"
+                            }
+                        },
+                        "process_id": "merge_cubes"
+                    },
+                    "reducedimension1": {
+                        "arguments": {
+                            "data": {
+                                "from_node": "loadcollection1"
+                            },
+                            "dimension": "bands",
+                            "reducer": {
+                                "process_graph": {
+                                    "add1": {
+                                        "arguments": {
+                                            "x": {
+                                                "from_node": "arrayelement1"
+                                            },
+                                            "y": {
+                                                "from_node": "arrayelement2"
+                                            }
+                                        },
+                                        "process_id": "add"
+                                    },
+                                    "arrayelement1": {
+                                        "arguments": {
+                                            "data": {
+                                                "from_parameter": "data"
+                                            },
+                                            "index": 0
+                                        },
+                                        "process_id": "array_element"
+                                    },
+                                    "arrayelement2": {
+                                        "arguments": {
+                                            "data": {
+                                                "from_parameter": "data"
+                                            },
+                                            "index": 1
+                                        },
+                                        "process_id": "array_element"
+                                    },
+                                    "divide1": {
+                                        "arguments": {
+                                            "x": {
+                                                "from_node": "subtract1"
+                                            },
+                                            "y": {
+                                                "from_node": "add1"
+                                            }
+                                        },
+                                        "process_id": "divide",
+                                        "result": true
+                                    },
+                                    "subtract1": {
+                                        "arguments": {
+                                            "x": {
+                                                "from_node": "arrayelement1"
+                                            },
+                                            "y": {
+                                                "from_node": "arrayelement2"
+                                            }
+                                        },
+                                        "process_id": "subtract"
+                                    }
+                                }
+                            }
+                        },
+                        "process_id": "reduce_dimension"
+                    },
+                    "saveresult1": {
+                        "arguments": {
+                            "data": {
+                                "from_node": "mergecubes1"
+                            },
+                            "format": "Gtiff",
+                            "options": {}
+                        },
+                        "process_id": "save_result",
+                        "result": true
+                    }
+                },
+                "format": "openeo"
+            },
+            "processing:facility": "openEO Geotrellis backend",
+            "processing:software": {
+                "Geotrellis backend": "0.39.0a1"
+            },
+            "roles": [
+                "processor"
+            ]
+        }
+    ],
+    "stac_extensions": [
+        "https://stac-extensions.github.io/eo/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/file/v2.1.0/schema.json",
+        "https://stac-extensions.github.io/processing/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/projection/v1.1.0/schema.json"
+    ],
+    "stac_version": "1.0.0",
+    "summaries": {},
+    "title": "Download multiple NDVI tiffs",
+    "type": "Collection"
+}
