@@ -13,6 +13,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -732,6 +733,10 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                         extent.add(BigDecimal.valueOf(Double.parseDouble(minT)));
                         extent.add(BigDecimal.valueOf(Double.parseDouble(maxT)));
                     }
+                    // units of the time dimension
+                    if (label.toUpperCase().equals(TimeUnit.YEAR.name())) {
+                        dim.setUnit(TimeUnit.YEAR.getAbbrv());
+                    }
                     dim.setExtent(extent);
                     cubeDimensions.put(label, dim);
                 }
@@ -896,15 +901,15 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
         // TODO what to put when there is no time axis in the original coverage?
         CollectionTemporalExtent temporalExtent = new CollectionTemporalExtent();
         List<List<OffsetDateTime>> intervals = new ArrayList<>();
-
+        List<OffsetDateTime> interval = new ArrayList<>();
+        DateTimeFormatter fmt = OffsetDateTimeSerializer.FORMATTER;
+        
         if (hasTimeCrs) {
             // 1+ time dimensions:
             for (DimensionTemporal dim : timeDims) {
                 String minT = dim.getExtent().get(0);
                 String maxT = dim.getExtent().get(1);
-
-                List<OffsetDateTime> interval = new ArrayList<>();
-                DateTimeFormatter fmt = OffsetDateTimeSerializer.FORMATTER;
+                
                 try {
                     //STAC requires format: https://www.rfc-editor.org/rfc/rfc3339#section-5.6
                     interval.add(OffsetDateTime.parse(minT, fmt));
@@ -917,8 +922,28 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                 }
 
                 log.debug("Time interval : " + interval);
-
                 intervals.add(interval);
+            }
+        } else {
+            // fetch other dimension with temporal type:
+            List<DimensionOther> otherTimeDims = cubeDimensions.values().stream()
+                    .filter(dim -> dim instanceof DimensionOther)
+                    .filter(dim -> TimeUnit.getAllAbbrv().contains(((DimensionOther)dim).getUnit()))
+                    .map(dim -> (DimensionOther) dim)
+                    .collect(Collectors.toList());
+            
+            switch (otherTimeDims.size()) {
+            case 0:
+                log.warn("No time dimension found in coverage {}.", coverageID);
+                break;
+            case 1:
+                DimensionOther tDim = otherTimeDims.get(0);
+                interval.addAll(toTimeExtent(tDim));
+                intervals.add(interval);
+                break;
+            default: 
+                log.warn("Multiple \"other\" time dimension found.");
+                break;
             }
         }
         temporalExtent.setInterval(intervals);
@@ -1036,17 +1061,25 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
         String tempStep = metadataElement.getChildText("Temporal_Step", gmlNS);
         if (null != tempStep) {
             if (!hasTimeCrs) {
-                log.warn("Temporal step provided but time axis not found in coverage {}.", coverageID);
-
                 // fetch other dimension with temporal type:
                 List<DimensionOther> otherTimeDims = cubeDimensions.values().stream()
                         .filter(dim -> TypeEnum.TEMPORAL.equals(dim.getType()))
                         .filter(dim -> dim instanceof DimensionOther)
                         .map(dim -> (DimensionOther) dim)
                         .collect(Collectors.toList()); //Java 9: .toList());
+                otherTimeDims.addAll(cubeDimensions.values().stream()
+                        .filter(dim -> dim instanceof DimensionOther)
+                        .filter(dim -> TimeUnit.getAllAbbrv().contains(((DimensionOther)dim).getUnit()))
+                        .map(dim -> (DimensionOther) dim)
+                        .collect(Collectors.toList()));
 
                 for (DimensionOther dim : otherTimeDims) {
                     dim.setStep(tempStep);
+                }
+                
+                if (otherTimeDims.isEmpty()) {
+                    log.warn("Temporal step provided but time dimension not found in coverage {}.", coverageID);
+                    // (..or heuristic for converting other to time is incomplete)
                 }
             } else {
                 DimensionTemporal dim = timeDims.get(0);
@@ -1364,4 +1397,33 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
 
         return currentCollection;
     }
+
+    /**
+     * Converts the numeric extent of a dimension of type "other" but
+     * with temporal meaning, to time extent (heuristic).
+     * 
+     * @return from/to timestamp of the given time dimension.
+     */
+    private static final List<OffsetDateTime> toTimeExtent(DimensionOther dim) {
+        if (TypeEnum.TEMPORAL != dim.getType()) {
+            log.warn("Input dimension is not temporal");
+            //return null;
+            // lenient because if type is TEMPORAL the dimension is serialized as TemporalDim anyway in STAC!
+        }
+        
+        List<OffsetDateTime> timeExtent = null;
+        
+        if (dim.getUnit().equals(TimeUnit.YEAR.getAbbrv())) {
+            int yFrom = dim.getExtent().get(0).toBigInteger().intValue();
+            int yUntl = dim.getExtent().get(1).toBigInteger().intValue();
+            OffsetDateTime from = OffsetDateTime.of(yFrom, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+            OffsetDateTime untl = OffsetDateTime.of(yUntl, 12, 31, 23, 59, 59, 0, ZoneOffset.UTC);
+            timeExtent = Arrays.asList(from, untl);
+        } else {
+            log.error("No time decoding implemented for unit: {}", dim.getUnit());
+        }
+        
+        return timeExtent;
+    }
+        
 }
