@@ -1,5 +1,7 @@
 package org.openeo.spring.api;
 
+import static org.openeo.spring.api.DefaultApiController.IMPLEMENTED_OPENEO_API_VERSION;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -51,7 +53,7 @@ public class WellKnownApiController implements WellKnownApi {
 		WellKnownDiscovery wellKnownDiscovery = new WellKnownDiscovery();
 
 		APIInstance apiInstance = new APIInstance();
-		apiInstance.apiVersion("1.0.0");
+		apiInstance.apiVersion(IMPLEMENTED_OPENEO_API_VERSION);
 		apiInstance.setProduction(false);
 		try {
 			apiInstance.setUrl(new URI(openEOPublicEndpoint));
