@@ -83,7 +83,7 @@ public class DimensionSpatial extends Dimension implements HasUnit  {
   private String unit = null;
 
   @JsonProperty("reference_system")
-  private Integer referenceSystem = null;
+  private String referenceSystem = null;
 
   public DimensionSpatial axis(AxisEnum axis) {
     this.axis = axis;
@@ -195,7 +195,7 @@ public class DimensionSpatial extends Dimension implements HasUnit  {
     this.unit = unit;
   }
 
-  public DimensionSpatial referenceSystem(Integer referenceSystem) {
+  public DimensionSpatial referenceSystem(String referenceSystem) {
     this.referenceSystem = referenceSystem;
     return this;
   }
@@ -208,11 +208,11 @@ public class DimensionSpatial extends Dimension implements HasUnit  {
 
   @Valid
 
-  public Integer getReferenceSystem() {
+  public String getReferenceSystem() {
     return referenceSystem;
   }
 
-  public void setReferenceSystem(Integer referenceSystem) {
+  public void setReferenceSystem(String referenceSystem) {
     this.referenceSystem = referenceSystem;
   }
 

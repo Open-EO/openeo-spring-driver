@@ -44,6 +44,9 @@ public class Link   {
 
     @JsonProperty("title")
     private String title;
+
+    @JsonProperty("method")
+    private String method;
     
     
     public long getId() {
