@@ -31,7 +31,10 @@ public class BandSummary   {
 
   @JsonProperty(value="center_wavelength", required=false)
   private Double centerwavelength;
-
+  
+  @JsonProperty(value="full_width_half_max", required=false)
+  private Double full_width_half_max;
+  
   @JsonProperty(value="gsd", required=false)
   private Double gsd;
 
