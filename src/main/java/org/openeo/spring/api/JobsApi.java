@@ -14,7 +14,6 @@ import javax.validation.constraints.Pattern;
 
 import org.openeo.spring.model.BatchJobEstimate;
 import org.openeo.spring.model.Job;
-import org.openeo.spring.model.LogEntries;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

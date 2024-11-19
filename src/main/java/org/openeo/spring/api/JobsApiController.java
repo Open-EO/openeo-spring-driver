@@ -34,7 +34,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 import javax.swing.event.EventListenerList;
-import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
@@ -965,7 +964,6 @@ public class JobsApiController implements JobsApi {
 			@ApiResponse(responseCode = "500", description = "The request can't be fulfilled due to an error at the back-end. The error is never the client’s fault and therefore it is reasonable for the client to retry the exact same request that triggered this response.  The response body SHOULD contain a JSON error object. MUST be any HTTP status code specified in [RFC 7231](https://tools.ietf.org/html/rfc7231#section-6.6).  See also: * [Error Handling](#section/API-Principles/Error-Handling) in the API in general. * [Common Error Codes](errors.json)") })
 	@RequestMapping(value = "/jobs/{job_id}/results", produces = { "application/json",
 			"application/geo+json" }, method = RequestMethod.GET)
-	@Transactional
 	public ResponseEntity<?> listResults(
 			@Pattern(regexp = "^[\\w\\-\\.~]+$") @Parameter(description = "Unique job identifier.", required = true) @PathVariable("job_id") String jobId) {
 		BatchJobResult result = resultDAO.findOne(jobId);
