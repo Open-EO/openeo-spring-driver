@@ -1359,7 +1359,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                     if (null != bandWave) {
                         try {
                             double w = Double.parseDouble(bandWave);
-                            bandsSummary.setCenterwavelength(w);
+                            bandsSummary.setCenterWavelength(w);
                         } catch (NumberFormatException e) {
                             log.warn("Error in parsing band wave-lenght:" + e.getMessage());
                         }
