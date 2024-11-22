@@ -52,10 +52,10 @@ public class ProcessesApiController implements ProcessesApi {
     private String odcCollEndpoint;
 
 	@Value("${org.openeo.wcps.processes.list}")
-	Resource processesFileWCPS;
+	Resource processesListWCPS;
 
 	@Value("${org.openeo.odc.processes.list}")
-	Resource processesFileODC;
+	Resource processesListODC;
 
 	@Autowired
 	ResourceLoader resourceLoader;
@@ -99,16 +99,16 @@ public class ProcessesApiController implements ProcessesApi {
         boolean hasWcpsEndpoint = !wcpsEndpoint.isEmpty();
 
         if (hasOdcEndpoint) {
-            res2eng.put(processesFileODC, EngineTypes.ODC_DASK);
+            res2eng.put(processesListODC, EngineTypes.ODC_DASK);
         }
         if (hasWcpsEndpoint) {
-            res2eng.put(processesFileWCPS, EngineTypes.WCPS);
+            res2eng.put(processesListWCPS, EngineTypes.WCPS);
         }
 
-        for (Resource processesFile : res2eng.keySet()) {
-            try (InputStream is = processesFile.getInputStream();){
+        for (Resource processesListResource : res2eng.keySet()) {
+            try (InputStream is = processesListResource.getInputStream();){
                 Processes processesListEng = mapper.readValue(is, Processes.class);
-                EngineTypes engine = res2eng.get(processesFile);
+                EngineTypes engine = res2eng.get(processesListResource);
 
                 for(Process processElement: processesListEng.getProcesses()) {
                     final String pID = processElement.getId();
@@ -123,9 +123,9 @@ public class ProcessesApiController implements ProcessesApi {
                     }
                 }
             } catch (JsonParseException | JsonMappingException e) {
-                log.warn("Invalid processes file {}.", processesFile, e); // be lenient?
+                log.warn("Invalid processes file {}.", processesListResource, e); // be lenient?
             } catch (IOException e) {
-                log.warn("Cannot access processes file {}.", processesFile, e); // be lenient?
+                log.warn("Cannot access processes file {}.", processesListResource, e); // be lenient?
             }
         }
 //

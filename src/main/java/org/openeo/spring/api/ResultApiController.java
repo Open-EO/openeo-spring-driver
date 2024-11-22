@@ -102,17 +102,11 @@ public class ResultApiController implements ResultApi {
 	@Value("${org.openeo.tmp.dir}")
 	private String tmpDir;
 
-	@Value("${org.openeo.wcps.collections.list}")
-	Resource collectionsFileWCPS;
-
-	@Value("${org.openeo.odc.collections.list}")
-	Resource collectionsFileODC;
-
 	@Value("${org.openeo.wcps.processes.list}")
-	Resource processesFileWCPS;
+	Resource processesListWCPS;
 
 	@Value("${org.openeo.odc.processes.list}")
-	Resource processesFileODC;
+	Resource processesListODC;
 
 	@Autowired
 	public ResultApiController(NativeWebRequest request) {
@@ -365,14 +359,14 @@ public class ResultApiController implements ResultApi {
 		Processes processesAvailableList = new Processes();
 		if(engine==EngineTypes.ODC_DASK) {
 			try {
-				processesAvailableList = mapper.readValue(processesFileODC.getInputStream(), Processes.class);
+				processesAvailableList = mapper.readValue(processesListODC.getInputStream(), Processes.class);
 			} catch (Exception e) {
 				addStackTraceAndErrorToLog(e);
 			}
 		}
 		else if(engine==EngineTypes.WCPS){
 			try {
-				processesAvailableList = mapper.readValue(processesFileWCPS.getInputStream(), Processes.class);
+				processesAvailableList = mapper.readValue(processesListWCPS.getInputStream(), Processes.class);
 			} catch (Exception e) {
 				addStackTraceAndErrorToLog(e);
 			}
