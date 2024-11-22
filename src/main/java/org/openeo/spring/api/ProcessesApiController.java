@@ -2,7 +2,6 @@ package org.openeo.spring.api;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -15,7 +14,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.ProcessIdUtil;
 import org.openeo.spring.model.EngineTypes;
-import org.openeo.spring.model.Link;
 import org.openeo.spring.model.Process;
 import org.openeo.spring.model.Processes;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,9 +44,12 @@ public class ProcessesApiController implements ProcessesApi {
     private static final Logger log = LogManager.getLogger(ProcessIdUtil.class);
 
     private final NativeWebRequest request;
-    private Map<String, Process> processes = null;
-	private Map<String, Link> links = null;
-	private ObjectMapper mapper = null;
+
+    @Value("${org.openeo.wcps.endpoint}")
+    private String wcpsEndpoint;
+
+    @Value("${org.openeo.odc.collectionsEndpoint}")
+    private String odcCollEndpoint;
 
 	@Value("${org.openeo.wcps.processes.list}")
 	Resource processesFileWCPS;
@@ -62,42 +63,6 @@ public class ProcessesApiController implements ProcessesApi {
     @org.springframework.beans.factory.annotation.Autowired
     public ProcessesApiController(NativeWebRequest request) {
         this.request = request;
-
-//        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-//        new ClassPathResource("processes.json").getInputStream();
-//        Resource processResource = resourceLoader.getResource("classpath:processes.json");
-//        Resource linksResource = resourceLoader.getResource("classpath:links.json");
-
-//    	InputStream stream = processResource.getInputStream();
-//    	InputStream linkstream = linksResource.getInputStream();
-
-//    	InputStream stream = classLoader.getResourceAsStream("processes.json");
-//    	InputStream linkstream = classLoader.getResourceAsStream("links.json");
-
-//    	this.mapper = new ObjectMapper();
-//    	this.processes = new HashMap<String, Process>();
-//    	this.links = new HashMap<String, Link>();
-//
-//    	try {
-//			Process[] processArray = this.mapper.readValue(stream, Process[].class);
-//			Link[] linksArray = this.mapper.readValue(linkstream, Link[].class);
-//
-//			for(int p = 0; p < linksArray.length; p++) {
-//				this.links.put(linksArray[p].getRel(), linksArray[p]);
-////				log.debug("Found and stored process: " + linksArray[p].getRel());
-//			}
-//
-//			for(int p = 0; p < processArray.length; p++) {
-//				this.processes.put(processArray[p].getId(), processArray[p]);
-////				log.debug("Found and stored process: " + processArray[p].getId());
-//			}
-//		} catch (JsonParseException e) {
-////			log.error("Error parsing json: " + e.getMessage());
-//		} catch (JsonMappingException e) {
-////			log.error("Error mapping json to java: " + e.getMessage());
-//		} catch (IOException e) {
-////			log.error("Error reading json file: " + e.getMessage());
-//		}
     }
 
     @Override
@@ -129,8 +94,16 @@ public class ProcessesApiController implements ProcessesApi {
         Map<String, Process> processMap = new HashMap<String, Process>();
 
         final Map<Resource, EngineTypes> res2eng = new LinkedHashMap<>();
-        res2eng.put(processesFileODC, EngineTypes.ODC_DASK);
-        res2eng.put(processesFileWCPS, EngineTypes.WCPS);
+
+        boolean hasOdcEndpoint = !odcCollEndpoint.isEmpty();
+        boolean hasWcpsEndpoint = !wcpsEndpoint.isEmpty();
+
+        if (hasOdcEndpoint) {
+            res2eng.put(processesFileODC, EngineTypes.ODC_DASK);
+        }
+        if (hasWcpsEndpoint) {
+            res2eng.put(processesFileWCPS, EngineTypes.WCPS);
+        }
 
         for (Resource processesFile : res2eng.keySet()) {
             try (InputStream is = processesFile.getInputStream();){
