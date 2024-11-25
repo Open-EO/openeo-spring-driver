@@ -2839,7 +2839,7 @@ public class WCPSQueryFactory {
 			collectionIDs.add(col);
 			Collection collection = collectionMap.get(collectionID);
 			
-			int srs = getSRSFromCollection(collection);
+			String srs = getSRSFromCollection(collection);
 			
 			JSONArray processDataCubeTempExt = new JSONArray();
 			JSONObject spatialExtentNode = new JSONObject();
@@ -2926,8 +2926,8 @@ public class WCPSQueryFactory {
 			JSONObject processFilterArguments = processFilter.getJSONObject("arguments");
 			Collection collection = collectionMap.get(collectionID);
 			
-			int srs = getSRSFromCollection(collection);
-			if (srs > 0) {
+			String srs = getSRSFromCollection(collection);
+			if (!srs.equals("")) {
 				createBoundingBoxFilterFromArgs(processFilterArguments, srs, collectionID, false);
 			}
 		}		
@@ -3168,7 +3168,7 @@ public class WCPSQueryFactory {
 //		}
 //	}
 
-	private void createBoundingBoxFilterFromArgs(JSONObject argsObject, int srs, String collectionID, Boolean spatNull) {
+	private void createBoundingBoxFilterFromArgs(JSONObject argsObject, String srs, String collectionID, Boolean spatNull) {
 		String left = null;
 		String right = null;
 		String top = null;
@@ -3244,14 +3244,14 @@ public class WCPSQueryFactory {
 			SpatialReference src = new SpatialReference();
 			src.ImportFromEPSG(4326);
 			SpatialReference dst = new SpatialReference();
-			dst.ImportFromEPSG(srs);
+			dst.ImportFromEPSG(new Integer(srs));
 			log.debug("SRS is :" + srs);			
 			CoordinateTransformation tx = new CoordinateTransformation(src, dst);
 			double[] c1 = null;
 			double[] c2 = null;
 			c1 = tx.TransformPoint(Double.parseDouble(bottom), Double.parseDouble(left));
 			c2 = tx.TransformPoint(Double.parseDouble(top), Double.parseDouble(right));
-			if (srs==3035 || srs==4326) {
+			if (srs.equals("3035") || srs.equals("4326")) {
 				left = Double.toString(c1[1]);
 				bottom = Double.toString(c1[0]);
 				right = Double.toString(c2[1]);
@@ -3412,7 +3412,7 @@ public class WCPSQueryFactory {
 					SpatialReference src = new SpatialReference();
 					src.ImportFromEPSG(4326);
 					SpatialReference dst = new SpatialReference();
-					dst.ImportFromEPSG(srs);
+					dst.ImportFromEPSG(new Integer(srs));
 					log.debug("SRS is : " + srs);
 					CoordinateTransformation tx = new CoordinateTransformation(src, dst);
 					double[] c1 = null;
@@ -3420,7 +3420,7 @@ public class WCPSQueryFactory {
 					c1 = tx.TransformPoint(Double.parseDouble(bottom), Double.parseDouble(left));
 					c2 = tx.TransformPoint(Double.parseDouble(top), Double.parseDouble(right));
 					//TODO include other CRS exceptions of different axis order
-					if (srs==3035 || srs==4326) {
+					if (srs.equals("3035") || srs.equals("4326")) {
 						left = Double.toString(c1[1]);
 						bottom = Double.toString(c1[0]);
 						right = Double.toString(c2[1]);
@@ -3654,8 +3654,8 @@ public class WCPSQueryFactory {
 		}
 	}
 	
-	private int getSRSFromCollection(Collection collection) {
-		int srs = 0;
+	private String getSRSFromCollection(Collection collection) {
+		String srs = "";
 		for(Dimension dimension: collection.getCubeColonDimensions().values()) {
 			if(dimension.getType() == Dimension.TypeEnum.SPATIAL) {
 				srs = ((DimensionSpatial) dimension).getReferenceSystem();

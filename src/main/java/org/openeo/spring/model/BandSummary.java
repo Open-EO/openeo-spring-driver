@@ -30,15 +30,13 @@ public class BandSummary   {
   private String description;
 
   @JsonProperty(value="center_wavelength", required=false)
-  private Double centerwavelength;
-
+  private Double centerWavelength;
+  
+  @JsonProperty(value="full_width_half_max", required=false)
+  private Double fullWidthHalfMax;
+  
   @JsonProperty(value="gsd", required=false)
   private Double gsd;
-
-  public BandSummary name(String name) {
-    this.name = name;
-    return this;
-  }
 
   /**
    * Relationship between the current document and the linked document. SHOULD be a [registered link relation type](https://www.iana.org/assignments/link-relations/link-relations.xml) whenever feasible.
@@ -52,11 +50,6 @@ public class BandSummary   {
 
   public void setName(String name) {
     this.name = name;
-  }
-
-  public BandSummary commonname(String commonname) {
-    this.commonname = commonname;
-    return this;
   }
 
   /**
@@ -82,22 +75,51 @@ public class BandSummary   {
       this.description = description;
   }
 
-  public BandSummary centerwavelength(double centerwavelength) {
-    this.centerwavelength = centerwavelength;
-    return this;
-  }
 
   /**
    * The value MUST be a string that hints at the format used to represent data at the provided URI, preferably a media (MIME) type.
    * @return type
   */
   @ApiModelProperty(example = "0.773", value = "The value MUST be a value that hints at the format used to represent data at the provided URI, preferably a media (MIME) type.")
-  public Double getCenterwavelength() {
-    return centerwavelength;
+  public Double getCenterWwavelength() {
+    return centerWavelength;
   }
 
-  public void setCenterwavelength(Double centerwavelength) {
-    this.centerwavelength = centerwavelength;
+  public void setCenterWavelength(Double centerwavelength) {
+    this.centerWavelength = centerwavelength;
+  }
+  
+  @ApiModelProperty
+  public Double getFullWidthHalfMax() {
+    return fullWidthHalfMax;
+  }
+
+  public void setFullWidthHalfMax(Double fullWidthHalfMax) {
+    this.fullWidthHalfMax = fullWidthHalfMax;
+  }
+  
+  /*
+   * constructor builder helpers
+   */
+  
+  public BandSummary name(String name) {
+      this.name = name;
+      return this;
+    }
+
+  public BandSummary commonName(String commonname) {
+    this.commonname = commonname;
+    return this;
+  }
+
+  public BandSummary centerWavelength(double centerWavelength) {
+    this.centerWavelength = centerWavelength;
+    return this;
+  }
+  
+  public BandSummary fullWidthHalfMax(double fullWidthHalfMax) {
+      this.fullWidthHalfMax = fullWidthHalfMax;
+      return this;
   }
 
   public BandSummary gsd(Double gsd) {
@@ -130,13 +152,14 @@ public class BandSummary   {
     return Objects.equals(this.name, bandsummary.name) &&
         Objects.equals(this.commonname, bandsummary.commonname) &&
         Objects.equals(this.description, bandsummary.description) &&
-        Objects.equals(this.centerwavelength, bandsummary.centerwavelength) &&
+        Objects.equals(this.centerWavelength, bandsummary.centerWavelength) &&
+        Objects.equals(this.fullWidthHalfMax, bandsummary.fullWidthHalfMax) &&
         Objects.equals(this.gsd, bandsummary.gsd);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, commonname, description, centerwavelength, gsd);
+    return Objects.hash(name, commonname, description, centerWavelength, fullWidthHalfMax, gsd);
   }
 
   @Override
@@ -147,7 +170,8 @@ public class BandSummary   {
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    common_name: ").append(toIndentedString(commonname)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");
-    sb.append("    center_wavelength: ").append(toIndentedString(centerwavelength)).append("\n");
+    sb.append("    center_wavelength: ").append(toIndentedString(centerWavelength)).append("\n");
+    sb.append("    full_width_half_max: ").append(toIndentedString(fullWidthHalfMax)).append("\n");
     sb.append("    gsd: ").append(toIndentedString(gsd)).append("\n");
     sb.append("}");
     return sb.toString();
@@ -164,4 +188,3 @@ public class BandSummary   {
     return o.toString().replace("\n", "\n    ");
   }
 }
-
