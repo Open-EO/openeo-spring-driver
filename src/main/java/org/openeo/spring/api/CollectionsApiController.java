@@ -82,6 +82,9 @@ public class CollectionsApiController implements CollectionsApi {
     @Autowired
     private JobsApiController jobsApiController;
     
+    @Autowired
+    private ResultApiController resultApiController;
+    
     /** Whether to run both inter- and intra-catalogue parallelized loading. */
     @Value("${org.openeo.parallelizedHarvest}")
     private boolean parallelizedHarvest;
@@ -496,6 +499,8 @@ public class CollectionsApiController implements CollectionsApi {
         //	if ((bboxList.isPresent() || temporalString.isPresent()) && (subsetList.isPresent())) {
         //		return ApiUtil.errorResponse(HttpStatus.FORBIDDEN,"Please provide either bbox and datetime parameters, or subset. Can't parse both at the same time!");
         //	}
+//        coverage = 'coverage?subset=Lat(46.45:46.50),Lon(11.30:11.35),time("2019-05-01/2019-06-01")'
+
         if (subsetList.isPresent()) {
             return ApiUtil.errorResponse(
                     HttpStatus.NOT_IMPLEMENTED,
@@ -578,7 +583,9 @@ public class CollectionsApiController implements CollectionsApi {
         List<?> collTInt      = collection.getExtent().getTemporal().getInterval();
         OffsetDateTime collT0 = collection.getExtent().getTemporal().getInterval().get(0).get(0);
         OffsetDateTime collT1 = collection.getExtent().getTemporal().getInterval().get(0).get(1);
-        
+        if (collT1==null) {
+        	collT1 = OffsetDateTime.now();
+        }
         final String DATETIME_OPEN = "..";
         if (DATETIME_OPEN == temporalExtent[0] && DATETIME_OPEN == temporalExtent[1]) {
             return ApiUtil.errorResponse(
@@ -657,92 +664,98 @@ public class CollectionsApiController implements CollectionsApi {
         Job job = new Job();
         BatchJobResult jobResult = BatchJobResult.ofType(AssetType.FEATURE);
         job.setProcess(process);
-        job.setTitle(String.format("OGC-Coverage-%s-%s", fileFormat, OffsetDateTime.now()));
-        ResponseEntity<?> response = jobsApiController.createJob(job, principal);
+        
+        ResponseEntity<?> response = resultApiController.computeResult(job, principal);
+        return response;
+    }
+}
+//        
+//        job.setTitle(String.format("OGC-Coverage-%s-%s", fileFormat, OffsetDateTime.now()));
+//        ResponseEntity<?> response2 = jobsApiController.createJob(job, principal);
 
         /*
          * PROBLEM
          * Information in the logs cannot be saved in the Job obj and gets lost
          * for the client.           
          */
-        job = (Job) response.getBody();
-        response = jobsApiController.startJob(job.getId().toString());
-//        response = jobsApiController.downloadResult(job.getId().toString(), filePath); ?
-        boolean jobFinishedSuccessfully = false;
-        for (int i = 0; i < 150; i++) { // FIXME ??
-            try {
-                Thread.sleep(2000); // FIXME ?
-                ResponseEntity<?> jobDescription = jobsApiController.describeJob(job.getId().toString());
-                job = (Job) jobDescription.getBody();
-                log.debug("Job status: {}", job.getStatus());
-
-                if (job.getStatus() == JobStates.FINISHED) {
-                    jobFinishedSuccessfully = true;
-                    break;
-                }
-                else if (job.getStatus() == JobStates.ERROR) {
-                    jobFinishedSuccessfully = false;
-                    break;
-                }
-            } catch (InterruptedException e) {
-                log.error("Request interrupted!");
-                Thread.currentThread().interrupt();
-            }
-        }
-        if (!jobFinishedSuccessfully) {
-            // FIXME
-            return ApiUtil.errorResponse(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "The request did not finished within the timeout limit, or failed.");
-        }
-
-        ResponseEntity<?> jobListResults = jobsApiController.listResults(job.getId().toString());
-        jobResult = (BatchJobResult) jobListResults.getBody();
-        Map<String, Asset> resultAssets = jobResult.getAssets();
-        String resultKey = new String();
-        for (Map.Entry<String, Asset> entry : resultAssets.entrySet()) {
-            log.trace("{} : {}", entry.getKey(), entry.getValue());
-            if (entry.getKey().contains("result")){
-                resultKey = entry.getKey();
-            }
-        }
-        Asset outputAsset = resultAssets.get(resultKey);
-        String outputFilePath = outputAsset.getHref();
-        try {
-            log.debug("Result path: '{}'", outputFilePath);
-            File outputFile = new File(outputFilePath);
-            String mime = URLConnection.guessContentTypeFromName(outputFile.getName());
-            if (mime == null) {
-                try {
-                    mime = ConvenienceHelper.getMimeFromFilename(outputFile.getName());
-                }
-                catch (Exception e){
-                    log.warn("Could not derive MIME type from file name.", e);
-                }
-            }
-            log.debug("Guessed MIME type: {}", mime);
-
-            URL url = new URL(outputFilePath);
-            InputStream is = null;
-            byte[] outputFileBytes = null;
-            is = url.openStream();
-            outputFileBytes = IOUtils.toByteArray(is);
-            if (is != null) {
-                is.close();
-            }
-            if (mime == null) {
-                mime = "application/octet-stream";
-            }
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(mime))
-                    .body(outputFileBytes);
-        } 
-        catch (IOException e) {
-            log.error("Result file not found", e);
-            return ApiUtil.errorResponse(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Result file not found.");
-        }
+//        job = (Job) response.getBody();
+//        response = jobsApiController.startJob(job.getId().toString());
+////        response = jobsApiController.downloadResult(job.getId().toString(), filePath); ?
+//        boolean jobFinishedSuccessfully = false;
+//        for (int i = 0; i < 150; i++) { // FIXME ??
+//            try {
+//                Thread.sleep(2000); // FIXME ?
+//                ResponseEntity<?> jobDescription = jobsApiController.describeJob(job.getId().toString());
+//                job = (Job) jobDescription.getBody();
+//                log.debug("Job status: {}", job.getStatus());
+//
+//                if (job.getStatus() == JobStates.FINISHED) {
+//                    jobFinishedSuccessfully = true;
+//                    break;
+//                }
+//                else if (job.getStatus() == JobStates.ERROR) {
+//                    jobFinishedSuccessfully = false;
+//                    break;
+//                }
+//            } catch (InterruptedException e) {
+//                log.error("Request interrupted!");
+//                Thread.currentThread().interrupt();
+//            }
+//        }
+//        if (!jobFinishedSuccessfully) {
+//            // FIXME
+//            return ApiUtil.errorResponse(
+//                    HttpStatus.INTERNAL_SERVER_ERROR,
+//                    "The request did not finished within the timeout limit, or failed.");
+//        }
+//
+//        ResponseEntity<?> jobListResults = jobsApiController.listResults(job.getId().toString());
+//        jobResult = (BatchJobResult) jobListResults.getBody();
+//        Map<String, Asset> resultAssets = jobResult.getAssets();
+//        String resultKey = new String();
+//        for (Map.Entry<String, Asset> entry : resultAssets.entrySet()) {
+//            log.trace("{} : {}", entry.getKey(), entry.getValue());
+//            if (entry.getKey().contains("result")){
+//                resultKey = entry.getKey();
+//            }
+//        }
+//        Asset outputAsset = resultAssets.get(resultKey);
+//        String outputFilePath = outputAsset.getHref();
+//        try {
+//            log.debug("Result path: '{}'", outputFilePath);
+//            File outputFile = new File(outputFilePath);
+//            String mime = URLConnection.guessContentTypeFromName(outputFile.getName());
+//            if (mime == null) {
+//                try {
+//                    mime = ConvenienceHelper.getMimeFromFilename(outputFile.getName());
+//                }
+//                catch (Exception e){
+//                    log.warn("Could not derive MIME type from file name.", e);
+//                }
+//            }
+//            log.debug("Guessed MIME type: {}", mime);
+//
+//            URL url = new URL(outputFilePath);
+//            InputStream is = null;
+//            byte[] outputFileBytes = null;
+//            is = url.openStream();
+//            outputFileBytes = IOUtils.toByteArray(is);
+//            if (is != null) {
+//                is.close();
+//            }
+//            if (mime == null) {
+//                mime = "application/octet-stream";
+//            }
+//            return ResponseEntity.ok()
+//                    .contentType(MediaType.parseMediaType(mime))
+//                    .body(outputFileBytes);
+//        } 
+//        catch (IOException e) {
+//            log.error("Result file not found", e);
+//            return ApiUtil.errorResponse(
+//                    HttpStatus.INTERNAL_SERVER_ERROR,
+//                    "Result file not found.");
+//        }
 
         //    {
         //    	  "process_graph": {
@@ -768,5 +781,5 @@ public class CollectionsApiController implements CollectionsApi {
         //    	  },
         //    	  "parameters": []
         //    	}
-    }
-}
+//    }
+//}
