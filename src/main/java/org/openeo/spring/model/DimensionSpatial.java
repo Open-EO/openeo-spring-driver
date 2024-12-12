@@ -83,7 +83,7 @@ public class DimensionSpatial extends Dimension implements HasUnit  {
   private String unit = null;
 
   @JsonProperty("reference_system")
-  private Integer referenceSystem = null;
+  private String referenceSystem = null;
 
   public DimensionSpatial axis(AxisEnum axis) {
     this.axis = axis;
@@ -195,7 +195,7 @@ public class DimensionSpatial extends Dimension implements HasUnit  {
     this.unit = unit;
   }
 
-  public DimensionSpatial referenceSystem(Integer referenceSystem) {
+  public DimensionSpatial referenceSystem(String referenceSystem) {
     this.referenceSystem = referenceSystem;
     return this;
   }
@@ -204,15 +204,13 @@ public class DimensionSpatial extends Dimension implements HasUnit  {
    * The spatial reference system for the data, specified as [EPSG code](http://www.epsg-registry.org/), [WKT2 (ISO 19162) string](http://docs.opengeospatial.org/is/18-010r7/18-010r7.html) or [PROJ definition (deprecated)](https://proj.org/usage/quickstart.html). Defaults to EPSG code 4326.
    * @return referenceSystem
   */
-  @ApiModelProperty(value = "The spatial reference system for the data, specified as [EPSG code](http://www.epsg-registry.org/), [WKT2 (ISO 19162) string](http://docs.opengeospatial.org/is/18-010r7/18-010r7.html) or [PROJ definition (deprecated)](https://proj.org/usage/quickstart.html). Defaults to EPSG code 4326.")
-
+  @ApiModelProperty(value = "The spatial reference system for the data, specified as [EPSG code](http://www.epsg-registry.org/), [WKT2 (ISO 19162) string](http://docs.opengeospatial.org/is/18-010r7/18-010r7.html) or [PROJ definition (deprecated)](https://proj.org/usage/quickstart.html). Defaults to EPSG code '4326'.")
   @Valid
-
-  public Integer getReferenceSystem() {
+  public String getReferenceSystem() {
     return referenceSystem;
   }
 
-  public void setReferenceSystem(Integer referenceSystem) {
+  public void setReferenceSystem(String referenceSystem) {
     this.referenceSystem = referenceSystem;
   }
 

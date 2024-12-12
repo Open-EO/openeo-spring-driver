@@ -662,7 +662,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                 dim.setType(TypeEnum.SPATIAL); // FIXME this should be implicit
 
 //              int gridDim = Integer.parseInt(gridDims[index]) + 1;
-                int epsgCode = axisLabel2EpsgCode.get(label);
+                String epsgCode = axisLabel2EpsgCode.get(label).toString();
                 dim.setReferenceSystem(epsgCode);
 
                 // axis type: easting/northing/z ?
@@ -1359,7 +1359,7 @@ public class WCSCollectionsLoader implements ICollectionsLoader {
                     if (null != bandWave) {
                         try {
                             double w = Double.parseDouble(bandWave);
-                            bandsSummary.setCenterwavelength(w);
+                            bandsSummary.setCenterWavelength(w);
                         } catch (NumberFormatException e) {
                             log.warn("Error in parsing band wave-lenght:" + e.getMessage());
                         }

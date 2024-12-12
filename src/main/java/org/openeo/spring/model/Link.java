@@ -44,6 +44,9 @@ public class Link   {
 
     @JsonProperty("title")
     private String title;
+
+    @JsonProperty("method")
+    private String method;
     
     
     public long getId() {
@@ -129,6 +132,20 @@ public class Link   {
         this.title = title;
     }
 
+    @ApiModelProperty(example = "related", required = true, value = "Relationship between the current document and the linked document. SHOULD be a [registered link relation type](https://www.iana.org/assignments/link-relations/link-relations.xml) whenever feasible.")
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    public Link  method(String method) {
+        this.method= method;
+        return this;
+    }
+    
     @Override
     public boolean equals(java.lang.Object o) {
         if (this == o) {
@@ -141,12 +158,13 @@ public class Link   {
         return Objects.equals(this.rel, link.rel) &&
                 Objects.equals(this.href, link.href) &&
                 Objects.equals(this.type, link.type) &&
-                Objects.equals(this.title, link.title);
+                Objects.equals(this.title, link.title) &&
+                Objects.equals(this.method, link.method);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(rel, href, type, title);
+        return Objects.hash(rel, href, type, title, method);
     }
 
     @Override
@@ -158,6 +176,7 @@ public class Link   {
         sb.append("    href: ").append(toIndentedString(href)).append("\n");
         sb.append("    type: ").append(toIndentedString(type)).append("\n");
         sb.append("    title: ").append(toIndentedString(title)).append("\n");
+        sb.append("    method: ").append(toIndentedString(method)).append("\n");
         sb.append("}");
         return sb.toString();
     }
